@@ -8,6 +8,11 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+      PASTA: bi
+      REPO_SRC: felipetaiar/vetvida-bi
+      EXCLUIR: vercel.json
 
     steps:
       - name: Setup Python
@@ -18,19 +23,7 @@ jobs:
       - name: Instalar requests
         run: pip install requests
 
-      - name: Baixar script de sync
-        env:
-          GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+      - name: Sync
         run: |
-          curl -H "Authorization: token $GH_TOKEN" \
-               -H "Accept: application/vnd.github.v3.raw" \
-               -o sync.py \
-               "https://api.github.com/repos/felipetaiar/vetvida-painel/contents/sync.py"
-
-      - name: Executar sync
-        env:
-          GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
-          PASTA: bi
-          REPO_SRC: felipetaiar/vetvida-bi
-          EXCLUIR: vercel.json
-        run: python3 sync.py
+          echo "aW1wb3J0IHJlcXVlc3RzLCB0aW1lLCBvcywgc3lzCgpUT0tFTiAgICA9IG9zLmVudmlyb25bIkdIX1RPS0VOIl0KUEFTVEEgICAgPSBvcy5lbnZpcm9uWyJQQVNUQSJdClJFUE9fU1JDID0gb3MuZW52aXJvblsiUkVQT19TUkMiXQpFWENMVUlSICA9IG9zLmVudmlyb24uZ2V0KCJFWENMVUlSIiwgIiIpLnNwbGl0KCIsIikKSEVBREVSUyAgPSB7IkF1dGhvcml6YXRpb24iOiBmInRva2VuIHtUT0tFTn0iLCAiQWNjZXB0IjogImFwcGxpY2F0aW9uL3ZuZC5naXRodWIudjMranNvbiJ9ClBBSU5FTCAgID0gImZlbGlwZXRhaWFyL3ZldHZpZGEtcGFpbmVsIgoKZGVmIGxpc3RhcigpOgogICAgciA9IHJlcXVlc3RzLmdldChmImh0dHBzOi8vYXBpLmdpdGh1Yi5jb20vcmVwb3Mve1JFUE9fU1JDfS9naXQvdHJlZXMvbWFpbj9yZWN1cnNpdmU9MSIsIGhlYWRlcnM9SEVBREVSUykKICAgIHJldHVybiBbZlsicGF0aCJdIGZvciBmIGluIHIuanNvbigpLmdldCgidHJlZSIsW10pIGlmIGZbInR5cGUiXT09ImJsb2IiXQoKZGVmIGdldF9jb250ZW50KHBhdGgpOgogICAgciA9IHJlcXVlc3RzLmdldChmImh0dHBzOi8vYXBpLmdpdGh1Yi5jb20vcmVwb3Mve1JFUE9fU1JDfS9jb250ZW50cy97cGF0aH0iLCBoZWFkZXJzPUhFQURFUlMpCiAgICByZXR1cm4gci5qc29uKCkuZ2V0KCJjb250ZW50IiwiIikucmVwbGFjZSgiXG4iLCIiKSBpZiByLnN0YXR1c19jb2RlPT0yMDAgZWxzZSBOb25lCgpkZWYgZ2V0X3NoYShwYXRoKToKICAgIHIgPSByZXF1ZXN0cy5nZXQoZiJodHRwczovL2FwaS5naXRodWIuY29tL3JlcG9zL3tQQUlORUx9L2NvbnRlbnRzL3twYXRofSIsIGhlYWRlcnM9SEVBREVSUykKICAgIHJldHVybiByLmpzb24oKS5nZXQoInNoYSIpIGlmIHIuc3RhdHVzX2NvZGU9PTIwMCBlbHNlIE5vbmUKCmRlZiB1cGxvYWQocGF0aCwgY29udGVudCwgc2hhPU5vbmUpOgogICAgYm9keT17Im1lc3NhZ2UiOmYic3luYzoge1BBU1RBfS97cGF0aH0iLCJjb250ZW50Ijpjb250ZW50LCJicmFuY2giOiJtYWluIn0KICAgIGlmIHNoYTogYm9keVsic2hhIl09c2hhCiAgICByPXJlcXVlc3RzLnB1dChmImh0dHBzOi8vYXBpLmdpdGh1Yi5jb20vcmVwb3Mve1BBSU5FTH0vY29udGVudHMve3BhdGh9IixoZWFkZXJzPUhFQURFUlMsanNvbj1ib2R5KQogICAgcmV0dXJuIHIuc3RhdHVzX2NvZGUgaW4gWzIwMCwyMDFdCgpvaz1lcnI9MApmb3IgcGF0aCBpbiBsaXN0YXIoKToKICAgIGlmIHBhdGggaW4gRVhDTFVJUjogY29udGludWUKICAgIGRlc3Q9ZiJ7UEFTVEF9L3twYXRofSIKICAgIGNvbnRlbnQ9Z2V0X2NvbnRlbnQocGF0aCkKICAgIGlmIG5vdCBjb250ZW50OiBjb250aW51ZQogICAgc2hhPWdldF9zaGEoZGVzdCkKICAgIGlmIHVwbG9hZChkZXN0LGNvbnRlbnQsc2hhKToKICAgICAgICBwcmludChmIk9LIHtkZXN0fSIpOyBvays9MQogICAgZWxzZToKICAgICAgICBwcmludChmIkVSUk8ge2Rlc3R9Iik7IGVycis9MQogICAgdGltZS5zbGVlcCgwLjMpCgpwcmludChmIlN5bmMge1BBU1RBfToge29rfSBvaywge2Vycn0gZXJyb3MiKQpzeXMuZXhpdCgwIGlmIGVycj09MCBlbHNlIDEpCg==" | base64 -d > sync.py
+          python3 sync.py

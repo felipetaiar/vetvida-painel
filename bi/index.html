@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetVida BI — Acesso</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #080c10;
+    --surface: #0e1419;
+    --border: rgba(255,255,255,0.06);
+    --accent: #CC0000;
+    --accent2: #ff4040;
+    --text: #e8edf2;
+    --muted: #5a6a78;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(204,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(204,0,0,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* Glow orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    opacity: 0.15;
+  }
+  .orb1 { width: 500px; height: 500px; background: #CC0000; top: -200px; left: -150px; }
+  .orb2 { width: 400px; height: 400px; background: #ff4040; bottom: -150px; right: -100px; }
+
+  .container {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 40px 20px;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 60px;
+  }
+
+  .heading {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    font-style: italic;
+  }
+
+  /* Cards grid */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .card:hover { transform: translateY(-2px); }
+  .card:hover::before { opacity: 1; }
+
+  /* Gestor card */
+  .card-gestor { grid-column: 1 / -1; }
+  .card-gestor::before { background: linear-gradient(135deg, rgba(204,0,0,0.08), transparent); }
+  .card-gestor:hover { border-color: var(--accent); box-shadow: 0 0 40px rgba(204,0,0,0.15); }
+
+  /* Rep card */
+  .card-rep::before { background: linear-gradient(135deg, rgba(255,64,64,0.08), transparent); }
+  .card-rep:hover { border-color: var(--accent2); box-shadow: 0 0 30px rgba(255,64,64,0.12); }
+
+  .card-tag {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 14px;
+  }
+
+  .tag-gestor { background: rgba(204,0,0,0.15); color: var(--accent); }
+  .tag-rep { background: rgba(255,64,64,0.12); color: var(--accent2); }
+
+  .card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .card-arrow {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .card:hover .card-arrow { color: var(--accent); transform: translateY(-50%) translateX(4px); }
+  .card-rep:hover .card-arrow { color: var(--accent2); }
+
+  /* Rep grid dentro do card gestor */
+  .gestor-meta {
+    display: flex;
+    gap: 20px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .meta-item { font-size: 12px; color: var(--muted); }
+  .meta-item strong { color: var(--accent); margin-right: 4px; }
+
+  /* Select reps */
+  .reps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .rep-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rep-btn:hover {
+    border-color: var(--accent2);
+    background: rgba(204,0,0,0.05);
+    transform: translateY(-1px);
+  }
+
+  .rep-avatar {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent2), #5b4fff);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .rep-info .name { font-weight: 500; }
+  .rep-info .area { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  /* Overlay para seleção de rep */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(8,12,16,0.9);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .overlay.active { display: flex; }
+
+  .overlay-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 600px;
+    width: 100%;
+  }
+
+  .overlay-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .overlay-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+  .overlay-close {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 20px; float: right; margin-top: -40px;
+    transition: color 0.2s;
+  }
+  .overlay-close:hover { color: var(--text); }
+
+  .env-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,200,0,0.1);
+    border: 1px solid rgba(255,200,0,0.2);
+    color: #ffc800;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-top: 40px;
+  }
+
+  .env-badge::before { content: '●'; font-size: 8px; }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- Overlay seleção de rep -->
+<div class="overlay" id="repOverlay">
+  <div class="overlay-box">
+    <button class="overlay-close" onclick="document.getElementById('repOverlay').classList.remove('active')">✕</button>
+    <div class="overlay-title">Selecione o representante</div>
+    <div class="overlay-sub">Cada rep visualiza apenas seus próprios dados e resultados.</div>
+    <div class="reps-grid" id="repsGrid"></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="logo">
+    <img src="logo.jpg" alt="VetVida" style="height:72px;display:block;margin:0 auto;background:white;padding:8px 18px;border-radius:12px;">
+  </div>
+  <div class="subtitle">Business Intelligence</div>
+
+  <div class="heading">Selecione seu perfil de acesso</div>
+
+  <div class="cards">
+    <!-- Gestor -->
+    <a class="card card-gestor" href="dashboard.html?perfil=gestor">
+      <div class="card-tag tag-gestor">👑 Gestor</div>
+      <div class="card-title">Felipe — Visão Completa</div>
+      <div class="card-desc">Faturamento consolidado, ranking de reps, análise por laboratório, curva ABC da equipe e KPIs gerenciais.</div>
+      <div class="gestor-meta">
+        <div class="meta-item"><strong>7</strong> representantes</div>
+        <div class="meta-item"><strong>7</strong> laboratórios</div>
+        <div class="meta-item"><strong>Todos</strong> os módulos</div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <!-- Representante -->
+    <div class="card card-rep" onclick="document.getElementById('repOverlay').classList.add('active')">
+      <div class="card-tag tag-rep">👤 Representante</div>
+      <div class="card-title">Acesso Individual</div>
+      <div class="card-desc">Cada rep visualiza exclusivamente sua própria carteira, metas, laboratórios e curva ABC pessoal.</div>
+      <div class="card-arrow">→</div>
+    </div>
+
+    <!-- Promotora -->
+    <div class="card card-rep" style="cursor:default; opacity:0.5;">
+      <div class="card-tag tag-rep" style="background:rgba(120,120,120,0.15);color:#5a6a78;">🗺️ Promotora</div>
+      <div class="card-title">Nicolle</div>
+      <div class="card-desc">Módulo de visitas e leads. Em desenvolvimento — será integrado em breve.</div>
+    </div>
+  </div>
+
+  <div class="env-badge">Ambiente de testes — dados simulados</div>
+</div>
+
+<script>
+  const REPS = [
+    { nome: 'Paula',   area: 'Guarulhos 1',  inicial: 'P' },
+    { nome: 'Mauro',   area: 'Zona Leste 1', inicial: 'M' },
+    { nome: 'Suane',   area: 'Zona Leste 2', inicial: 'S' },
+    { nome: 'Vanessa', area: 'Zona Norte 2', inicial: 'V' },
+    { nome: 'Luiz',    area: 'Zona Leste 3', inicial: 'L' },
+    { nome: 'Paulo',   area: 'Zona Norte 3', inicial: 'P' },
+    { nome: 'Nayara',  area: 'Alto Tietê 1', inicial: 'N' },
+  ];
+
+  const grid = document.getElementById('repsGrid');
+
+  REPS.forEach(rep => {
+    const btn = document.createElement('button');
+    btn.className = 'rep-btn';
+    btn.innerHTML = `
+      <div class="rep-avatar">${rep.inicial}</div>
+      <div class="rep-info">
+        <div class="name">${rep.nome}</div>
+        <div class="area">${rep.area}</div>
+      </div>
+    `;
+    btn.onclick = () => {
+      window.location.href = `dashboard.html?perfil=rep&rep=${rep.nome}`;
+    };
+    grid.appendChild(btn);
+  });
+</script>
+</body>
+</html>

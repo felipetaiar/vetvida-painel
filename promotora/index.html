@@ -1219,7 +1219,8 @@ function verificarSSO() {
   const auth   = sessionStorage.getItem('vv_auth');
   const perfil = sessionStorage.getItem('vv_perfil');
   if (auth !== 'ok' || !perfil) return false;
-  entrar(perfil === 'gestor' ? 'gestor' : 'nicolle');
+  const perfilProm = (perfil === 'gestor') ? 'gestor' : 'nicolle';
+  entrar(perfilProm);
   return true;
 }
 
@@ -2592,15 +2593,14 @@ function formatarDataSimples(str) {
   return `${d}/${m}/${y}`;
 }
 
+window.addEventListener('load', function() { verificarSSO(); });
+
 function mostrarToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
-
-// Auto-login SSO
-window.addEventListener('load', function() { verificarSSO(); });
 </script>
 </body>
 </html>

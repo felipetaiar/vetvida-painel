@@ -84,6 +84,10 @@ const URLS = {
   nicolle: 'https://vetvida-promotora.vercel.app/',
   rep:     'https://vetvida-reativacao.vercel.app/',
 };
+// Nota: após configurar domínios próprios, trocar para:
+// gestor:  'https://rep.vetvidasp.com/'
+// nicolle: 'https://promotora.vetvidasp.com/'
+// rep:     'https://rep.vetvidasp.com/'
 
 function fazerLogin() {
   const user = (document.getElementById('login-user').value || '').toLowerCase().trim();
@@ -101,10 +105,11 @@ function fazerLogin() {
   erro.style.display = 'none';
 
   // Passar credenciais via URL para auto-login no sistema destino
-  const perfil = match.perfil === 'rep' ? match.rep : match.perfil;
-  const token  = btoa(user + ':' + pass); // token simples base64
+  const perfil  = match.perfil === 'rep' ? match.rep : match.perfil;
+  const token   = btoa(user + ':' + pass);
   const baseUrl = URLS[match.perfil] || URLS.rep;
-  window.location.href = baseUrl + '?vv_auth=ok&vv_perfil=' + encodeURIComponent(perfil) + '&vv_tk=' + encodeURIComponent(token);
+  // Para gestor e reps, passar o user original também
+  window.location.href = baseUrl + '?vv_auth=ok&vv_perfil=' + encodeURIComponent(perfil) + '&vv_tk=' + encodeURIComponent(token) + '&vv_user=' + encodeURIComponent(user);
 }
 
 function toggleSenha() {

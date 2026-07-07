@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetVida — Reativação Comercial</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111418;
+    --surface2: #181c22;
+    --border: rgba(255,255,255,0.07);
+    --red: #c44040;
+    --red-glow: rgba(196,64,64,0.18);
+    --red-soft: rgba(196,64,64,0.10);
+    --text: #e8edf2;
+    --muted: #56636f;
+    --muted2: #8a99a6;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+  }
+
+  /* Background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(196,64,64,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(196,64,64,0.025) 1px, transparent 1px);
+    background-size: 44px 44px;
+    pointer-events: none;
+  }
+
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+  }
+  .orb1 {
+    width: 480px; height: 480px;
+    background: #c44040;
+    opacity: 0.07;
+    top: -180px; left: -140px;
+  }
+  .orb2 {
+    width: 360px; height: 360px;
+    background: #ff6a00;
+    opacity: 0.05;
+    bottom: -120px; right: -80px;
+  }
+
+  /* Card container */
+  .card {
+    position: relative;
+    z-index: 10;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.4);
+  }
+
+  /* Logo */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .brand-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--red), #ff4040);
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 16px var(--red-glow);
+  }
+
+  .brand-icon svg { width: 22px; height: 22px; fill: white; }
+
+  .brand-name {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 26px;
+    letter-spacing: -0.3px;
+    line-height: 1;
+  }
+  .brand-name span { color: var(--red); }
+
+  .brand-sub {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 36px;
+    padding-left: 54px;
+  }
+
+  /* Form */
+  .field { margin-bottom: 18px; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted2);
+    margin-bottom: 8px;
+  }
+
+  .field select,
+  .field input[type="password"] {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--muted);
+    pointer-events: none;
+  }
+
+  .field select option { background: #1a1f26; color: var(--text); }
+
+  .field select:focus,
+  .field input[type="password"]:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px var(--red-soft);
+  }
+
+  .field select:focus { box-shadow: 0 0 0 3px var(--red-soft); }
+
+  /* Password wrapper */
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 44px; }
+  .pw-toggle {
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    cursor: pointer;
+    color: var(--muted);
+    display: flex; align-items: center;
+    transition: color 0.15s;
+    padding: 4px;
+  }
+  .pw-toggle:hover { color: var(--text); }
+  .pw-toggle svg { width: 18px; height: 18px; }
+
+  /* Error */
+  .erro {
+    background: rgba(196,64,64,0.10);
+    border: 1px solid rgba(196,64,64,0.25);
+    color: #ff7070;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  /* Button */
+  .btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px var(--red-glow);
+    letter-spacing: 0.2px;
+  }
+  .btn:hover { background: #8a2020; box-shadow: 0 6px 28px rgba(196,64,64,0.28); }
+  .btn:active { transform: scale(0.98); }
+
+  /* Divider */
+  .divider {
+    width: 40px; height: 1px;
+    background: var(--border);
+    margin: 28px auto;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+/* index.html design system override */
+body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; }
+.card { background: #1c2023 !important; border-color: rgba(255,255,255,0.08) !important; }
+.field select, .field input[type="password"] { background: #141a21 !important; border-color: rgba(255,255,255,0.08) !important; color: #f0eee8 !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; }
+.field select:focus, .field input[type="password"]:focus { border-color: #c44040 !important; box-shadow: 0 0 0 3px rgba(196,64,64,0.1) !important; }
+.btn { background: #c44040 !important; box-shadow: 0 4px 18px rgba(196,64,64,0.28) !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; }
+.btn:hover { background: #8a2020 !important; }
+.brand-sub { color: rgba(255,255,255,0.25) !important; }
+.footer { color: rgba(255,255,255,0.2) !important; }
+.select-wrap::after { border-top-color: rgba(255,255,255,0.3) !important; }
+
+</style>
+</head>
+<body>
+<script>
+// ── SSO AUTO-LOGIN ──────────────────────────────────────────
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var auth   = params.get('vv_auth');
+  var perfil = params.get('vv_perfil');
+  var tk     = params.get('vv_tk');
+  if (auth !== 'ok' || !perfil || !tk) return;
+  try {
+    var decoded = atob(tk);
+    var parts   = decoded.split(':');
+    var user    = parts[0];
+    var pass    = parts.slice(1).join(':');
+    // Aguardar S estar definido
+    window.addEventListener('load', function() {
+      if (!window.S) return;
+      if (S[perfil] !== pass) return;
+      // Login válido — executar como se tivesse digitado
+      sessionStorage.setItem('vv_perfil', perfil);
+      sessionStorage.setItem('vv_auth', 'ok');
+      // Limpar URL
+      window.history.replaceState({}, '', window.location.pathname);
+      // Redirecionar para o destino correto
+      window.location.href = perfil === 'gestor' ? 'gestor.html' : 'rep.html?rep=' + encodeURIComponent(perfil);
+    });
+  } catch(e) { console.warn('SSO:', e); }
+})();
+</script>
+
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="card">
+
+  <div class="brand">
+    <img src="logo.jpg" alt="VetVida" style="height:72px;display:block;margin:0 auto;background:white;padding:8px 18px;border-radius:12px;">
+  </div>
+
+  <div class="brand-sub">Reativação Comercial</div>
+
+  <div class="erro" id="erro"></div>
+
+  <div class="field">
+    <label>Perfil de acesso</label>
+    <div class="select-wrap">
+      <select id="perfil">
+        <option value="">Selecione seu perfil...</option>
+        <option value="gestor">👑 Felipe — Gestor</option>
+        <option value="PAULA">Paula — Guarulhos 1</option>
+        <option value="MAURO">Mauro — Zona Leste 1</option>
+        <option value="SUANE">Suane — Zona Leste 2</option>
+        <option value="VANESSA">Vanessa — Zona Norte 2</option>
+        <option value="LUIZ">Luiz — Zona Leste 3</option>
+        <option value="PAULO">Paulo — Zona Norte 3</option>
+        <option value="NAYARA">Nayara — Alto Tietê 1</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Senha</label>
+    <div class="pw-wrap">
+      <input type="password" id="senha" placeholder="••••••••••" onkeydown="if(event.key==='Enter')entrar()">
+      <button class="pw-toggle" onclick="toggleSenha(this)" tabindex="-1" type="button">
+        <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <button class="btn" onclick="entrar()">Entrar</button>
+
+  <div class="divider"></div>
+  <div class="footer">Sistema interno · VetVida Ltda</div>
+
+</div>
+
+<script>
+const S = {
+  "gestor":  "vvgestor2026",
+  "PAULA":   "vvpaula2026",
+  "MAURO":   "vvmauro2026",
+  "SUANE":   "vvsuane2026",
+  "VANESSA": "vvvanessa2026",
+  "LUIZ":    "vvluiz2026",
+  "PAULO":   "vvpaulo2026",
+  "NAYARA":  "vvnayara2026"
+};
+
+function entrar() {
+  const p = document.getElementById('perfil').value;
+  const s = document.getElementById('senha').value;
+  const e = document.getElementById('erro');
+
+  if (!p) {
+    e.textContent = 'Selecione seu perfil de acesso.';
+    e.style.display = 'block';
+    return;
+  }
+  if (S[p] !== s) {
+    e.textContent = 'Senha incorreta. Tente novamente.';
+    e.style.display = 'block';
+    document.getElementById('senha').value = '';
+    document.getElementById('senha').focus();
+    return;
+  }
+
+  e.style.display = 'none';
+  sessionStorage.setItem('vv_perfil', p);
+  sessionStorage.setItem('vv_auth', 'ok');
+  window.location.href = p === 'gestor' ? 'gestor.html' : 'rep.html?rep=' + p;
+}
+
+function toggleSenha(btn) {
+  const input = document.getElementById('senha');
+  const isPass = input.type === 'password';
+  input.type = isPass ? 'text' : 'password';
+  btn.querySelector('svg').innerHTML = isPass
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
+</script>
+</body>
+</html>

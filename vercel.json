@@ -1,1 +1,28 @@
-{"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}
+{
+  "rewrites": [
+    {
+      "source": "/rep/:path*",
+      "destination": "https://vetvida-reativacao.vercel.app/:path*"
+    },
+    {
+      "source": "/promotora/:path*",
+      "destination": "https://vetvida-promotora.vercel.app/:path*"
+    },
+    {
+      "source": "/bi/:path*",
+      "destination": "https://vetvida-bi.vercel.app/:path*"
+    },
+    {
+      "source": "/rep",
+      "destination": "https://vetvida-reativacao.vercel.app/"
+    },
+    {
+      "source": "/promotora",
+      "destination": "https://vetvida-promotora.vercel.app/"
+    },
+    {
+      "source": "/bi",
+      "destination": "https://vetvida-bi.vercel.app/"
+    }
+  ]
+}

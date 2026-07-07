@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vet Vida — Roteiro</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+:root {
+  --bg:         #f7fafc;
+  --surface:    #ffffff;
+  --surface2:   #ffffff;
+  --surface3:   #f1f5f9;
+  --border:     #e2e8f0;
+  --border2:    #cbd5e1;
+  --red:        #c44040;
+  --red-dark:   #8a2020;
+  --red-glow:   rgba(196,64,64,0.15);
+  --red-soft:   rgba(196,64,64,0.08);
+  --gold:       #b45309;
+  --gold-soft:  rgba(180,83,9,0.08);
+  --green:      #16a34a;
+  --green-soft: rgba(22,163,74,0.10);
+  --text:       #1e293b;
+  --text2:      #64748b;
+  --text3:      #94a3b8;
+  --muted:      #94a3b8;
+  --muted2:     #64748b;
+  --radius:     10px;
+  --radius-sm:  7px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family: 'Plus Jakarta Sans', system-ui, sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--surface);border-bottom:2px solid var(--red);padding:12px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.hdr img{height:40px}.hdiv{width:1px;height:34px;background:var(--border2)}
+.hi h1{font-size:15px;font-weight:600}.hi p{font-size:11px;color:var(--text2);margin-top:1px}
+.hr{margin-left:auto;display:flex;gap:8px;align-items:center}
+.hrep{background:var(--red);color:white;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700}
+.btn-sair{background:var(--surface2);color:var(--text2);padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--border2)}
+
+/* NAV */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:0}
+.nav a{padding:10px 16px;font-size:12px;font-weight:600;color:var(--text2);text-decoration:none;border-bottom:3px solid transparent;transition:all .2s}
+.nav a.ativo{color:var(--red);border-bottom-color:var(--red)}
+
+/* MAIN */
+.cont{max-width:1100px;margin:0 auto;padding:16px}
+
+/* SEMANA HEADER */
+.semana-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.semana-titulo{font-size:16px;font-weight:700;color:var(--text)}
+.semana-info{font-size:12px;color:var(--text2);margin-top:2px}
+.semana-nav{display:flex;gap:6px;align-items:center}
+.btn-semana{background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;transition:all .2s}
+.btn-semana:hover{border-color:var(--red);color:var(--red)}
+.btn-semana.ativo{background:var(--red);color:white;border-color:var(--red)}
+
+/* FILTROS */
+.filtros{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filtro-rep{background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:7px 12px;border-radius:8px;font-size:12px;cursor:pointer;outline:none}
+.badge-alerta{background:var(--red-soft);color:var(--red);border:1px solid var(--red-glow);padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer}
+.badge-alerta.off{background:var(--surface2);color:var(--text2);border-color:var(--border2)}
+
+/* GRADE SEMANAL */
+.grade{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:24px}
+.dia-col{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;min-height:200px}
+.dia-hdr{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.dia-nome{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.dia-nome.hoje{color:var(--red)}
+.dia-count{font-size:10px;color:var(--text2);background:var(--surface2);padding:2px 6px;border-radius:8px}
+.dia-count.cheio{background:var(--red-soft);color:var(--red)}
+.dia-body{padding:8px}
+.cli-card{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:all .2s;position:relative}
+.cli-card:hover{border-color:var(--red-glow);background:var(--surface3)}
+.cli-card.nao-comprou{border-left:3px solid var(--red)}
+.cli-card.comprou{border-left:3px solid var(--green)}
+.cli-card.critico-estoque::after{content:'⚠';position:absolute;top:6px;right:8px;font-size:12px}
+.cli-card-nome{font-size:11px;font-weight:600;color:var(--text);line-height:1.3}
+.cli-card-info{font-size:10px;color:var(--text2);margin-top:2px}
+.cli-card-badges{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.badge-freq{font-size:9px;padding:1px 5px;border-radius:5px;background:var(--surface3);color:var(--text2);border:1px solid var(--border2)}
+.badge-visita{font-size:9px;padding:1px 5px;border-radius:5px;font-weight:700}
+.badge-visita.ok{background:var(--green-soft);color:var(--green)}
+.badge-visita.pendente{background:var(--red-soft);color:var(--red)}
+.check-visita{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border2);background:var(--surface3);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .2s}
+.check-visita.ok{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+
+/* SEM ROTEIRO */
+.sem-roteiro{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+.sem-roteiro-titulo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sem-roteiro-lista{display:flex;flex-wrap:wrap;gap:6px}
+.sem-cli{background:var(--red-soft);border:1px solid var(--red-glow);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--text);cursor:pointer;transition:all .2s}
+.sem-cli:hover{background:var(--red);color:white}
+
+/* MODAL CONFIGURAR ROTEIRO */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:300;padding:20px;align-items:flex-start;justify-content:center;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:500px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.modal-hdr{background:var(--surface2);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.modal-hdr h2{font-size:14px;font-weight:700;margin:0;color:var(--text)}
+.modal-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.modal-close{background:var(--surface3);border:1px solid var(--border2);color:var(--text2);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px}
+.modal-body{padding:16px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px}
+.form-select{width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:8px;font-size:13px;outline:none;background:var(--surface2);color:var(--text);cursor:pointer}
+.form-select:focus{border-color:var(--red)}
+.semanas-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.semana-btn{padding:8px;border-radius:7px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s}
+.semana-btn.sel{background:var(--red);border-color:var(--red);color:white}
+.dias-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.dia-btn{padding:8px 4px;border-radius:7px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s}
+.dia-btn.sel{background:var(--red);border-color:var(--red);color:white}
+.modal-ftr{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:space-between}
+.btn-salvar{flex:1;background:var(--red);color:white;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-salvar:hover{background:var(--red-dark)}
+.btn-remover{background:var(--surface2);color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:11px 14px;font-size:12px;cursor:pointer;display:none}
+.btn-remover:hover{border-color:var(--red);color:var(--red)}
+.btn-cancel{background:var(--surface2);color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:11px 14px;font-size:12px;cursor:pointer}
+
+/* MODAL APROVACAO GESTOR */
+.aprovacao-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;display:none}
+.aprovacao-titulo{font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.aprovacao-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px}
+.aprovacao-rep{font-size:13px;font-weight:600;color:var(--text)}
+.aprovacao-info{font-size:11px;color:var(--text2);margin-top:2px}
+.btn-aprovar{background:var(--green-soft);color:var(--green);border:1px solid rgba(0,180,80,.3);border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer}
+.btn-devolver{background:var(--red-soft);color:var(--red);border:1px solid var(--red-glow);border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-left:4px}
+
+/* LIMITE ALTERACOES */
+.limite-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.limite-label{font-size:11px;color:var(--text2);white-space:nowrap}
+.limite-progress{flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.limite-fill{height:100%;border-radius:3px;background:var(--green);transition:width .4s}
+.limite-fill.amarelo{background:var(--gold)}
+.limite-fill.vermelho{background:var(--red)}
+.limite-pct{font-size:11px;font-weight:700;white-space:nowrap}
+
+.tst{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 20px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.tst.show{opacity:1}
+.empty-dia{padding:20px 8px;text-align:center;color:var(--text3);font-size:11px}
+
+/* ═══ VetVida — Design System B+C Override ═══ */
+/* 1. Charcoal header */
+.hdr{background:#1c2023!important;border-bottom:1px solid rgba(196,64,64,0.18)!important;box-shadow:0 2px 20px rgba(0,0,0,0.18)!important;}
+.hdr::before{background:linear-gradient(90deg,#6a1010,#c44040 50%,#d45050)!important;}
+.hi h1{color:#f0eee8!important;}
+.hi p{color:rgba(255,255,255,0.32)!important;}
+.hdiv{background:rgba(255,255,255,0.1)!important;}
+/* header badges/buttons */
+.hrep{background:rgba(196,64,64,0.14)!important;color:#f4a090!important;border-color:rgba(196,64,64,0.28)!important;}
+.bs,.btn-sair,.btn-s{background:rgba(255,255,255,0.06)!important;border-color:rgba(255,255,255,0.1)!important;color:rgba(255,255,255,0.42)!important;}
+.nav-link-est{background:rgba(96,165,250,0.1)!important;color:#7ab4f8!important;border-color:rgba(96,165,250,0.2)!important;}
+.nav-link-rot{background:rgba(74,222,128,0.1)!important;color:#6fcf97!important;border-color:rgba(74,222,128,0.18)!important;}
+/* Gestor header brand */
+.hdr-brand{color:#f0eee8!important;}
+.hdr-brand span{color:#f4a090!important;}
+.bg-g{background:rgba(196,64,64,0.1)!important;color:#c44040!important;border-color:rgba(196,64,64,0.22)!important;}
+/* 2. Controls bar: tinted */
+.ctrl{background:#edf2f7!important;box-shadow:0 1px 8px rgba(0,0,0,0.06)!important;}
+/* 3. Stat bar label text */
+.sl,.pbl{color:#94a3b8!important;}
+/* 4. Message box (hardcoded dark bg in rep.html) */
+.mb{background:#f8fafc!important;border-left-color:rgba(196,64,64,0.3)!important;border-color:#e2e8f0!important;}
+.mb::before{background:none!important;}
+/* 5. Input fields */
+.bsc,.form-select,.form-textarea,.form-input,.filtro-select,.filtro-input{background:#f8fafc!important;border-color:#e2e8f0!important;color:#1e293b!important;}
+.bsc::placeholder,.form-textarea::placeholder{color:#94a3b8!important;}
+.bsc:focus,.form-select:focus,.form-textarea:focus{border-color:#c44040!important;box-shadow:0 0 0 3px rgba(196,64,64,0.08)!important;}
+/* 6. Stat number pulse — tone down on light */
+.sn{text-shadow:none!important;animation:none!important;}
+.fat-badge{text-shadow:none!important;}
+/* 7. Modals */
+.modal-overlay,.status-overlay{background:rgba(10,18,30,0.5)!important;backdrop-filter:blur(4px)!important;}
+.modal,.status-box{background:#ffffff!important;border-color:#e2e8f0!important;}
+.modal-hdr,.status-hdr{background:#f1f5f9!important;border-bottom-color:#e2e8f0!important;color:#1e293b!important;}
+.modal-hdr h2{color:#1e293b!important;}
+.modal-close{background:#ffffff!important;border-color:#e2e8f0!important;color:#64748b!important;}
+.modal-close:hover{border-color:#c44040!important;color:#c44040!important;}
+.status-sub{color:#64748b!important;}
+.status-btn-cancel{background:#f1f5f9!important;color:#64748b!important;border-color:#e2e8f0!important;}
+.status-obs textarea{background:#f8fafc!important;border-color:#e2e8f0!important;color:#1e293b!important;}
+/* 8. Toast */
+.tst{background:#1e293b!important;border-color:#334155!important;color:#f8fafc!important;}
+/* 9. Scrollbar */
+::-webkit-scrollbar-track{background:#f1f5f9!important;}
+::-webkit-scrollbar-thumb{background:#cbd5e1!important;}
+::-webkit-scrollbar-thumb:hover{background:#94a3b8!important;}
+/* 10. Lab tags */
+.lab-tag{background:rgba(30,100,220,0.08)!important;color:#1d4ed8!important;border-color:rgba(30,100,220,0.15)!important;}
+.prod-lab{background:rgba(30,100,220,0.08)!important;color:#1d4ed8!important;border-color:rgba(30,100,220,0.12)!important;}
+/* 11. Leads button */
+.leads-btn{background:rgba(180,83,9,0.07)!important;border-color:rgba(180,83,9,0.2)!important;color:#b45309!important;}
+.leads-badge{background:#b45309!important;}
+/* 12. Gestor modal/table fixes */
+.modal-lab-flt{background:#f1f5f9!important;border-bottom-color:#e2e8f0!important;}
+.modal-lab-btn{background:#f8fafc!important;border-color:#e2e8f0!important;color:#64748b!important;}
+.modal-lab-btn.ativo{border-color:#c44040!important;background:rgba(196,64,64,0.07)!important;color:#c44040!important;}
+.lab-btn{background:#f8fafc!important;border-color:#e2e8f0!important;color:#64748b!important;}
+.lab-btn.ativo{border-color:#c44040!important;background:rgba(196,64,64,0.07)!important;color:#c44040!important;}
+/* 13. Histograma empty bars */
+.hist-bar.sem{background:#e2e8f0!important;}
+/* 14. Info grid */
+.ii{color:#1e293b!important;}
+.ii .lb{color:#94a3b8!important;}
+/* 15. Progress bar fill */
+.pbf{box-shadow:none!important;}
+/* 16. Card hover */
+.card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.1)!important;}
+/* 17. Section dividers */
+.sec::after{opacity:0.15!important;}
+/* 18. Filter buttons */
+.bf{opacity:1!important;}
+.bf.ativo.ft,.bf.ativo.fr{box-shadow:none!important;}
+/* 19. Status dots in modal */
+.status-opt{opacity:1!important;}
+/* 20. nav bar (roteiro/gestor) */
+.nav{background:#ffffff!important;border-bottom-color:#e2e8f0!important;}
+.nav a{color:#64748b!important;}
+.nav a.ativo,.nav a:hover{color:#c44040!important;border-bottom-color:#c44040!important;}
+/* Gestor cards/tables */
+.resumo-card,.tabela-wrap,.filtros-wrap,.nao-contados-wrap{background:#ffffff!important;border-color:#e2e8f0!important;}
+th{background:#f1f5f9!important;color:#64748b!important;border-bottom-color:#e2e8f0!important;}
+td{color:#1e293b!important;border-bottom-color:#e2e8f0!important;}
+tr:hover td{background:#f8fafc!important;}
+.filtro-label{color:#64748b!important;}
+
+</style></head><body>
+
+<div class="hdr">
+  <img src="logo.jpg" alt="Vet Vida" onerror="this.style.display='none'">
+  <div class="hdiv"></div>
+  <div class="hi"><h1>Roteiro de Visitas</h1><p id="sub">Carregando...</p></div>
+  <div class="hr"><span class="hrep" id="badge">...</span><button class="btn-sair" onclick="sair()">Sair</button></div>
+</div>
+
+<div class="nav">
+  <a href="rep.html">Reativação</a>
+  <a href="estoque.html">Estoque</a>
+  <a href="roteiro.html" class="ativo">Roteiro</a>
+</div>
+
+<div class="cont">
+
+  <!-- Aprovação pendente (gestor) -->
+  <div class="aprovacao-section" id="aprovacao-section">
+    <div class="aprovacao-titulo">⚠ Roteiros pendentes de aprovação</div>
+    <div id="aprovacao-lista"></div>
+  </div>
+
+  <!-- Barra de limite de alterações -->
+  <div class="limite-bar" id="limite-bar" style="display:none">
+    <span class="limite-label">Alterações este mês:</span>
+    <div class="limite-progress"><div class="limite-fill" id="limite-fill"></div></div>
+    <span class="limite-pct" id="limite-pct">0/0</span>
+    <span class="limite-label" style="color:var(--text2);font-size:10px">(máx 10%)</span>
+  </div>
+
+  <!-- Header da semana -->
+  <div class="semana-hdr">
+    <div>
+      <div class="semana-titulo" id="semana-titulo">Semana atual</div>
+      <div class="semana-info" id="semana-info"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="semana-nav" id="semana-nav">
+        <button class="btn-semana" id="btn-s1" onclick="setSemana(1)">1ª Sem</button>
+        <button class="btn-semana" id="btn-s2" onclick="setSemana(2)">2ª Sem</button>
+        <button class="btn-semana" id="btn-s3" onclick="setSemana(3)">3ª Sem</button>
+        <button class="btn-semana" id="btn-s4" onclick="setSemana(4)">4ª Sem</button>
+      </div>
+      <select class="filtro-rep" id="filtro-rep" onchange="renderGrade()" style="display:none">
+        <option value="todos">Todos os reps</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Clientes sem roteiro -->
+  <div class="sem-roteiro" id="sem-roteiro-section" style="display:none">
+    <div class="sem-roteiro-titulo">⚠ Clientes sem roteiro configurado <span id="sem-roteiro-count"></span></div>
+    <div class="sem-roteiro-lista" id="sem-roteiro-lista"></div>
+  </div>
+
+  <!-- Grade semanal -->
+  <div class="grade" id="grade"></div>
+
+</div>
+
+<!-- Modal configurar roteiro -->
+<div class="modal-overlay" id="modal-roteiro" onclick="if(event.target===this)fecharModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <h2 id="modal-nome">Configurar Roteiro</h2>
+        <div class="modal-sub" id="modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Frequência de visita</label>
+        <select class="form-select" id="f-frequencia" onchange="atualizarSemanasOpcoes()">
+          <option value="semanal">Semanal (toda semana)</option>
+          <option value="quinzenal">Quinzenal (a cada 15 dias)</option>
+          <option value="mensal" selected>Mensal (uma vez por mês)</option>
+          <option value="bimestral">Bimestral (a cada 2 meses)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Semana(s) do mês <span id="semanas-dica" style="font-weight:400;color:var(--text2);text-transform:none;letter-spacing:0;font-size:10px">Selecione 1 semana</span></label>
+        <div class="semanas-grid" id="semanas-grid">
+          <button class="semana-btn" data-s="1" onclick="toggleSemana(this)">1ª</button>
+          <button class="semana-btn" data-s="2" onclick="toggleSemana(this)">2ª</button>
+          <button class="semana-btn" data-s="3" onclick="toggleSemana(this)">3ª</button>
+          <button class="semana-btn" data-s="4" onclick="toggleSemana(this)">4ª</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Dia(s) da semana</label>
+        <div class="dias-grid">
+          <button class="dia-btn" data-d="segunda" onclick="toggleDia(this)">Seg</button>
+          <button class="dia-btn" data-d="terca" onclick="toggleDia(this)">Ter</button>
+          <button class="dia-btn" data-d="quarta" onclick="toggleDia(this)">Qua</button>
+          <button class="dia-btn" data-d="quinta" onclick="toggleDia(this)">Qui</button>
+          <button class="dia-btn" data-d="sexta" onclick="toggleDia(this)">Sex</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-remover" id="btn-remover" onclick="removerRoteiro()">Remover</button>
+      <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarRoteiro()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="tst" id="tst"></div>
+
+<script src="dados.js"></script>
+<script>
+var SUPABASE_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+
+var REP='', IS_GESTOR=false;
+var SEMANA_ATUAL=1, ROTEIROS={}, VISITAS={}, CLI_MODAL=null;
+var ESTOQUE_CRITICO=new Set();
+var COMPRAS_MES=new Set();
+var ALTERACOES_MES=0, TOTAL_CART=0;
+
+var DIAS=['segunda','terca','quarta','quinta','sexta'];
+var DIAS_LABEL={segunda:'Seg',terca:'Ter',quarta:'Qua',quinta:'Qui',sexta:'Sex'};
+var DIAS_FULL={segunda:'Segunda',terca:'Terça',quarta:'Quarta',quinta:'Quinta',sexta:'Sexta'};
+var MAPA_REP={'PAULO':'ZONA NORTE 3','VANESSA':'ZONA NORTE 2','PAULA':'GUARULHOS 1',
+              'MAURO':'ZONA LESTE 1','SUANE':'ZONA LESTE 2','LUIZ':'ZONA LESTE 3','NAYARA':'ALTO TIETE 1'};
+var REPS_ORDEM=['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
+
+function sair(){sessionStorage.clear();window.location.href='index.html';}
+function toast(msg,dur){
+  var t=document.getElementById('tst');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},dur||2500);
+}
+
+// ── SEMANA DO MES ATUAL ──────────────────────────────────
+function getSemanaAtual(){
+  var hoje=new Date();
+  return Math.ceil(hoje.getDate()/7);
+}
+function getDiaSemanaAtual(){
+  var d=new Date().getDay(); // 0=dom,1=seg...6=sab
+  var dias=['','segunda','terca','quarta','quinta','sexta','sabado'];
+  return dias[d]||'';
+}
+
+// ── INIT ─────────────────────────────────────────────────
+function init(){
+  var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
+  if(au!=='ok'||!pf){window.location.href='index.html';return;}
+  REP=pf; IS_GESTOR=(pf==='gestor');
+  document.getElementById('badge').textContent=IS_GESTOR?'Felipe':REP;
+  document.getElementById('sub').textContent=IS_GESTOR?'Visão Consolidada':'Area: '+(AREAS_LABEL_DATA&&AREAS_LABEL_DATA[REP]?AREAS_LABEL_DATA[REP]:REP);
+
+  SEMANA_ATUAL=getSemanaAtual();
+  setSemana(SEMANA_ATUAL,true);
+
+  if(IS_GESTOR){
+    document.getElementById('filtro-rep').style.display='block';
+    document.getElementById('limite-bar').style.display='none';
+    document.getElementById('sem-roteiro-section').style.display='none';
+    REPS_ORDEM.forEach(function(r){
+      var opt=document.createElement('option');
+      opt.value=r; opt.textContent=r+' — '+(MAPA_REP[r]||'');
+      document.getElementById('filtro-rep').appendChild(opt);
+    });
+    carregarAprovacoespendentes();
+  }
+
+  carregarDados();
+}
+
+function setSemana(n, skip){
+  SEMANA_ATUAL=n;
+  [1,2,3,4].forEach(function(i){
+    var btn=document.getElementById('btn-s'+i);
+    if(btn) btn.className='btn-semana'+(i===n?' ativo':'');
+  });
+  var hoje=new Date();
+  var mes=hoje.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  document.getElementById('semana-titulo').textContent=n+'ª Semana de '+mes.charAt(0).toUpperCase()+mes.slice(1);
+  var diaSem=getDiaSemanaAtual();
+  var diaHoje=DIAS_FULL[diaSem]||''; document.getElementById('semana-info').textContent=diaHoje?'Hoje: '+diaHoje:'';
+  if(!skip) renderGrade();
+}
+
+// ── CARREGAR DADOS ────────────────────────────────────────
+function carregarDados(){
+  var reps=IS_GESTOR?REPS_ORDEM:[REP];
+
+  // Carregar roteiros
+  Promise.all([
+    fetch(SUPABASE_URL+'/rest/v1/roteiros?select=*',{headers:sbHeaders()}).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL+'/rest/v1/visitas_realizadas?select=*&data_visita=gte.'+primeiroDiaMes(),{headers:sbHeaders()}).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL+'/rest/v1/contagens_estoque?select=cod_cli,produto,qtde_estoque,created_at&order=created_at.desc',{headers:sbHeaders()}).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL+'/rest/v1/roteiro_alteracoes?select=*&mes_ano=eq.'+mesAnoAtual()+(IS_GESTOR?'':('&rep=eq.'+REP)),{headers:sbHeaders()}).then(function(r){return r.json();})
+  ]).then(function(results){
+    var roteiros_rows=results[0]||[];
+    var visitas_rows=results[1]||[];
+    var estoque_rows=results[2]||[];
+    var alteracoes_rows=results[3]||[];
+
+    // Indexar roteiros por rep+cod
+    ROTEIROS={};
+    roteiros_rows.forEach(function(r){
+      if(!ROTEIROS[r.rep]) ROTEIROS[r.rep]={};
+      ROTEIROS[r.rep][r.cod_cli]=r;
+    });
+
+    // Indexar visitas
+    VISITAS={};
+    visitas_rows.forEach(function(v){
+      var key=v.rep+'_'+v.cod_cli+'_'+v.semanas_mes;
+      VISITAS[key]=v;
+    });
+
+    // Detectar estoque crítico
+    ESTOQUE_CRITICO=new Set();
+    var ultimoPorCli={};
+    estoque_rows.forEach(function(e){
+      if(!ultimoPorCli[e.cod_cli]) ultimoPorCli[e.cod_cli]=[];
+      ultimoPorCli[e.cod_cli].push(e);
+    });
+    Object.keys(ultimoPorCli).forEach(function(cod){
+      var itens=ultimoPorCli[cod];
+      var temCritico=itens.some(function(i){return i.qtde_estoque===0||i.qtde_estoque<3;});
+      if(temCritico) ESTOQUE_CRITICO.add(parseInt(cod));
+    });
+
+    // Clientes que compraram este mês
+    COMPRAS_MES=new Set();
+    if(typeof TODOS_DADOS!=='undefined'){
+      var clientes=IS_GESTOR?Object.values(TODOS_DADOS).flat():( TODOS_DADOS[REP]||[]);
+      // Clientes que NÃO estão na lista de reativação já compraram
+      var naLista=new Set(clientes.map(function(c){return c.cod;}));
+      // Buscar todos os clientes da carteira
+    }
+
+    // Alterações do mês
+    if(alteracoes_rows.length){
+      var alt=alteracoes_rows.find(function(a){return IS_GESTOR||a.rep===REP;});
+      if(alt){ ALTERACOES_MES=alt.alteracoes; TOTAL_CART=alt.total_cart; }
+    } else {
+      // Calcular carteira
+      if(!IS_GESTOR&&typeof TODOS_DADOS!=='undefined'){
+        TOTAL_CART=(TODOS_DADOS[REP]||[]).length; // clientes na lista de reativacao
+      }
+    }
+
+    atualizarBarraLimite();
+    renderSemRoteiro();
+    renderGrade();
+  }).catch(function(e){
+    console.error(e);
+    toast('Erro ao carregar dados: '+e.message);
+  });
+}
+
+function sbHeaders(prefer){
+  var h={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'};
+  if(prefer) h['Prefer']=prefer;
+  return h;
+}
+function primeiroDiaMes(){
+  var d=new Date(); return d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'))+'-01';
+}
+function mesAnoAtual(){
+  var d=new Date(); return String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+}
+
+// ── BARRA DE LIMITE ───────────────────────────────────────
+function atualizarBarraLimite(){
+  if(IS_GESTOR) return;
+  var maxAlt=Math.max(1,Math.floor(TOTAL_CART*0.1));
+  var pct=TOTAL_CART>0?Math.round(ALTERACOES_MES/TOTAL_CART*100):0;
+  document.getElementById('limite-bar').style.display='flex';
+  document.getElementById('limite-pct').textContent=ALTERACOES_MES+'/'+maxAlt+' alterações';
+  var fill=document.getElementById('limite-fill');
+  fill.style.width=Math.min(100,Math.round(ALTERACOES_MES/maxAlt*100))+'%';
+  fill.className='limite-fill'+(pct>=10?' vermelho':pct>=7?' amarelo':'');
+}
+
+// ── SEM ROTEIRO ───────────────────────────────────────────
+function renderSemRoteiro(){
+  if(IS_GESTOR) return; // gestor vê tudo — não mostra alerta por ora
+  var carteira=typeof TODOS_DADOS!=='undefined'?(TODOS_DADOS[REP]||[]):[];
+  var meuRoteiro=ROTEIROS[REP]||{};
+  var semRoteiro=carteira.filter(function(c){return !meuRoteiro[c.cod];});
+  var sec=document.getElementById('sem-roteiro-section');
+  var lista=document.getElementById('sem-roteiro-lista');
+  if(!semRoteiro.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  document.getElementById('sem-roteiro-count').textContent='('+semRoteiro.length+')';
+  var h='';
+  semRoteiro.slice(0,20).forEach(function(c){
+    h+='<div class="sem-cli" onclick="abrirModal('+c.cod+',\''+encodeURIComponent(c.nome)+'\',\''+encodeURIComponent(c.municipio)+'\')">'+c.nome+'</div>';
+  });
+  if(semRoteiro.length>20) h+='<div class="sem-cli" style="cursor:default;background:var(--surface2)">+'+( semRoteiro.length-20)+' mais</div>';
+  lista.innerHTML=h;
+}
+
+// ── GRADE SEMANAL ─────────────────────────────────────────
+function renderGrade(){
+  var filtroRep=IS_GESTOR?document.getElementById('filtro-rep').value:REP;
+  var reps=filtroRep==='todos'?REPS_ORDEM:[filtroRep];
+  var diaSemHoje=getDiaSemanaAtual();
+  var h='';
+
+  DIAS.forEach(function(dia){
+    var clientes=[];
+    reps.forEach(function(rep){
+      var rot=ROTEIROS[rep]||{};
+      Object.values(rot).forEach(function(r){
+        var semanas=Array.isArray(r.semanas_mes)?r.semanas_mes:(r.semanas_mes?JSON.parse(r.semanas_mes):[1]);
+        if(r.dia_semana===dia&&semanas.indexOf(SEMANA_ATUAL)>=0){
+          var carteira=typeof TODOS_DADOS!=='undefined'?(TODOS_DADOS[rep]||[]):[];
+          var cli=carteira.find(function(c){return c.cod===r.cod_cli;});
+          var visKey=rep+'_'+r.cod_cli+'_'+SEMANA_ATUAL;
+          var visitou=VISITAS[visKey]&&VISITAS[visKey].realizada;
+          var comprou=cli&&cli.tipo!=='reativacao'&&cli.tipo!=='alta'; // simplificado
+          clientes.push({
+            cod:r.cod_cli, nome:r.nome_cli,
+            municipio:cli?cli.municipio:'',
+            rep:rep, freq:r.freq||r.frequencia||'mensal',
+            visitou:visitou, estoqueCrit:ESTOQUE_CRITICO.has(r.cod_cli),
+            naoComprou:cli&&(cli.tipo==='alta'||cli.tipo==='reativacao'),
+            r:r
+          });
+        }
+      });
+    });
+
+    var isHoje=(dia===diaSemHoje);
+    var carga=clientes.length;
+    h+='<div class="dia-col">';
+    h+='<div class="dia-hdr">';
+    h+='<span class="dia-nome'+(isHoje?' hoje':'')+'">'+DIAS_FULL[dia]+(isHoje?' •':'')+'</span>';
+    h+='<span class="dia-count'+(carga>=8?' cheio':'')+'">'+carga+'</span>';
+    h+='</div><div class="dia-body">';
+
+    if(!clientes.length){
+      h+='<div class="empty-dia">Nenhuma visita</div>';
+    } else {
+      clientes.forEach(function(c){
+        var classes='cli-card'+(c.naoComprou?' nao-comprou':' comprou')+(c.estoqueCrit?' critico-estoque':'');
+        h+='<div class="'+classes+'" onclick="abrirModal('+c.cod+',\''+encodeURIComponent(c.nome)+'\',\''+encodeURIComponent(c.municipio)+'\',\''+c.rep+'\')">';
+        h+='<div style="display:flex;align-items:flex-start;gap:6px">';
+        if(!IS_GESTOR){
+          var visKey=c.rep+'_'+c.cod+'_'+SEMANA_ATUAL;
+          var visitou=VISITAS[visKey]&&VISITAS[visKey].realizada;
+          h+='<div class="check-visita'+(visitou?' ok':'')+'" onclick="event.stopPropagation();marcarVisita(\''+c.rep+'\','+c.cod+',\''+encodeURIComponent(c.nome)+'\')">'+(visitou?'✓':'')+'</div>';
+        }
+        h+='<div style="flex:1"><div class="cli-card-nome">'+c.nome+'</div>';
+        if(c.municipio) h+='<div class="cli-card-info">'+c.municipio+'</div>';
+        if(IS_GESTOR) h+='<div class="cli-card-info" style="color:var(--red);font-weight:600">'+c.rep+'</div>';
+        h+='<div class="cli-card-badges">';
+        h+='<span class="badge-freq">'+c.freq+'</span>';
+        if(c.naoComprou) h+='<span class="badge-visita pendente">sem compra</span>';
+        if(c.estoqueCrit) h+='<span class="badge-visita pendente">estoque ⚠</span>';
+        h+='</div></div></div></div>';
+      });
+    }
+    h+='</div></div>';
+  });
+  document.getElementById('grade').innerHTML=h;
+}
+
+// ── MARCAR VISITA ─────────────────────────────────────────
+function marcarVisita(rep, cod, nomeEnc){
+  var nome=decodeURIComponent(nomeEnc);
+  var visKey=rep+'_'+cod+'_'+SEMANA_ATUAL;
+  var jaVisitou=VISITAS[visKey]&&VISITAS[visKey].realizada;
+  var nova={rep:rep,cod_cli:cod,nome_cli:nome,data_visita:new Date().toISOString().split('T')[0],
+            semanas_mes:SEMANA_ATUAL,realizada:!jaVisitou,obs:''};
+
+  if(VISITAS[visKey]&&VISITAS[visKey].id){
+    // Atualizar
+    fetch(SUPABASE_URL+'/rest/v1/visitas_realizadas?id=eq.'+VISITAS[visKey].id,{
+      method:'PATCH',headers:sbHeaders('return=minimal'),
+      body:JSON.stringify({realizada:!jaVisitou})
+    }).then(function(r){
+      if(r.ok){
+        VISITAS[visKey].realizada=!jaVisitou;
+        toast((!jaVisitou?'✓ Visita registrada!':'Visita desmarcada'));
+        renderGrade();
+      }
+    });
+  } else {
+    // Inserir
+    fetch(SUPABASE_URL+'/rest/v1/visitas_realizadas',{
+      method:'POST',headers:sbHeaders('return=representation'),
+      body:JSON.stringify([nova])
+    }).then(function(r){return r.json();})
+    .then(function(rows){
+      if(rows&&rows[0]){
+        VISITAS[visKey]=rows[0];
+        toast('✓ Visita registrada!');
+        renderGrade();
+      }
+    });
+  }
+}
+
+// ── MODAL CONFIGURAR ROTEIRO ──────────────────────────────
+function abrirModal(cod, nomeEnc, munEnc, repParam){
+  var nome=decodeURIComponent(nomeEnc);
+  var mun=decodeURIComponent(munEnc||'');
+  var repAlvo=repParam?decodeURIComponent(repParam):REP;
+  CLI_MODAL={cod:cod, nome:nome, municipio:mun, rep:repAlvo};
+
+  document.getElementById('modal-nome').textContent=nome;
+  document.getElementById('modal-sub').textContent=mun+(repAlvo&&repAlvo!==REP?' · '+repAlvo:'');
+
+  // Preencher com roteiro existente
+  var roteiroExist=ROTEIROS[repAlvo]&&ROTEIROS[repAlvo][cod];
+  var btnRem=document.getElementById('btn-remover');
+
+  // Reset
+  document.querySelectorAll('.semana-btn').forEach(function(b){b.classList.remove('sel');});
+  document.querySelectorAll('.dia-btn').forEach(function(b){b.classList.remove('sel');});
+  document.getElementById('f-frequencia').value='mensal';
+  btnRem.style.display='none';
+
+  if(roteiroExist){
+    document.getElementById('f-frequencia').value=roteiroExist.frequencia||'mensal';
+    var semanas=Array.isArray(roteiroExist.semanas_mes)?roteiroExist.semanas_mes:
+                (roteiroExist.semanas_mes?JSON.parse(roteiroExist.semanas_mes):[1]);
+    semanas.forEach(function(s){
+      var btn=document.querySelector('.semana-btn[data-s="'+s+'"]');
+      if(btn) btn.classList.add('sel');
+    });
+    var dia=roteiroExist.dia_semana;
+    var dBtn=document.querySelector('.dia-btn[data-d="'+dia+'"]');
+    if(dBtn) dBtn.classList.add('sel');
+    btnRem.style.display='block';
+  } else {
+    // Default: semana atual selecionada
+    var btnS=document.querySelector('.semana-btn[data-s="'+SEMANA_ATUAL+'"]');
+    if(btnS) btnS.classList.add('sel');
+  }
+
+  atualizarSemanasOpcoes();
+  document.getElementById('modal-roteiro').classList.add('open');
+}
+
+function fecharModal(){document.getElementById('modal-roteiro').classList.remove('open');CLI_MODAL=null;}
+
+function toggleSemana(btn){
+  var freq=document.getElementById('f-frequencia').value;
+  var maxSemanas={semanal:4,quinzenal:2,mensal:1,bimestral:1}[freq]||1;
+  var selecionadas=document.querySelectorAll('.semana-btn.sel').length;
+
+  if(btn.classList.contains('sel')){
+    // Desmarcar sempre permitido
+    btn.classList.remove('sel');
+  } else {
+    if(selecionadas>=maxSemanas){
+      // Desmarcar a primeira e marcar a nova
+      if(maxSemanas===1){
+        document.querySelectorAll('.semana-btn.sel').forEach(function(b){b.classList.remove('sel');});
+      } else {
+        // Para quinzenal: alerta se já tem 2
+        toast('Frequência '+freq+' permite no máximo '+maxSemanas+' semana(s).');
+        return;
+      }
+    }
+    btn.classList.add('sel');
+  }
+}
+function toggleDia(btn){
+  // Apenas um dia por vez
+  document.querySelectorAll('.dia-btn').forEach(function(b){b.classList.remove('sel');});
+  btn.classList.add('sel');
+}
+
+function atualizarSemanasOpcoes(){
+  var freq=document.getElementById('f-frequencia').value;
+  var btns=document.querySelectorAll('.semana-btn');
+  var dicas={semanal:'Todas as semanas (automático)',quinzenal:'Selecione 2 semanas',mensal:'Selecione 1 semana',bimestral:'Selecione 1 semana'};
+  var maxSemanas={semanal:4,quinzenal:2,mensal:1,bimestral:1}[freq]||1;
+
+  // Atualizar label
+  var lbl=document.getElementById('semanas-dica');
+  if(lbl) lbl.textContent=dicas[freq]||'';
+
+  if(freq==='semanal'){
+    btns.forEach(function(b){b.classList.add('sel');b.disabled=true;b.style.opacity='.6';});
+  } else {
+    btns.forEach(function(b){b.disabled=false;b.style.opacity='1';});
+    // Desmarcar excedentes
+    var sels=document.querySelectorAll('.semana-btn.sel');
+    if(sels.length>maxSemanas){
+      for(var i=maxSemanas;i<sels.length;i++) sels[i].classList.remove('sel');
+    }
+  }
+}
+
+function salvarRoteiro(){
+  if(!CLI_MODAL) return;
+  var freq=document.getElementById('f-frequencia').value;
+  var semanas=[];
+  if(freq==='semanal'){
+    semanas=[1,2,3,4];
+  } else {
+    document.querySelectorAll('.semana-btn.sel').forEach(function(b){semanas.push(parseInt(b.dataset.s));});
+    if(!semanas.length){toast('Selecione ao menos uma semana.');return;}
+  }
+  // Validar semanas por frequência
+  var semanasSel=freq==='semanal'?4:document.querySelectorAll('.semana-btn.sel').length;
+  var semanasCertas={semanal:4,quinzenal:2,mensal:1,bimestral:1}[freq]||1;
+  if(semanasSel!==semanasCertas){
+    toast('Frequência '+freq+' requer exatamente '+semanasCertas+' semana(s). Selecione '+semanasCertas+'.',3500);
+    return;
+  }
+
+  var diaSel=document.querySelector('.dia-btn.sel');
+  if(!diaSel){toast('Selecione um dia da semana.');return;}
+  var dia=diaSel.dataset.d;
+
+  // Verificar limite de 10% — só aplica após ter roteiro aprovado (primeiro cadastro é livre)
+  var roteiroExist=ROTEIROS[CLI_MODAL.rep]&&ROTEIROS[CLI_MODAL.rep][CLI_MODAL.cod];
+  var temAprovado=Object.values(ROTEIROS[REP]||{}).some(function(r){return r.status==='aprovado';});
+  if(temAprovado && roteiroExist){
+    // Só conta como alteração se o roteiro já foi aprovado antes
+    var maxAlt=Math.max(1,Math.floor(TOTAL_CART*0.1));
+    if(ALTERACOES_MES>=maxAlt&&TOTAL_CART>0){
+      toast('⚠ Limite de 10% de alterações atingido este mês!',4000);
+      return;
+    }
+  }
+
+  var payload={
+    rep:CLI_MODAL.rep, cod_cli:CLI_MODAL.cod, nome_cli:CLI_MODAL.nome,
+    dia_semana:dia, semanas_mes:semanas,
+    frequencia:freq, status:'pendente'
+  };
+
+  var url=SUPABASE_URL+'/rest/v1/roteiros?apikey='+SUPABASE_KEY;
+  var method='POST';
+  var prefer='return=representation';
+
+  if(roteiroExist&&roteiroExist.id){
+    url+='&id=eq.'+roteiroExist.id;
+    method='PATCH';
+    ALTERACOES_MES++;
+  }
+
+  fetch(url,{method:method,headers:sbHeaders(prefer),body:JSON.stringify(method==='POST'?[payload]:payload)})
+  .then(function(resp){
+    if(!resp.ok){
+      return resp.text().then(function(t){
+        console.error('Supabase erro '+resp.status+':', t);
+        toast('Erro '+resp.status+': '+t.slice(0,100));
+        throw new Error(t);
+      });
+    }
+    return resp.json();
+  })
+  .then(function(data){
+    if(!data) return;
+    var row=Array.isArray(data)?data[0]:data;
+    if(!ROTEIROS[CLI_MODAL.rep]) ROTEIROS[CLI_MODAL.rep]={};
+    if(row) ROTEIROS[CLI_MODAL.rep][CLI_MODAL.cod]=row;
+    registrarAlteracao();
+    fecharModal();
+    toast('✓ Roteiro salvo! Aguardando aprovação.');
+    renderSemRoteiro();
+    renderGrade();
+    atualizarBarraLimite();
+  }).catch(function(e){console.error('Erro roteiro:',e);});
+}
+
+function removerRoteiro(){
+  if(!CLI_MODAL) return;
+  if(!confirm('Remover o roteiro de '+CLI_MODAL.nome+'?')) return;
+  var rot=ROTEIROS[CLI_MODAL.rep]&&ROTEIROS[CLI_MODAL.rep][CLI_MODAL.cod];
+  if(!rot||!rot.id){fecharModal();return;}
+  fetch(SUPABASE_URL+'/rest/v1/roteiros?id=eq.'+rot.id,{
+    method:'DELETE',headers:sbHeaders('return=minimal')
+  }).then(function(r){
+    if(r.ok){
+      delete ROTEIROS[CLI_MODAL.rep][CLI_MODAL.cod];
+      ALTERACOES_MES++;
+      registrarAlteracao();
+      fecharModal(); toast('Roteiro removido.');
+      renderSemRoteiro(); renderGrade(); atualizarBarraLimite();
+    }
+  });
+}
+
+function registrarAlteracao(){
+  var mes=mesAnoAtual();
+  fetch(SUPABASE_URL+'/rest/v1/roteiro_alteracoes?rep=eq.'+REP+'&mes_ano=eq.'+mes,{headers:sbHeaders()})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    if(rows&&rows.length){
+      fetch(SUPABASE_URL+'/rest/v1/roteiro_alteracoes?id=eq.'+rows[0].id,{
+        method:'PATCH',headers:sbHeaders('return=minimal'),
+        body:JSON.stringify({alteracoes:rows[0].alteracoes+1,updated_at:new Date().toISOString()})
+      });
+    } else {
+      fetch(SUPABASE_URL+'/rest/v1/roteiro_alteracoes',{
+        method:'POST',headers:sbHeaders('return=minimal'),
+        body:JSON.stringify([{rep:REP,mes_ano:mes,alteracoes:1,total_cart:TOTAL_CART,status:'aberto'}])
+      });
+    }
+  });
+}
+
+// ── APROVAÇÕES (GESTOR) ───────────────────────────────────
+function carregarAprovacoespendentes(){
+  fetch(SUPABASE_URL+'/rest/v1/roteiros?status=eq.pendente&select=rep,cod_cli,nome_cli',{headers:sbHeaders()})
+  .then(function(r){return r.json();})
+  .then(function(rows){
+    if(!rows||!rows.length){
+      document.getElementById('aprovacao-section').style.display='none';
+      return;
+    }
+    // Agrupar por rep
+    var porRep={};
+    rows.forEach(function(r){if(!porRep[r.rep])porRep[r.rep]=[];porRep[r.rep].push(r);});
+    var h='';
+    Object.keys(porRep).forEach(function(rep){
+      var n=porRep[rep].length;
+      h+='<div class="aprovacao-item">';
+      h+='<div><div class="aprovacao-rep">'+rep+'</div><div class="aprovacao-info">'+n+' cliente(s) com roteiro pendente</div></div>';
+      h+='<div>';
+      h+='<button class="btn-aprovar" onclick="aprovarRoteiro(\''+rep+'\')">✓ Aprovar</button>';
+      h+='<button class="btn-devolver" onclick="devolverRoteiro(\''+rep+'\')">✕ Devolver</button>';
+      h+='</div></div>';
+    });
+    document.getElementById('aprovacao-lista').innerHTML=h;
+    document.getElementById('aprovacao-section').style.display='block';
+  });
+}
+
+function aprovarRoteiro(rep){
+  fetch(SUPABASE_URL+'/rest/v1/roteiros?rep=eq.'+rep+'&status=eq.pendente',{
+    method:'PATCH',headers:sbHeaders('return=minimal'),
+    body:JSON.stringify({status:'aprovado',updated_at:new Date().toISOString()})
+  }).then(function(r){
+    if(r.ok){toast('✓ Roteiro de '+rep+' aprovado!');carregarAprovacoespendentes();carregarDados();}
+  });
+}
+
+function devolverRoteiro(rep){
+  fetch(SUPABASE_URL+'/rest/v1/roteiros?rep=eq.'+rep+'&status=eq.pendente',{
+    method:'PATCH',headers:sbHeaders('return=minimal'),
+    body:JSON.stringify({status:'rascunho',updated_at:new Date().toISOString()})
+  }).then(function(r){
+    if(r.ok){toast('Roteiro de '+rep+' devolvido para revisão.');carregarAprovacoespendentes();}
+  });
+}
+
+init();
+</script></body></html>

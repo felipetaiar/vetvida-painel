@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetVida — Leads</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+:root {
+  --red:#c44040; --red-dark:#8a2020; --red-light:#fff0f0;
+  --green:#16a34a; --green-light:#f0fdf4;
+  --yellow:#d97706; --yellow-light:#fffbeb;
+  --blue:#0369a1; --blue-light:#f0f9ff;
+  --gray-50:#f9fafb; --gray-100:#f3f4f6; --gray-200:#e5e7eb;
+  --gray-300:#d1d5db; --gray-400:#9ca3af; --gray-500:#6b7280;
+  --gray-600:#4b5563; --gray-700:#374151; --gray-800:#1f2937;
+  --white:#ffffff;
+  --shadow:0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md:0 4px 6px rgba(0,0,0,0.07);
+  --radius:12px; --radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans', system-ui, sans-serif;background:var(--gray-50);color:var(--gray-800);font-size:14px;min-height:100vh;}
+
+/* HEADER */
+.header{background:#1c2023;color:white;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-md);}
+.header-logo{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700;}
+.header-rep{font-size:12px;opacity:0.85;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:20px;}
+.back-btn{background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;text-decoration:none;display:inline-block;}
+
+/* TABS */
+.tabs{display:flex;background:white;border-bottom:1px solid var(--gray-200);padding:0 16px;}
+.tab{padding:12px 16px;border:none;background:none;font-size:13px;font-weight:500;color:var(--gray-500);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;}
+.tab.active{color:var(--red);border-bottom-color:var(--red);}
+
+/* MAIN */
+.main{padding:16px;}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.kpi{background:white;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);border-top:3px solid var(--gray-200);}
+.kpi.aberto{border-top-color:var(--yellow);}
+.kpi.ganho{border-top-color:var(--green);}
+.kpi.perdido{border-top-color:var(--red);}
+.kpi-val{font-size:28px;font-weight:700;line-height:1;}
+.kpi-lbl{font-size:11px;color:var(--gray-500);margin-top:3px;}
+
+/* LEAD CARD */
+.lead-card{background:white;border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:10px;border-left:4px solid var(--yellow);}
+.lead-card.ganho{border-left-color:var(--green);}
+.lead-card.perdido{border-left-color:var(--red);}
+.lead-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.lead-nome{font-weight:600;font-size:15px;}
+.lead-data{font-size:11px;color:var(--gray-400);}
+.lead-meta{font-size:12px;color:var(--gray-500);margin-bottom:10px;line-height:1.6;}
+.lead-fornec{font-size:11px;color:var(--blue);background:var(--blue-light);padding:3px 8px;border-radius:20px;display:inline-block;margin-bottom:10px;}
+.lead-obs{font-size:12px;color:var(--gray-600);background:var(--gray-50);padding:8px;border-radius:6px;margin-bottom:10px;font-style:italic;}
+
+/* STATUS BADGE */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-aberto{background:var(--yellow-light);color:var(--yellow);}
+.badge-ganho{background:var(--green-light);color:var(--green);}
+.badge-perdido{background:var(--red-light);color:var(--red);}
+
+/* AÇÕES */
+.lead-acoes{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;}
+.btn-ganho{background:var(--green-light);color:var(--green);border:1px solid #bbf7d0;}
+.btn-ganho:hover{background:#dcfce7;}
+.btn-perdido{background:var(--red-light);color:var(--red);border:1px solid #fecaca;}
+.btn-perdido:hover{background:#fee2e2;}
+.btn-detalhe{background:var(--gray-100);color:var(--gray-600);border:1px solid var(--gray-200);}
+
+/* RESULTADO */
+.resultado-box{background:var(--green-light);border:1px solid #bbf7d0;border-radius:8px;padding:10px;margin-top:8px;font-size:12px;color:var(--green);}
+.resultado-box.perdido{background:var(--red-light);border-color:#fecaca;color:var(--red);}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:var(--gray-400);}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+.empty-txt{font-size:14px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:white;border-radius:20px 20px 0 0;width:100%;max-width:500px;padding:20px 16px;max-height:80vh;overflow-y:auto;}
+.modal-handle{width:40px;height:4px;background:var(--gray-200);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--gray-500);margin-bottom:16px;}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;font-weight:500;color:var(--gray-600);margin-bottom:5px;display:block;}
+.form-select,.form-textarea,.form-input{width:100%;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:'Plus Jakarta Sans', system-ui, sans-serif;color:var(--gray-800);outline:none;transition:border-color 0.15s;}
+.form-select:focus,.form-textarea:focus{border-color:var(--red);}
+.form-textarea{resize:vertical;min-height:80px;}
+.btn-full{width:100%;padding:12px;font-size:14px;font-weight:600;border:none;border-radius:var(--radius-sm);cursor:pointer;margin-top:4px;}
+.btn-primary-full{background:var(--red);color:white;}
+.btn-secondary-full{background:var(--gray-100);color:var(--gray-700);margin-top:8px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--gray-900);color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:all 0.3s;z-index:500;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* FILTROS */
+.filtros{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.filtro-select{flex:1;min-width:120px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-family:'Plus Jakarta Sans', system-ui, sans-serif;background:white;outline:none;}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:var(--gray-400);}
+
+/* leads.html design system override */
+:root { --red: #c44040; --red-dark: #8a2020; }
+.header { background: #1c2023 !important; }
+.header::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background: linear-gradient(90deg,#6a1010,#c44040 50%,#d45050); pointer-events:none; }
+.header { position: relative; }
+.tab.active { color: #c44040 !important; border-bottom-color: #c44040 !important; }
+.kpi.aberto { border-top-color: #b45309 !important; }
+.kpi.perdido { border-top-color: #c44040 !important; }
+.btn-ganho { background: #f0fdf4 !important; color: #15803d !important; border-color: #bbf7d0 !important; }
+.btn-perdido { background: #fff1f2 !important; color: #c44040 !important; border-color: #fecdd3 !important; }
+.btn-primary-full { background: #c44040 !important; }
+.form-select:focus,.form-textarea:focus { border-color: #c44040 !important; }
+body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; }
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">🐾 <span>Leads</span></div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="header-rep" id="header-rep"></span>
+    <a class="back-btn" id="back-btn" href="#">← Painel</a>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('abertos',this)">🔔 Abertos</button>
+  <button class="tab" onclick="switchTab('fechados',this)">✓ Fechados</button>
+</div>
+
+<div class="main">
+  <div class="kpi-row">
+    <div class="kpi aberto"><div class="kpi-val" id="kpi-abertos">—</div><div class="kpi-lbl">Abertos</div></div>
+    <div class="kpi ganho"><div class="kpi-val" id="kpi-ganhos">—</div><div class="kpi-lbl">Pedidos</div></div>
+    <div class="kpi perdido"><div class="kpi-val" id="kpi-perdidos">—</div><div class="kpi-lbl">Perdidos</div></div>
+  </div>
+
+  <div class="filtros" id="filtros-wrap">
+    <select class="filtro-select" id="filtro-cidade" onchange="renderLeads()">
+      <option value="">Todas as regiões</option>
+      <option>Zona Leste – SP</option>
+      <option>Zona Norte – SP</option>
+      <option>Guarulhos</option>
+    </select>
+  </div>
+
+  <div id="lista-leads"></div>
+</div>
+
+<!-- Modal registro resultado -->
+<div class="modal-overlay" id="modal-resultado">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-lead-nome"></div>
+    <div class="modal-sub">Registrar resultado do lead</div>
+    <div class="form-group">
+      <label class="form-label">Resultado</label>
+      <select class="form-select" id="resultado-select">
+        <option value="">Selecione...</option>
+        <option value="ganho">✅ Virou pedido</option>
+        <option value="perdido">❌ Não converteu</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observação</label>
+      <textarea class="form-textarea" id="resultado-obs" placeholder="Detalhes do resultado..."></textarea>
+    </div>
+    <button class="btn-full btn-primary-full" onclick="confirmarResultado()">Confirmar</button>
+    <button class="btn-full btn-secondary-full" onclick="fecharModal()">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+
+const SB_HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+};
+
+// Mapeamento cidade → rep
+const AREA_REP = {
+  'Zona Leste – SP': ['MAURO','SUANE','LUIZ'],
+  'Zona Norte – SP': ['VANESSA','PAULO'],
+  'Guarulhos':       ['PAULA','NAYARA']
+};
+
+const params = new URLSearchParams(location.search);
+const REP    = (params.get('rep') || '').toUpperCase();
+const PERFIL = params.get('perfil') || 'rep';
+
+let LEADS = [];
+let activeTab = 'abertos';
+let leadSelecionado = null;
+
+// ── INIT ──
+async function init() {
+  document.getElementById('header-rep').textContent = PERFIL === 'gestor' ? 'Felipe · Gestor' : REP;
+  document.getElementById('back-btn').href = PERFIL === 'gestor' ? 'gestor.html' : `rep.html?rep=${REP}`;
+
+  // Gestor vê filtro de rep
+  if(PERFIL === 'gestor') {
+    const sel = document.createElement('select');
+    sel.className = 'filtro-select';
+    sel.id = 'filtro-rep';
+    sel.innerHTML = '<option value="">Todos os reps</option>' +
+      ['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'].map(r=>`<option>${r}</option>`).join('');
+    sel.onchange = renderLeads;
+    document.getElementById('filtros-wrap').appendChild(sel);
+  }
+
+  await carregarLeads();
+}
+
+async function carregarLeads() {
+  document.getElementById('lista-leads').innerHTML = '<div class="loading">⏳ Carregando leads...</div>';
+  try {
+    let url = `${SUPABASE_URL}/rest/v1/leads?select=*&order=created_at.desc`;
+    if(PERFIL === 'rep') {
+      // Filtrar leads da área do rep
+      const areas = Object.entries(AREA_REP)
+        .filter(([,reps]) => reps.includes(REP))
+        .map(([area]) => area);
+      if(areas.length) {
+        url += '&cidade=in.(' + areas.map(a => `"${a}"`).join(',') + ')';
+      }
+    }
+    const r = await fetch(url, { headers: SB_HEADERS });
+    LEADS = await r.json();
+    if(!Array.isArray(LEADS)) LEADS = [];
+    renderKpis();
+    renderLeads();
+  } catch(e) {
+    console.error(e);
+    document.getElementById('lista-leads').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar leads</div></div>';
+  }
+}
+
+function renderKpis() {
+  document.getElementById('kpi-abertos').textContent  = LEADS.filter(l=>l.status_lead==='aberto').length;
+  document.getElementById('kpi-ganhos').textContent   = LEADS.filter(l=>l.status_lead==='ganho').length;
+  document.getElementById('kpi-perdidos').textContent = LEADS.filter(l=>l.status_lead==='perdido').length;
+}
+
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderLeads();
+}
+
+function renderLeads() {
+  const cidade  = document.getElementById('filtro-cidade')?.value || '';
+  const repFilt = document.getElementById('filtro-rep')?.value || '';
+
+  let lista = LEADS.filter(l => {
+    if(activeTab === 'abertos'  && l.status_lead !== 'aberto')  return false;
+    if(activeTab === 'fechados' && l.status_lead === 'aberto')  return false;
+    if(cidade  && l.cidade !== cidade)  return false;
+    if(repFilt && l.rep_area !== repFilt) return false;
+    return true;
+  });
+
+  const el = document.getElementById('lista-leads');
+
+  if(!lista.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">${activeTab==='abertos'?'🎯':'📋'}</div><div class="empty-txt">${activeTab==='abertos'?'Nenhum lead aberto no momento':'Nenhum lead fechado ainda'}</div></div>`;
+    return;
+  }
+
+  el.innerHTML = lista.map(l => {
+    const dataFmt = new Date(l.created_at).toLocaleDateString('pt-BR');
+    const horaFmt = new Date(l.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const badgeClass = l.status_lead === 'ganho' ? 'badge-ganho' : l.status_lead === 'perdido' ? 'badge-perdido' : 'badge-aberto';
+    const badgeLabel = l.status_lead === 'ganho' ? '✅ Pedido' : l.status_lead === 'perdido' ? '❌ Perdido' : '🔔 Aberto';
+
+    const acoes = l.status_lead === 'aberto' ? `
+      <div class="lead-acoes">
+        <button class="btn btn-ganho" onclick="abrirResultado(${l.id}, '${esc(l.estabelecimento)}', 'ganho')">✅ Virou pedido</button>
+        <button class="btn btn-perdido" onclick="abrirResultado(${l.id}, '${esc(l.estabelecimento)}', 'perdido')">❌ Não converteu</button>
+      </div>` : `
+      <div class="resultado-box ${l.status_lead}">
+        <strong>${l.status_lead === 'ganho' ? '✅ Pedido realizado' : '❌ Não converteu'}</strong>
+        ${l.resultado_obs ? `<div style="margin-top:4px;">${l.resultado_obs}</div>` : ''}
+        <div style="margin-top:4px;opacity:0.7;">Registrado em ${l.resultado_at ? new Date(l.resultado_at).toLocaleDateString('pt-BR') : '—'}</div>
+      </div>`;
+
+    return `
+      <div class="lead-card ${l.status_lead !== 'aberto' ? l.status_lead : ''}">
+        <div class="lead-header">
+          <div class="lead-nome">${l.estabelecimento}</div>
+          <span class="badge ${badgeClass}">${badgeLabel}</span>
+        </div>
+        <div class="lead-meta">
+          📍 ${l.cidade||'—'} · ${l.tipo||'—'}
+          ${l.contato ? ` · ${l.contato}` : ''}
+          ${PERFIL==='gestor' && l.rep_area ? ` · <strong>${l.rep_area}</strong>` : ''}
+          <br>📅 ${dataFmt} às ${horaFmt}
+          ${l.data_retorno ? ` · Retorno: ${new Date(l.data_retorno+'T12:00:00').toLocaleDateString('pt-BR')}` : ''}
+        </div>
+        ${l.fornecedores ? `<span class="lead-fornec">🧪 ${l.fornecedores}</span>` : ''}
+        ${l.obs ? `<div class="lead-obs">"${l.obs}"</div>` : ''}
+        ${acoes}
+      </div>`;
+  }).join('');
+}
+
+function esc(str) { return (str||'').replace(/'/g,"\\'"); }
+
+// ── MODAL RESULTADO ──
+function abrirResultado(id, nome, presel) {
+  leadSelecionado = id;
+  document.getElementById('modal-lead-nome').textContent = nome;
+  document.getElementById('resultado-select').value = presel || '';
+  document.getElementById('resultado-obs').value = '';
+  document.getElementById('modal-resultado').classList.add('open');
+}
+
+function fecharModal() {
+  document.getElementById('modal-resultado').classList.remove('open');
+  leadSelecionado = null;
+}
+
+async function confirmarResultado() {
+  const resultado = document.getElementById('resultado-select').value;
+  const obs = document.getElementById('resultado-obs').value.trim();
+  if(!resultado) { alert('Selecione o resultado.'); return; }
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/leads?id=eq.${leadSelecionado}`, {
+      method: 'PATCH',
+      headers: SB_HEADERS,
+      body: JSON.stringify({
+        status_lead:    resultado,
+        resultado:      resultado,
+        resultado_obs:  obs,
+        resultado_at:   new Date().toISOString(),
+        rep_responsavel: REP || 'GESTOR'
+      })
+    });
+
+    if(r.ok) {
+      mostrarToast(resultado === 'ganho' ? '✅ Pedido registrado!' : '❌ Lead fechado como perdido');
+      fecharModal();
+      await carregarLeads();
+    } else {
+      throw new Error('Erro ao salvar');
+    }
+  } catch(e) {
+    console.error(e);
+    mostrarToast('⚠ Erro ao salvar resultado');
+  }
+}
+
+function mostrarToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1215,6 +1215,14 @@ const USUARIOS = {
   'felipe':  { senha: 'gestorvv2026',  perfil: 'gestor'  }
 };
 
+function verificarSSO() {
+  const auth   = sessionStorage.getItem('vv_auth');
+  const perfil = sessionStorage.getItem('vv_perfil');
+  if (auth !== 'ok' || !perfil) return false;
+  entrar(perfil === 'gestor' ? 'gestor' : 'nicolle');
+  return true;
+}
+
 function fazerLogin() {
   const user = (document.getElementById('login-user').value || '').toLowerCase().trim();
   const pass = document.getElementById('login-pass').value;
@@ -1312,8 +1320,8 @@ async function carregarDados() {
 
 function sair() {
   PERFIL = null;
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
+  sessionStorage.clear();
+  window.location.href = '/';
 }
 
 // ─── NAVEGAÇÃO ───────────────────────────────────────────────────────────────

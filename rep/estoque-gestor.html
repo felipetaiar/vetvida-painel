@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vet Vida — Estoque Gestor</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+:root {
+  --bg:         #f7fafc;
+  --surface:    #ffffff;
+  --surface2:   #ffffff;
+  --surface3:   #f1f5f9;
+  --border:     #e2e8f0;
+  --border2:    #cbd5e1;
+  --red:        #c44040;
+  --red-dark:   #8a2020;
+  --red-glow:   rgba(196,64,64,0.15);
+  --red-soft:   rgba(196,64,64,0.08);
+  --gold:       #b45309;
+  --gold-soft:  rgba(180,83,9,0.08);
+  --green:      #16a34a;
+  --green-soft: rgba(22,163,74,0.10);
+  --text:       #1e293b;
+  --text2:      #64748b;
+  --text3:      #94a3b8;
+  --muted:      #94a3b8;
+  --muted2:     #64748b;
+  --radius:     10px;
+  --radius-sm:  7px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family: 'Plus Jakarta Sans', system-ui, sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.hdr{background:var(--surface);border-bottom:2px solid var(--red);padding:12px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.hdr img{height:40px}.hdiv{width:1px;height:34px;background:var(--border2)}
+.hi h1{font-size:15px;font-weight:600}.hi p{font-size:11px;color:var(--text2);margin-top:1px}
+.hr{margin-left:auto;display:flex;gap:8px;align-items:center}
+.hrep{background:var(--red);color:white;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700}
+.btn-sair{background:var(--surface2);color:var(--text2);padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--border2);text-decoration:none}
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:0}
+.nav a{padding:10px 16px;font-size:12px;font-weight:600;color:var(--text2);text-decoration:none;border-bottom:3px solid transparent;transition:all .2s}
+.nav a.ativo{color:var(--red);border-bottom-color:var(--red)}
+.cont{max-width:1200px;margin:0 auto;padding:16px}
+
+/* FILTROS */
+.filtros-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px}
+.filtros-titulo{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.filtros-grid{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.filtro-group{display:flex;flex-direction:column;gap:4px;min-width:150px}
+.filtro-label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.filtro-select,.filtro-input{background:var(--surface2);border:1.5px solid var(--border2);color:var(--text);padding:7px 10px;border-radius:8px;font-size:12px;outline:none;cursor:pointer}
+.filtro-select:focus,.filtro-input:focus{border-color:var(--red)}
+.btn-filtrar{background:var(--red);color:white;border:none;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-filtrar:hover{background:var(--red-dark)}
+.btn-exportar{background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn-exportar:hover{border-color:var(--green);color:var(--green)}
+
+/* RESUMO CARDS */
+.resumo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+.resumo-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.resumo-card .val{font-size:24px;font-weight:700;color:var(--red);margin-bottom:2px}
+.resumo-card .lbl{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+
+/* TABELA CONTAGENS */
+.tabela-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.tabela-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.tabela-titulo{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.tabela-count{font-size:11px;color:var(--text2)}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);background:var(--surface2)}
+td{padding:10px 14px;font-size:12px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700}
+.badge-crit{background:var(--red-soft);color:var(--red)}
+.badge-ok{background:var(--green-soft);color:var(--green)}
+.badge-warn{background:var(--gold-soft);color:var(--gold)}
+.badge-neutro{background:var(--surface3);color:var(--text2)}
+.trend-up{color:var(--green)}
+.trend-dn{color:var(--red)}
+.trend-eq{color:var(--text2)}
+.btn-detalhe{background:var(--surface3);border:1px solid var(--border2);color:var(--text2);padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer}
+.btn-detalhe:hover{border-color:var(--red);color:var(--red)}
+
+/* CLIENTES NAO CONTADOS */
+.nao-contados-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px}
+.nao-contados-titulo{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.nao-contados-lista{display:flex;flex-wrap:wrap;gap:6px}
+.nao-cli{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--text2)}
+
+/* MODAL DETALHE */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:300;padding:20px;align-items:flex-start;justify-content:center;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:700px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.modal-hdr{background:var(--surface2);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between}
+.modal-hdr h2{font-size:14px;font-weight:700;color:var(--text)}
+.modal-hdr p{font-size:11px;color:var(--text2);margin-top:3px}
+.modal-close{background:var(--surface3);border:1px solid var(--border2);color:var(--text2);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0}
+.modal-body{padding:16px;max-height:75vh;overflow-y:auto}
+.modal-secao{margin-bottom:18px}
+.modal-secao-titulo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.prod-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.prod-row:last-child{border-bottom:none}
+.prod-nome{font-size:12px;color:var(--text);flex:1}
+.prod-qtde{font-size:13px;font-weight:700;width:60px;text-align:center}
+.prod-media{font-size:11px;color:var(--text2);width:100px;text-align:right}
+.prod-sugest{font-size:11px;font-weight:700;width:100px;text-align:right}
+.prox-visita{background:var(--surface2);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px}
+.prox-visita-icon{font-size:20px}
+.prox-visita-info{font-size:12px;color:var(--text)}
+.prox-visita-data{font-size:13px;font-weight:700;color:var(--text);margin-top:2px}
+.evolucao-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.evolucao-row:last-child{border-bottom:none}
+.evolucao-prod{font-size:12px;color:var(--text);flex:1}
+.evolucao-vals{display:flex;align-items:center;gap:6px;font-size:12px}
+
+.tst{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 20px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.tst.show{opacity:1}
+.empty{text-align:center;padding:40px;color:var(--text2);font-size:13px}
+
+/* ═══ VetVida — Design System B+C Override ═══ */
+/* 1. Charcoal header */
+.hdr{background:#1c2023!important;border-bottom:1px solid rgba(196,64,64,0.18)!important;box-shadow:0 2px 20px rgba(0,0,0,0.18)!important;}
+.hdr::before{background:linear-gradient(90deg,#6a1010,#c44040 50%,#d45050)!important;}
+.hi h1{color:#f0eee8!important;}
+.hi p{color:rgba(255,255,255,0.32)!important;}
+.hdiv{background:rgba(255,255,255,0.1)!important;}
+/* header badges/buttons */
+.hrep{background:rgba(196,64,64,0.14)!important;color:#f4a090!important;border-color:rgba(196,64,64,0.28)!important;}
+.bs,.btn-sair,.btn-s{background:rgba(255,255,255,0.06)!important;border-color:rgba(255,255,255,0.1)!important;color:rgba(255,255,255,0.42)!important;}
+.nav-link-est{background:rgba(96,165,250,0.1)!important;color:#7ab4f8!important;border-color:rgba(96,165,250,0.2)!important;}
+.nav-link-rot{background:rgba(74,222,128,0.1)!important;color:#6fcf97!important;border-color:rgba(74,222,128,0.18)!important;}
+/* Gestor header brand */
+.hdr-brand{color:#f0eee8!important;}
+.hdr-brand span{color:#f4a090!important;}
+.bg-g{background:rgba(196,64,64,0.1)!important;color:#c44040!important;border-color:rgba(196,64,64,0.22)!important;}
+/* 2. Controls bar: tinted */
+.ctrl{background:#edf2f7!important;box-shadow:0 1px 8px rgba(0,0,0,0.06)!important;}
+/* 3. Stat bar label text */
+.sl,.pbl{color:#94a3b8!important;}
+/* 4. Message box (hardcoded dark bg in rep.html) */
+.mb{background:#f8fafc!important;border-left-color:rgba(196,64,64,0.3)!important;border-color:#e2e8f0!important;}
+.mb::before{background:none!important;}
+/* 5. Input fields */
+.bsc,.form-select,.form-textarea,.form-input,.filtro-select,.filtro-input{background:#f8fafc!important;border-color:#e2e8f0!important;color:#1e293b!important;}
+.bsc::placeholder,.form-textarea::placeholder{color:#94a3b8!important;}
+.bsc:focus,.form-select:focus,.form-textarea:focus{border-color:#c44040!important;box-shadow:0 0 0 3px rgba(196,64,64,0.08)!important;}
+/* 6. Stat number pulse — tone down on light */
+.sn{text-shadow:none!important;animation:none!important;}
+.fat-badge{text-shadow:none!important;}
+/* 7. Modals */
+.modal-overlay,.status-overlay{background:rgba(10,18,30,0.5)!important;backdrop-filter:blur(4px)!important;}
+.modal,.status-box{background:#ffffff!important;border-color:#e2e8f0!important;}
+.modal-hdr,.status-hdr{background:#f1f5f9!important;border-bottom-color:#e2e8f0!important;color:#1e293b!important;}
+.modal-hdr h2{color:#1e293b!important;}
+.modal-close{background:#ffffff!important;border-color:#e2e8f0!important;color:#64748b!important;}
+.modal-close:hover{border-color:#c44040!important;color:#c44040!important;}
+.status-sub{color:#64748b!important;}
+.status-btn-cancel{background:#f1f5f9!important;color:#64748b!important;border-color:#e2e8f0!important;}
+.status-obs textarea{background:#f8fafc!important;border-color:#e2e8f0!important;color:#1e293b!important;}
+/* 8. Toast */
+.tst{background:#1e293b!important;border-color:#334155!important;color:#f8fafc!important;}
+/* 9. Scrollbar */
+::-webkit-scrollbar-track{background:#f1f5f9!important;}
+::-webkit-scrollbar-thumb{background:#cbd5e1!important;}
+::-webkit-scrollbar-thumb:hover{background:#94a3b8!important;}
+/* 10. Lab tags */
+.lab-tag{background:rgba(30,100,220,0.08)!important;color:#1d4ed8!important;border-color:rgba(30,100,220,0.15)!important;}
+.prod-lab{background:rgba(30,100,220,0.08)!important;color:#1d4ed8!important;border-color:rgba(30,100,220,0.12)!important;}
+/* 11. Leads button */
+.leads-btn{background:rgba(180,83,9,0.07)!important;border-color:rgba(180,83,9,0.2)!important;color:#b45309!important;}
+.leads-badge{background:#b45309!important;}
+/* 12. Gestor modal/table fixes */
+.modal-lab-flt{background:#f1f5f9!important;border-bottom-color:#e2e8f0!important;}
+.modal-lab-btn{background:#f8fafc!important;border-color:#e2e8f0!important;color:#64748b!important;}
+.modal-lab-btn.ativo{border-color:#c44040!important;background:rgba(196,64,64,0.07)!important;color:#c44040!important;}
+.lab-btn{background:#f8fafc!important;border-color:#e2e8f0!important;color:#64748b!important;}
+.lab-btn.ativo{border-color:#c44040!important;background:rgba(196,64,64,0.07)!important;color:#c44040!important;}
+/* 13. Histograma empty bars */
+.hist-bar.sem{background:#e2e8f0!important;}
+/* 14. Info grid */
+.ii{color:#1e293b!important;}
+.ii .lb{color:#94a3b8!important;}
+/* 15. Progress bar fill */
+.pbf{box-shadow:none!important;}
+/* 16. Card hover */
+.card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.1)!important;}
+/* 17. Section dividers */
+.sec::after{opacity:0.15!important;}
+/* 18. Filter buttons */
+.bf{opacity:1!important;}
+.bf.ativo.ft,.bf.ativo.fr{box-shadow:none!important;}
+/* 19. Status dots in modal */
+.status-opt{opacity:1!important;}
+/* 20. nav bar (roteiro/gestor) */
+.nav{background:#ffffff!important;border-bottom-color:#e2e8f0!important;}
+.nav a{color:#64748b!important;}
+.nav a.ativo,.nav a:hover{color:#c44040!important;border-bottom-color:#c44040!important;}
+/* Gestor cards/tables */
+.resumo-card,.tabela-wrap,.filtros-wrap,.nao-contados-wrap{background:#ffffff!important;border-color:#e2e8f0!important;}
+th{background:#f1f5f9!important;color:#64748b!important;border-bottom-color:#e2e8f0!important;}
+td{color:#1e293b!important;border-bottom-color:#e2e8f0!important;}
+tr:hover td{background:#f8fafc!important;}
+.filtro-label{color:#64748b!important;}
+
+</style></head><body>
+
+<div class="hdr">
+  <img src="logo.jpg" alt="Vet Vida" onerror="this.style.display='none'">
+  <div class="hdiv"></div>
+  <div class="hi"><h1>Estoque — Visão Gestor</h1><p>Contagens por representante</p></div>
+  <div class="hr">
+    <span class="hrep">Felipe</span>
+    <a href="gestor.html" class="btn-sair">← Painel</a>
+  </div>
+</div>
+
+<div class="nav">
+  <a href="gestor.html">Painel</a>
+  <a href="roteiro.html">Roteiro</a>
+  <a href="estoque-gestor.html" class="ativo">Estoque</a>
+</div>
+
+<div class="cont">
+
+  <!-- FILTROS -->
+  <div class="filtros-wrap">
+    <div class="filtros-titulo">Filtros</div>
+    <div class="filtros-grid">
+      <div class="filtro-group">
+        <label class="filtro-label">Representante</label>
+        <select class="filtro-select" id="f-rep">
+          <option value="todos">Todos</option>
+          <option value="PAULA">Paula</option>
+          <option value="MAURO">Mauro</option>
+          <option value="SUANE">Suane</option>
+          <option value="VANESSA">Vanessa</option>
+          <option value="LUIZ">Luiz</option>
+          <option value="PAULO">Paulo</option>
+          <option value="NAYARA">Nayara</option>
+        </select>
+      </div>
+      <div class="filtro-group">
+        <label class="filtro-label">Cliente</label>
+        <input class="filtro-input" id="f-cli" placeholder="Nome do cliente..." style="width:200px">
+      </div>
+      <div class="filtro-group">
+        <label class="filtro-label">Período</label>
+        <select class="filtro-select" id="f-periodo">
+          <option value="7">Últimos 7 dias</option>
+          <option value="15">Últimos 15 dias</option>
+          <option value="30" selected>Últimos 30 dias</option>
+          <option value="90">Últimos 90 dias</option>
+          <option value="0">Todos</option>
+        </select>
+      </div>
+      <div class="filtro-group">
+        <label class="filtro-label">Status</label>
+        <select class="filtro-select" id="f-status">
+          <option value="todos">Todos</option>
+          <option value="critico">Com críticos</option>
+          <option value="ok">Sem críticos</option>
+        </select>
+      </div>
+      <button class="btn-filtrar" onclick="aplicarFiltros()">Filtrar</button>
+      <button class="btn-exportar" onclick="exportarExcel()">⬇ Exportar Excel</button>
+    </div>
+  </div>
+
+  <!-- RESUMO -->
+  <div class="resumo-grid" id="resumo-grid"></div>
+
+  <!-- CLIENTES NAO CONTADOS -->
+  <div class="nao-contados-wrap" id="nao-contados-wrap" style="display:none">
+    <div class="nao-contados-titulo">⚠ Clientes nunca contados <span id="nao-contados-count" style="color:var(--red)"></span></div>
+    <div class="nao-contados-lista" id="nao-contados-lista"></div>
+  </div>
+
+  <!-- TABELA CONTAGENS -->
+  <div class="tabela-wrap">
+    <div class="tabela-hdr">
+      <div class="tabela-titulo">Contagens de Estoque</div>
+      <div class="tabela-count" id="tabela-count"></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Representante</th>
+            <th>Cliente</th>
+            <th>Produtos</th>
+            <th>Críticos</th>
+            <th>Evolução</th>
+            <th>Próx. Visita</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tabela-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL DETALHE -->
+<div class="modal-overlay" id="modal-detalhe" onclick="if(event.target===this)fecharModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <h2 id="modal-titulo">Detalhe da Contagem</h2>
+        <p id="modal-sub"></p>
+      </div>
+      <button class="modal-close" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div class="tst" id="tst"></div>
+
+<script src="dados.js"></script>
+<script src="hist_paula.js"></script><script>var HIST_REP_PAULA=HIST_REP;</script>
+<script src="hist_mauro.js"></script><script>var HIST_REP_MAURO=HIST_REP;</script>
+<script src="hist_suane.js"></script><script>var HIST_REP_SUANE=HIST_REP;</script>
+<script src="hist_vanessa.js"></script><script>var HIST_REP_VANESSA=HIST_REP;</script>
+<script src="hist_luiz.js"></script><script>var HIST_REP_LUIZ=HIST_REP;</script>
+<script src="hist_paulo.js"></script><script>var HIST_REP_PAULO=HIST_REP;</script>
+<script src="hist_nayara.js"></script><script>var HIST_REP_NAYARA=HIST_REP;</script>
+<script>
+var SUPABASE_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+
+var TODOS_ROWS=[], ROTEIROS_DATA=[], GRUPOS_ATUAL=[];
+var MAPA_REP={'PAULA':'Guarulhos 1','MAURO':'Zona Leste 1','SUANE':'Zona Leste 2','VANESSA':'Zona Norte 2','LUIZ':'Zona Leste 3','PAULO':'Zona Norte 3','NAYARA':'Alto Tietê 1'};
+var REPS=['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
+var CART_SIZE={'PAULA':130,'MAURO':100,'SUANE':100,'VANESSA':75,'LUIZ':55,'PAULO':78,'NAYARA':42};
+
+function sbH(){return{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY};}
+function toast(msg){var t=document.getElementById('tst');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+function fecharModal(){document.getElementById('modal-detalhe').classList.remove('open');}
+
+// ── INIT ────────────────────────────────────────────────
+function init(){
+  var au=sessionStorage.getItem('vv_auth'), pf=sessionStorage.getItem('vv_perfil');
+  if(au!=='ok'||pf!=='gestor'){window.location.href='index.html';return;}
+  carregarDados();
+}
+
+async function carregarDados(){
+  try{
+    var [r1,r2]=await Promise.all([
+      fetch(SUPABASE_URL+'/rest/v1/contagens_estoque?select=*&order=created_at.desc',{headers:sbH()}),
+      fetch(SUPABASE_URL+'/rest/v1/roteiros?select=rep,cod_cli,nome_cli,dia_semana,semanas_mes,frequencia,status',{headers:sbH()})
+    ]);
+    TODOS_ROWS=await r1.json();
+    ROTEIROS_DATA=await r2.json();
+    aplicarFiltros();
+  }catch(e){console.error(e);toast('Erro ao carregar dados.');}
+}
+
+// ── FILTROS ──────────────────────────────────────────────
+function aplicarFiltros(){
+  var rep=document.getElementById('f-rep').value;
+  var cli=document.getElementById('f-cli').value.toLowerCase().trim();
+  var periodo=parseInt(document.getElementById('f-periodo').value);
+  var status=document.getElementById('f-status').value;
+
+  var corte=periodo>0?new Date(Date.now()-periodo*86400000):null;
+
+  var rows=TODOS_ROWS.filter(function(r){
+    if(rep!=='todos'&&r.rep!==rep) return false;
+    if(cli&&r.nome_cli.toLowerCase().indexOf(cli)<0) return false;
+    if(corte&&new Date(r.created_at)<corte) return false;
+    return true;
+  });
+
+  // Agrupar por contagem (rep+cod_cli+data)
+  var grupos={};
+  rows.forEach(function(r){
+    var dt=new Date(r.created_at);
+    var key=r.rep+'|'+r.cod_cli+'|'+dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    if(!grupos[key]) grupos[key]={rep:r.rep,cod_cli:r.cod_cli,nome:r.nome_cli,dt:dt,itens:[],criticos:0,key:key};
+    grupos[key].itens.push(r);
+    if(r.qtde_estoque===0||r.qtde_estoque<3) grupos[key].criticos++;
+  });
+
+  var lista=Object.values(grupos).sort(function(a,b){return b.dt-a.dt;});
+
+  if(status==='critico') lista=lista.filter(function(g){return g.criticos>0;});
+  if(status==='ok') lista=lista.filter(function(g){return g.criticos===0;});
+
+  GRUPOS_ATUAL=lista;
+  renderResumo(rows, lista);
+  renderNaoContados(rep);
+  renderTabela(lista);
+}
+
+// ── RESUMO ───────────────────────────────────────────────
+function renderResumo(rows, grupos){
+  var clis=new Set(grupos.map(function(g){return g.rep+'|'+g.cod_cli;})).size;
+  var criticos=grupos.filter(function(g){return g.criticos>0;}).length;
+  var reps=new Set(grupos.map(function(g){return g.rep;})).size;
+  document.getElementById('resumo-grid').innerHTML=
+    card(grupos.length,'Contagens')+
+    card(clis,'Clientes Contados')+
+    card(criticos,'Com Críticos','var(--red)')+
+    card(reps,'Reps Ativos');
+}
+function card(val,lbl,cor){
+  return '<div class="resumo-card"><div class="val" style="color:'+(cor||'var(--red)')+'">'+val+'</div><div class="lbl">'+lbl+'</div></div>';
+}
+
+// ── NAO CONTADOS ─────────────────────────────────────────
+function renderNaoContados(repFiltro){
+  var contadosCods=new Set(TODOS_ROWS.map(function(r){return r.rep+'|'+r.cod_cli;}));
+  var nao=[];
+  var reps=repFiltro==='todos'?REPS:[repFiltro];
+  reps.forEach(function(rep){
+    var cart=typeof TODOS_DADOS!=='undefined'?(TODOS_DADOS[rep]||[]):[];
+    cart.forEach(function(c){
+      if(!contadosCods.has(rep+'|'+c.cod)) nao.push({rep:rep,nome:c.nome,cod:c.cod});
+    });
+  });
+  var sec=document.getElementById('nao-contados-wrap');
+  if(!nao.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  document.getElementById('nao-contados-count').textContent='('+nao.length+')';
+  var h='';
+  nao.slice(0,30).forEach(function(c){
+    h+='<div class="nao-cli">'+c.nome+(repFiltro==='todos'?' <span style="color:var(--red);font-size:9px">'+c.rep+'</span>':'')+'</div>';
+  });
+  if(nao.length>30) h+='<div class="nao-cli">+'+( nao.length-30)+' mais</div>';
+  document.getElementById('nao-contados-lista').innerHTML=h;
+}
+
+// ── TABELA ───────────────────────────────────────────────
+function renderTabela(lista){
+  document.getElementById('tabela-count').textContent=lista.length+' contagens';
+  if(!lista.length){
+    document.getElementById('tabela-body').innerHTML='<tr><td colspan="8" class="empty">Nenhuma contagem encontrada.</td></tr>';
+    return;
+  }
+  var h='';
+  lista.forEach(function(g){
+    // Evolução — comparar com contagem anterior do mesmo cliente
+    var anterior=TODOS_ROWS.filter(function(r){
+      return r.rep===g.rep&&r.cod_cli===g.cod_cli&&new Date(r.created_at)<g.dt;
+    });
+    var evolucao='—';
+    if(anterior.length){
+      var somAtual=g.itens.reduce(function(s,i){return s+i.qtde_estoque;},0);
+      var somAnt=anterior.reduce(function(s,r){return s+r.qtde_estoque;},0)/g.itens.length*g.itens.length;
+      if(somAtual>somAnt) evolucao='<span class="trend-up">▲ Subiu</span>';
+      else if(somAtual<somAnt) evolucao='<span class="trend-dn">▼ Caiu</span>';
+      else evolucao='<span class="trend-eq">= Igual</span>';
+    }
+    // Próxima visita
+    var rot=ROTEIROS_DATA.find(function(r){return r.rep===g.rep&&r.cod_cli===g.cod_cli;});
+    var proxVisita='Sem roteiro';
+    if(rot){
+      var DIAS_L={segunda:'Seg',terca:'Ter',quarta:'Qua',quinta:'Qui',sexta:'Sex'};
+      var sems=rot.semanas_mes?JSON.parse(rot.semanas_mes||'[]'):[];
+      proxVisita='<span style="color:var(--green);font-weight:600">'+DIAS_L[rot.dia_semana]+' · '+sems.map(function(s){return s+'ª';}).join('/')+'</span>';
+    }
+
+    h+='<tr>'
+      +'<td>'+g.dt.toLocaleDateString('pt-BR')+'<br><span style="font-size:10px;color:var(--text2)">'+g.dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'</span></td>'
+      +'<td><span style="font-weight:600">'+g.rep+'</span><br><span style="font-size:10px;color:var(--text2)">'+( MAPA_REP[g.rep]||'')+'</span></td>'
+      +'<td style="font-weight:600">'+g.nome+'</td>'
+      +'<td>'+g.itens.length+' produto(s)</td>'
+      +'<td>'+(g.criticos?'<span class="badge badge-crit">⚠ '+g.criticos+'</span>':'<span class="badge badge-ok">✓ OK</span>')+'</td>'
+      +'<td>'+evolucao+'</td>'
+      +'<td>'+proxVisita+'</td>'
+      +'<td><button class="btn-detalhe" onclick="abrirDetalhe(\''+g.key+'\')">Ver</button></td>'
+      +'</tr>';
+  });
+  document.getElementById('tabela-body').innerHTML=h;
+}
+
+// ── MODAL DETALHE ────────────────────────────────────────
+function abrirDetalhe(key){
+  var g=GRUPOS_ATUAL.find(function(x){return x.key===key;});
+  if(!g) return;
+  document.getElementById('modal-titulo').textContent=g.nome;
+  document.getElementById('modal-sub').textContent=g.rep+' · '+g.dt.toLocaleDateString('pt-BR')+' '+g.dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+  // Calcular média de compra por produto via HIST_REP (mesmo método do estoque.html)
+  var mediasProd={};
+  var histReps={
+    'PAULA': typeof HIST_REP_PAULA!=='undefined'?HIST_REP_PAULA:null,
+    'MAURO': typeof HIST_REP_MAURO!=='undefined'?HIST_REP_MAURO:null,
+    'SUANE': typeof HIST_REP_SUANE!=='undefined'?HIST_REP_SUANE:null,
+    'VANESSA': typeof HIST_REP_VANESSA!=='undefined'?HIST_REP_VANESSA:null,
+    'LUIZ': typeof HIST_REP_LUIZ!=='undefined'?HIST_REP_LUIZ:null,
+    'PAULO': typeof HIST_REP_PAULO!=='undefined'?HIST_REP_PAULO:null,
+    'NAYARA': typeof HIST_REP_NAYARA!=='undefined'?HIST_REP_NAYARA:null
+  };
+  var histRep=histReps[g.rep];
+  var hist=histRep?histRep[String(g.cod_cli)]:null;
+  if(hist&&hist.pedidos){
+    var prods={};
+    hist.pedidos.forEach(function(ped){
+      (ped.itens||[]).forEach(function(item){
+        if(!prods[item.prod]) prods[item.prod]={totalQtde:0,nPedidos:0};
+        prods[item.prod].totalQtde+=item.qtde;
+        prods[item.prod].nPedidos++;
+      });
+    });
+    Object.keys(prods).forEach(function(nome){
+      var p=prods[nome];
+      mediasProd[nome]=p.nPedidos>0?Math.round(p.totalQtde/p.nPedidos):0;
+    });
+  }
+
+  // Contagem anterior
+  var anterior=TODOS_ROWS.filter(function(r){
+    return r.rep===g.rep&&r.cod_cli===g.cod_cli&&new Date(r.created_at)<g.dt;
+  });
+  var antPorProd={};
+  anterior.forEach(function(r){antPorProd[r.produto]=r.qtde_estoque;});
+
+  // Produtos
+  var hprod='<div class="modal-secao"><div class="modal-secao-titulo">Produtos contados</div>';
+  hprod+='<div style="display:grid;grid-template-columns:1fr 80px 100px 100px;gap:0;font-size:10px;font-weight:700;color:var(--text2);padding:6px 0;border-bottom:2px solid var(--border);text-transform:uppercase">'
+    +'<span>Produto</span><span style="text-align:center">Estoque</span><span style="text-align:right">Compra Méd.</span><span style="text-align:right">Sugestão</span></div>';
+
+  g.itens.forEach(function(item){
+    var qtde=item.qtde_estoque;
+    var media=mediasProd[item.produto]||0; // un/compra (media historica)
+    // Sugestão = quanto falta para completar 1 média: estoque + sugerido >= media
+    var sugest=media>0?Math.max(0,media-qtde):0;
+    var cor=qtde===0?'var(--red)':qtde<3?'var(--gold)':'var(--green)';
+    var evol='';
+    if(antPorProd[item.produto]!==undefined){
+      var diff=qtde-antPorProd[item.produto];
+      if(diff>0) evol=' <span class="trend-up">▲'+diff+'</span>';
+      else if(diff<0) evol=' <span class="trend-dn">▼'+Math.abs(diff)+'</span>';
+    }
+    hprod+='<div class="prod-row">'
+      +'<div class="prod-nome">'+item.produto+'</div>'
+      +'<div class="prod-qtde" style="color:'+cor+'">'+qtde+evol+'</div>'
+      +'<div class="prod-media">'+(media?'~'+media+' un/mês':'—')+'</div>'
+      +'<div class="prod-sugest" style="color:'+(sugest>0?'var(--red)':'var(--green)')+';font-weight:700">'+(sugest>0?'Pedir '+sugest:'Suficiente')+'</div>'
+      +'</div>';
+  });
+  hprod+='</div>';
+
+  // Evolução vs anterior
+  var hevol='';
+  if(anterior.length){
+    hevol='<div class="modal-secao"><div class="modal-secao-titulo">Evolução vs contagem anterior</div>';
+    g.itens.forEach(function(item){
+      if(antPorProd[item.produto]!==undefined){
+        var diff=item.qtde_estoque-antPorProd[item.produto];
+        var icon=diff>0?'▲':diff<0?'▼':'=';
+        var cor=diff>0?'var(--green)':diff<0?'var(--red)':'var(--text2)';
+        hevol+='<div class="evolucao-row">'
+          +'<div class="evolucao-prod">'+item.produto+'</div>'
+          +'<div class="evolucao-vals">'
+          +'<span style="color:var(--text2)">'+antPorProd[item.produto]+' →</span>'
+          +'<span style="font-weight:700">'+item.qtde_estoque+'</span>'
+          +'<span style="color:'+cor+';font-weight:700">'+icon+(diff!==0?Math.abs(diff):'')+'</span>'
+          +'</div></div>';
+      }
+    });
+    hevol+='</div>';
+  }
+
+  // Próxima visita
+  var rot=ROTEIROS_DATA.find(function(r){return r.rep===g.rep&&r.cod_cli===g.cod_cli;});
+  var hprox='<div class="modal-secao"><div class="modal-secao-titulo">Próxima visita</div>';
+  if(rot){
+    var DIAS_FULL={segunda:'Segunda-feira',terca:'Terça-feira',quarta:'Quarta-feira',quinta:'Quinta-feira',sexta:'Sexta-feira'};
+    var sems=rot.semanas_mes?JSON.parse(rot.semanas_mes||'[]'):[];
+    hprox+='<div class="prox-visita">'
+      +'<div class="prox-visita-icon">🗓</div>'
+      +'<div><div class="prox-visita-info">Roteiro configurado</div>'
+      +'<div class="prox-visita-data">'+DIAS_FULL[rot.dia_semana]+' · '+sems.map(function(s){return s+'ª semana';}).join(' e ')+'</div>'
+      +'<div style="font-size:10px;color:var(--text2);margin-top:3px">Frequência: '+rot.frequencia+' · Status: '+rot.status+'</div>'
+      +'</div></div>';
+  } else {
+    hprox+='<div class="prox-visita"><div class="prox-visita-icon">⚠</div><div style="color:var(--text2);font-size:12px">Sem roteiro configurado para este cliente.</div></div>';
+  }
+  hprox+='</div>';
+
+  document.getElementById('modal-body').innerHTML=hprod+hevol+hprox;
+  document.getElementById('modal-detalhe').classList.add('open');
+}
+
+// ── EXPORTAR EXCEL ───────────────────────────────────────
+function exportarExcel(){
+  var rows=[];
+  GRUPOS_ATUAL.forEach(function(g){
+    g.itens.forEach(function(item){
+      rows.push([
+        g.dt.toLocaleDateString('pt-BR'),
+        g.dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+        g.rep,
+        MAPA_REP[g.rep]||'',
+        g.nome,
+        item.produto,
+        item.qtde_estoque,
+        item.qtde_estoque===0?'Zerado':item.qtde_estoque<3?'Crítico':'OK'
+      ]);
+    });
+  });
+  var csv='Data,Hora,Rep,Área,Cliente,Produto,Qtde,Status\n';
+  rows.forEach(function(r){csv+=r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',')+'\n';});
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download='estoque_vetvida_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('✓ Exportado!');
+}
+
+init();
+</script></body></html>

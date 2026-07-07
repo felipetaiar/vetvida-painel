@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetVida BI — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
+  :root {
+    --bg: #080c10;
+    --surface: #0e1419;
+    --surface2: #131b22;
+    --border: rgba(255,255,255,0.06);
+    --accent: #CC0000;
+    --accent2: #ff4040;
+    --warn: #ff9500;
+    --danger: #ff3b5c;
+    --text: #e8edf2;
+    --muted: #5a6a78;
+    --card-radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    z-index: 50;
+    padding: 24px 0;
+  }
+
+  .sidebar-logo {
+    padding: 0 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-mark {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+  }
+
+  .logo-mark span { color: var(--accent); }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 18px; height: 18px; fill: white; }
+
+  .sidebar-section {
+    padding: 16px 12px 8px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+    margin: 1px 0;
+  }
+
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(204,0,0,0.06); }
+
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .perfil-badge {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .perfil-avatar {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px;
+  }
+
+  .perfil-info .name { font-size: 13px; font-weight: 600; }
+  .perfil-info .role { font-size: 11px; color: var(--muted); }
+
+  .back-link {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--muted); font-size: 12px;
+    text-decoration: none; margin-top: 10px;
+    transition: color 0.15s;
+  }
+  .back-link:hover { color: var(--text); }
+
+  /* ── MAIN ── */
+  .main {
+    margin-left: 220px;
+    padding: 32px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    line-height: 1.1;
+  }
+
+  .page-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .filter-row {
+    display: flex; gap: 10px; align-items: center;
+  }
+
+  .select-styled {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .select-styled:focus { border-color: var(--accent); }
+
+  .env-tag {
+    background: rgba(255,200,0,0.1);
+    border: 1px solid rgba(255,200,0,0.2);
+    color: #ffc800;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 5px;
+    margin-bottom: 28px;
+    width: fit-content;
+  }
+
+  .tab {
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all 0.15s;
+    border: none; background: none;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--accent); color: #000; font-weight: 600; }
+
+  /* ── TAB PANELS ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+
+  .kpi-green::before { background: var(--accent); }
+  .kpi-blue::before { background: var(--accent2); }
+  .kpi-warn::before { background: var(--warn); }
+  .kpi-danger::before { background: var(--danger); }
+
+  .kpi-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-family: 'DM Serif Display', serif; font-size: 28px; line-height: 1; margin-bottom: 6px; }
+  .kpi-delta { font-size: 12px; }
+  .kpi-delta.up { color: var(--accent); }
+  .kpi-delta.down { color: var(--danger); }
+
+  /* ── CHARTS ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 20px;
+  }
+
+  .chart-card.full { grid-column: 1 / -1; }
+
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .chart-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .chart-wrap { position: relative; height: 240px; }
+  .chart-wrap-sm { position: relative; height: 200px; }
+
+  /* ── TABLE ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .table-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .table-header .chart-title { margin-bottom: 0; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr { transition: background 0.1s; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  tbody td {
+    padding: 12px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+
+  /* ABC badges */
+  .abc { display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+  .abc-A { background: rgba(204,0,0,0.15); color: var(--accent); }
+  .abc-B { background: rgba(255,149,0,0.15); color: var(--warn); }
+  .abc-C { background: rgba(90,106,120,0.2); color: var(--muted); }
+
+  /* Progress bar */
+  .progress-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+
+  /* Rep banner */
+  .rep-banner {
+    background: linear-gradient(135deg, rgba(204,0,0,0.10), rgba(255,64,64,0.05));
+    border: 1px solid rgba(204,0,0,0.18);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 20px;
+  }
+
+  .rep-banner-avatar {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--accent2), #5b4fff);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+
+  .rep-banner-info { flex: 1; }
+  .rep-banner-name { font-family: 'DM Serif Display', serif; font-size: 22px; }
+  .rep-banner-area { font-size: 12px; color: var(--muted); }
+
+  .rep-banner-kpis { display: flex; gap: 28px; }
+  .rep-banner-kpi .val { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--accent); }
+  .rep-banner-kpi .lbl { font-size: 11px; color: var(--muted); }
+
+  /* Gerencial ranking */
+  .ranking-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .rank-pos { font-size: 18px; width: 28px; text-align: center; }
+  .rank-name { font-weight: 500; width: 80px; font-size: 13px; }
+  .rank-bar-wrap { flex: 1; }
+  .rank-val { font-size: 13px; color: var(--accent); font-weight: 600; width: 90px; text-align: right; }
+  .rank-pct { font-size: 11px; color: var(--muted); width: 45px; text-align: right; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <img src="logo.jpg" alt="VetVida" style="height:38px;display:block;background:white;padding:4px 12px;border-radius:8px;">
+  </div>
+
+  <div class="sidebar-section">Módulos</div>
+
+  <div class="nav-item active" onclick="switchTab('faturamento', this)">
+    <span class="nav-icon">📈</span> Faturamento
+  </div>
+  <div class="nav-item" onclick="switchTab('laboratorio', this)">
+    <span class="nav-icon">🧪</span> Laboratórios
+  </div>
+  <div class="nav-item" onclick="switchTab('abc', this)">
+    <span class="nav-icon">📊</span> Curva ABC
+  </div>
+  <div id="nav-gerencial" class="nav-item" onclick="switchTab('gerencial', this)" style="display:none;">
+    <span class="nav-icon">🏢</span> Gerencial
+  </div>
+
+  <div class="sidebar-section">Sistema</div>
+  <div class="nav-item" style="opacity:0.4; cursor:default;">
+    <span class="nav-icon">🗺️</span> Promotora
+  </div>
+  <div class="nav-item" style="opacity:0.4; cursor:default;">
+    <span class="nav-icon">✅</span> Positivação
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="perfil-badge">
+      <div class="perfil-avatar" id="sidebarAvatar">F</div>
+      <div class="perfil-info">
+        <div class="name" id="sidebarName">Felipe</div>
+        <div class="role" id="sidebarRole">Gestor</div>
+      </div>
+    </div>
+    <a href="index.html" class="back-link">← Trocar perfil</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div>
+      <div class="page-title" id="pageTitle">Dashboard de Faturamento</div>
+      <div class="page-sub" id="pageSub">Dados simulados · Período: Jan–Jun 2026</div>
+    </div>
+    <div class="filter-row">
+      <select class="select-styled" id="repFilter" onchange="renderAll()">
+        <option value="todos">Todos os reps</option>
+      </select>
+      <select class="select-styled" id="mesFilter" onchange="renderAll()">
+        <option value="todos">Todo o período</option>
+        <option value="Jan">Janeiro</option>
+        <option value="Fev">Fevereiro</option>
+        <option value="Mar">Março</option>
+        <option value="Abr">Abril</option>
+        <option value="Mai">Maio</option>
+        <option value="Jun">Junho</option>
+      </select>
+      <div class="env-tag">⚗ Teste</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" id="tabsRow">
+    <button class="tab active" onclick="switchTab('faturamento', null, this)">📈 Faturamento</button>
+    <button class="tab" onclick="switchTab('laboratorio', null, this)">🧪 Laboratórios</button>
+    <button class="tab" onclick="switchTab('abc', null, this)">📊 Curva ABC</button>
+    <button class="tab" id="tabGerencial" onclick="switchTab('gerencial', null, this)" style="display:none;">🏢 Gerencial</button>
+  </div>
+
+  <!-- PANEL: FATURAMENTO -->
+  <div class="panel active" id="panel-faturamento">
+    <div id="repBanner"></div>
+    <div class="kpi-grid" id="kpiFaturamento"></div>
+    <div class="charts-grid">
+      <div class="chart-card full">
+        <div class="chart-title">Evolução Mensal de Faturamento</div>
+        <div class="chart-sub">Faturamento bruto por mês · Jan–Jun 2026</div>
+        <div class="chart-wrap"><canvas id="chartEvolucao"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Faturamento por Rep</div>
+        <div class="chart-sub">Acumulado no período</div>
+        <div class="chart-wrap"><canvas id="chartPorRep"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Meta vs Realizado</div>
+        <div class="chart-sub">Atingimento mensal</div>
+        <div class="chart-wrap"><canvas id="chartMeta"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: LABORATÓRIOS -->
+  <div class="panel" id="panel-laboratorio">
+    <div class="kpi-grid" id="kpiLab"></div>
+    <div class="charts-grid">
+      <div class="chart-card full">
+        <div class="chart-title">Faturamento por Laboratório</div>
+        <div class="chart-sub">Distribuição no período selecionado</div>
+        <div class="chart-wrap"><canvas id="chartLab"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Margem Bruta por Lab</div>
+        <div class="chart-sub">% estimada de margem</div>
+        <div class="chart-wrap-sm"><canvas id="chartMargem"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Mix de Vendas</div>
+        <div class="chart-sub">Participação percentual</div>
+        <div class="chart-wrap-sm"><canvas id="chartMix"></canvas></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="chart-title">Detalhamento por Laboratório</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Laboratório</th>
+            <th>Faturamento</th>
+            <th>Margem %</th>
+            <th>Margem R$</th>
+            <th>Participação</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbodyLab"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PANEL: CURVA ABC -->
+  <div class="panel" id="panel-abc">
+    <div class="kpi-grid" id="kpiAbc"></div>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="chart-title">Curva ABC de Clientes</div>
+        <div style="font-size:12px;color:var(--muted);">A: até 80% receita · B: 80–95% · C: cauda</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Cliente</th>
+            <th>Rep</th>
+            <th>Faturamento</th>
+            <th>% Acum.</th>
+            <th>Curva</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyAbc"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PANEL: GERENCIAL -->
+  <div class="panel" id="panel-gerencial">
+    <div class="kpi-grid" id="kpiGerencial"></div>
+    <div class="charts-grid">
+      <div class="chart-card full">
+        <div class="chart-title">Evolução Comparativa — Equipe</div>
+        <div class="chart-sub">Faturamento mensal empilhado por representante</div>
+        <div class="chart-wrap"><canvas id="chartGerencial"></canvas></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="chart-title">Ranking de Representantes</div></div>
+      <div id="rankingBody"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ─── DADOS SIMULADOS ─────────────────────────────────────────────────────────
+
+const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun'];
+const LABS  = ['Syntec','Vansil','Labyes','Homeopet','Dechra','Organnact','Biogênesis'];
+const MARGEM_LAB = { Syntec:18, Vansil:22, Labyes:20, Homeopet:25, Dechra:28, Organnact:23, Biogênesis:19 };
+
+const REPS = [
+  { nome:'Paula',   area:'Guarulhos 1',  meta:85000 },
+  { nome:'Mauro',   area:'Zona Leste 1', meta:75000 },
+  { nome:'Suane',   area:'Zona Leste 2', meta:70000 },
+  { nome:'Vanessa', area:'Zona Norte 2', meta:72000 },
+  { nome:'Luiz',    area:'Zona Leste 3', meta:68000 },
+  { nome:'Paulo',   area:'Zona Norte 3', meta:65000 },
+  { nome:'Nayara',  area:'Alto Tietê 1', meta:60000 },
+];
+
+// Seed determinístico por rep e mês
+function seed(rep, lab, mes) {
+  const h = [...(rep+lab+mes)].reduce((a,c)=>a*31+c.charCodeAt(0),7);
+  return (Math.abs(h) % 1000) / 1000;
+}
+
+function gerarVendas() {
+  const rows = [];
+  REPS.forEach(rep => {
+    MESES.forEach(mes => {
+      const baseTotal = rep.meta * (0.75 + seed(rep.nome, 'base', mes) * 0.45);
+      LABS.forEach(lab => {
+        const peso = seed(rep.nome, lab, mes);
+        const total = baseTotal * peso * 0.35;
+        rows.push({ rep: rep.nome, area: rep.area, lab, mes, total: Math.round(total) });
+      });
+    });
+  });
+  return rows;
+}
+
+function gerarClientes() {
+  const clientes = [];
+  REPS.forEach(rep => {
+    const n = 15 + Math.floor(seed(rep.nome,'cli','x') * 20);
+    for(let i=0;i<n;i++){
+      const fat = Math.round(5000 + seed(rep.nome,'c',i) * 80000);
+      clientes.push({ nome:`Cliente ${rep.nome.slice(0,1)}${i+1}`, rep:rep.nome, fat });
+    }
+  });
+  return clientes;
+}
+
+const VENDAS   = gerarVendas();
+const CLIENTES = gerarClientes();
+
+// ─── ESTADO ──────────────────────────────────────────────────────────────────
+const params  = new URLSearchParams(location.search);
+const PERFIL  = params.get('perfil') || 'gestor';
+const REP_LOGADO = params.get('rep') || '';
+
+let activeTab = 'faturamento';
+let activeNavItem = null;
+let activeTabBtn  = null;
+let chartInstances = {};
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function init() {
+  // Sidebar
+  document.getElementById('sidebarName').textContent = PERFIL === 'gestor' ? 'Felipe' : REP_LOGADO;
+  document.getElementById('sidebarRole').textContent = PERFIL === 'gestor' ? 'Gestor' : 'Representante';
+  document.getElementById('sidebarAvatar').textContent = PERFIL === 'gestor' ? 'F' : REP_LOGADO[0];
+
+  if(PERFIL === 'gestor') {
+    document.getElementById('nav-gerencial').style.display = '';
+    document.getElementById('tabGerencial').style.display = '';
+  }
+
+  // Filtro de rep
+  const sel = document.getElementById('repFilter');
+  if(PERFIL === 'rep') {
+    sel.style.display = 'none';
+  } else {
+    REPS.forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.nome; o.textContent = r.nome;
+      sel.appendChild(o);
+    });
+  }
+
+  renderAll();
+}
+
+// ─── FILTROS ─────────────────────────────────────────────────────────────────
+function getFilters() {
+  const repF = PERFIL === 'rep' ? REP_LOGADO : document.getElementById('repFilter').value;
+  const mesF = document.getElementById('mesFilter').value;
+  return { repF, mesF };
+}
+
+function filteredVendas() {
+  const { repF, mesF } = getFilters();
+  return VENDAS.filter(v =>
+    (repF === 'todos' || v.rep === repF) &&
+    (mesF === 'todos' || v.mes === mesF)
+  );
+}
+
+function filteredClientes() {
+  const { repF } = getFilters();
+  return CLIENTES.filter(c => repF === 'todos' || c.rep === repF);
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+const fmt = n => 'R$ ' + (n/1000).toFixed(1) + 'k';
+const fmtFull = n => 'R$ ' + n.toLocaleString('pt-BR');
+const pct = (a,b) => b ? ((a/b)*100).toFixed(1)+'%' : '—';
+
+const COLORS = ['#CC0000','#ff4040','#ff9500','#ff3b5c','#bf5fff','#e06060','#ffcc00'];
+
+function destroyChart(id) {
+  if(chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+function makeChart(id, config) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if(!ctx) return;
+  chartInstances[id] = new Chart(ctx, config);
+}
+
+const baseChartOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { color:'#5a6a78', font:{ family:'DM Sans' } } } },
+  scales: {
+    x: { ticks:{ color:'#5a6a78' }, grid:{ color:'rgba(255,255,255,0.04)' } },
+    y: { ticks:{ color:'#5a6a78', callback: v => fmt(v) }, grid:{ color:'rgba(255,255,255,0.04)' } }
+  }
+};
+
+// ─── RENDER ALL ───────────────────────────────────────────────────────────────
+function renderAll() {
+  renderFaturamento();
+  renderLaboratorio();
+  renderAbc();
+  if(PERFIL === 'gestor') renderGerencial();
+}
+
+// ─── FATURAMENTO ──────────────────────────────────────────────────────────────
+function renderFaturamento() {
+  const v = filteredVendas();
+  const total = v.reduce((a,r)=>a+r.total,0);
+  const { repF } = getFilters();
+
+  // Banner do rep
+  const banner = document.getElementById('repBanner');
+  if(PERFIL === 'rep') {
+    const repData = REPS.find(r=>r.nome===REP_LOGADO);
+    const ating = (total / (repData.meta*6)*100).toFixed(0);
+    banner.innerHTML = `
+      <div class="rep-banner">
+        <div class="rep-banner-avatar">${REP_LOGADO[0]}</div>
+        <div class="rep-banner-info">
+          <div class="rep-banner-name">${REP_LOGADO}</div>
+          <div class="rep-banner-area">${repData.area}</div>
+        </div>
+        <div class="rep-banner-kpis">
+          <div class="rep-banner-kpi"><div class="val">${fmt(total)}</div><div class="lbl">Faturamento</div></div>
+          <div class="rep-banner-kpi"><div class="val">${ating}%</div><div class="lbl">Atingimento</div></div>
+          <div class="rep-banner-kpi"><div class="val">${fmt(repData.meta*6)}</div><div class="lbl">Meta acum.</div></div>
+        </div>
+      </div>`;
+  } else { banner.innerHTML=''; }
+
+  // KPIs
+  const metaTotal = REPS.filter(r=>repF==='todos'||r.nome===repF).reduce((a,r)=>a+r.meta*6,0);
+  const ating = (total/metaTotal*100).toFixed(1);
+  const clientes_uniq = [...new Set(filteredClientes().map(c=>c.nome))].length;
+  const ticket = total/Math.max(clientes_uniq,1);
+
+  document.getElementById('kpiFaturamento').innerHTML = `
+    <div class="kpi kpi-green">
+      <div class="kpi-label">Faturamento Total</div>
+      <div class="kpi-value">${fmt(total)}</div>
+      <div class="kpi-delta up">↑ período selecionado</div>
+    </div>
+    <div class="kpi kpi-blue">
+      <div class="kpi-label">Meta Acumulada</div>
+      <div class="kpi-value">${fmt(metaTotal)}</div>
+      <div class="kpi-delta ${parseFloat(ating)>=100?'up':'down'}">${ating}% atingido</div>
+    </div>
+    <div class="kpi kpi-warn">
+      <div class="kpi-label">Clientes Ativos</div>
+      <div class="kpi-value">${clientes_uniq}</div>
+      <div class="kpi-delta up">na carteira</div>
+    </div>
+    <div class="kpi kpi-green">
+      <div class="kpi-label">Ticket Médio</div>
+      <div class="kpi-value">${fmt(ticket)}</div>
+      <div class="kpi-delta up">por cliente</div>
+    </div>`;
+
+  // Chart: evolução mensal
+  const byMes = {};
+  MESES.forEach(m=>byMes[m]=0);
+  v.forEach(r=>byMes[r.mes]=(byMes[r.mes]||0)+r.total);
+
+  const metaByMes = REPS.filter(r=>repF==='todos'||r.nome===repF).reduce((a,r)=>a+r.meta,0);
+
+  makeChart('chartEvolucao', {
+    type:'line',
+    data:{
+      labels: MESES,
+      datasets:[
+        { label:'Faturamento', data:MESES.map(m=>byMes[m]), borderColor:'#CC0000', backgroundColor:'rgba(204,0,0,0.08)', tension:0.4, fill:true, pointBackgroundColor:'#CC0000', pointRadius:4 },
+        { label:'Meta', data:MESES.map(()=>metaByMes), borderColor:'#ff9500', borderDash:[6,3], tension:0, pointRadius:0 }
+      ]
+    },
+    options:{ ...baseChartOpts, responsive:true, maintainAspectRatio:false }
+  });
+
+  // Chart: por rep
+  const byRep = {};
+  REPS.forEach(r=>byRep[r.nome]=0);
+  v.forEach(r=>byRep[r.rep]=(byRep[r.rep]||0)+r.total);
+  const repsVis = repF==='todos'?REPS:REPS.filter(r=>r.nome===repF);
+
+  makeChart('chartPorRep',{
+    type:'bar',
+    data:{
+      labels:repsVis.map(r=>r.nome),
+      datasets:[{
+        label:'Faturamento',
+        data:repsVis.map(r=>byRep[r.nome]||0),
+        backgroundColor:COLORS,
+        borderRadius:6
+      }]
+    },
+    options:{ ...baseChartOpts, responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} }
+  });
+
+  // Chart: meta vs realizado (por mês)
+  const metaM = REPS.filter(r=>repF==='todos'||r.nome===repF).reduce((a,r)=>a+r.meta,0);
+  makeChart('chartMeta',{
+    type:'bar',
+    data:{
+      labels:MESES,
+      datasets:[
+        { label:'Realizado', data:MESES.map(m=>byMes[m]), backgroundColor:'rgba(204,0,0,0.75)', borderRadius:4 },
+        { label:'Meta', data:MESES.map(()=>metaM), backgroundColor:'rgba(255,149,0,0.3)', borderRadius:4 }
+      ]
+    },
+    options:{ ...baseChartOpts, responsive:true, maintainAspectRatio:false }
+  });
+}
+
+// ─── LABORATÓRIOS ─────────────────────────────────────────────────────────────
+function renderLaboratorio() {
+  const v = filteredVendas();
+  const totalGeral = v.reduce((a,r)=>a+r.total,0);
+
+  const byLab = {};
+  LABS.forEach(l=>byLab[l]=0);
+  v.forEach(r=>byLab[r.lab]=(byLab[r.lab]||0)+r.total);
+
+  const totalMargem = LABS.reduce((a,l)=>a+byLab[l]*MARGEM_LAB[l]/100,0);
+
+  // KPIs
+  const topLab = LABS.reduce((a,b)=>byLab[a]>byLab[b]?a:b);
+  document.getElementById('kpiLab').innerHTML = `
+    <div class="kpi kpi-green">
+      <div class="kpi-label">Total Faturado</div>
+      <div class="kpi-value">${fmt(totalGeral)}</div>
+    </div>
+    <div class="kpi kpi-blue">
+      <div class="kpi-label">Margem Bruta Estimada</div>
+      <div class="kpi-value">${fmt(totalMargem)}</div>
+      <div class="kpi-delta up">${(totalMargem/totalGeral*100).toFixed(1)}% do faturamento</div>
+    </div>
+    <div class="kpi kpi-warn">
+      <div class="kpi-label">Laboratórios Ativos</div>
+      <div class="kpi-value">${LABS.length}</div>
+    </div>
+    <div class="kpi kpi-green">
+      <div class="kpi-label">Maior Lab</div>
+      <div class="kpi-value" style="font-size:20px;">${topLab}</div>
+      <div class="kpi-delta up">${fmt(byLab[topLab])}</div>
+    </div>`;
+
+  // Chart: barras por lab
+  makeChart('chartLab',{
+    type:'bar',
+    data:{
+      labels:LABS,
+      datasets:[{
+        label:'Faturamento',
+        data:LABS.map(l=>byLab[l]),
+        backgroundColor:COLORS,
+        borderRadius:6
+      }]
+    },
+    options:{ ...baseChartOpts, responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} }
+    }
+  });
+
+  // Chart: margem
+  makeChart('chartMargem',{
+    type:'bar',
+    data:{
+      labels:LABS,
+      datasets:[{
+        label:'Margem %',
+        data:LABS.map(l=>MARGEM_LAB[l]),
+        backgroundColor:'rgba(255,64,64,0.7)',
+        borderRadius:4
+      }]
+    },
+    options:{ ...baseChartOpts, responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{color:'#5a6a78'},grid:{color:'rgba(255,255,255,0.04)'}}, y:{ticks:{color:'#5a6a78',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}} }
+    }
+  });
+
+  // Chart: pizza mix
+  makeChart('chartMix',{
+    type:'doughnut',
+    data:{
+      labels:LABS,
+      datasets:[{ data:LABS.map(l=>byLab[l]), backgroundColor:COLORS, borderWidth:2, borderColor:'#0e1419' }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#5a6a78', font:{family:'DM Sans'}, boxWidth:12 } } }
+    }
+  });
+
+  // Tabela
+  const sorted = [...LABS].sort((a,b)=>byLab[b]-byLab[a]);
+  document.getElementById('tbodyLab').innerHTML = sorted.map((l,i) => {
+    const fat = byLab[l];
+    const marg = fat * MARGEM_LAB[l] / 100;
+    const part = totalGeral ? (fat/totalGeral*100).toFixed(1) : 0;
+    return `<tr>
+      <td><span style="font-weight:600;color:${COLORS[i%COLORS.length]}">${l}</span></td>
+      <td>${fmtFull(fat)}</td>
+      <td>${MARGEM_LAB[l]}%</td>
+      <td>${fmtFull(Math.round(marg))}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="progress-bar" style="width:100px;">
+            <div class="progress-fill" style="width:${part}%;background:${COLORS[i%COLORS.length]}"></div>
+          </div>
+          <span style="font-size:12px;color:var(--muted)">${part}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── CURVA ABC ────────────────────────────────────────────────────────────────
+function renderAbc() {
+  const clientes = filteredClientes().sort((a,b)=>b.fat-a.fat);
+  const total = clientes.reduce((a,c)=>a+c.fat,0);
+
+  let acum = 0;
+  let cA=0,cB=0,cC=0,rA=0,rB=0,rC=0;
+
+  const rows = clientes.map((c,i)=>{
+    acum += c.fat;
+    const acumPct = total ? acum/total*100 : 0;
+    const cls = acumPct <= 80 ? 'A' : acumPct <= 95 ? 'B' : 'C';
+    if(cls==='A'){cA++;rA+=c.fat}else if(cls==='B'){cB++;rB+=c.fat}else{cC++;rC+=c.fat}
+    return `<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="font-weight:500">${c.nome}</td>
+      <td style="color:var(--muted)">${c.rep}</td>
+      <td>${fmtFull(c.fat)}</td>
+      <td style="color:var(--muted)">${acumPct.toFixed(1)}%</td>
+      <td><span class="abc abc-${cls}">${cls}</span></td>
+    </tr>`;
+  });
+
+  document.getElementById('kpiAbc').innerHTML = `
+    <div class="kpi kpi-green">
+      <div class="kpi-label">Classe A — Estratégicos</div>
+      <div class="kpi-value">${cA}</div>
+      <div class="kpi-delta up">${fmt(rA)} · ${(rA/total*100).toFixed(0)}% receita</div>
+    </div>
+    <div class="kpi kpi-warn">
+      <div class="kpi-label">Classe B — Desenvolvimento</div>
+      <div class="kpi-value">${cB}</div>
+      <div class="kpi-delta" style="color:var(--warn)">${fmt(rB)} · ${(rB/total*100).toFixed(0)}% receita</div>
+    </div>
+    <div class="kpi" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:20px;">
+      <div class="kpi-label">Classe C — Atenção</div>
+      <div class="kpi-value" style="color:var(--muted)">${cC}</div>
+      <div class="kpi-delta" style="color:var(--muted)">${fmt(rC)} · ${(rC/total*100).toFixed(0)}% receita</div>
+    </div>
+    <div class="kpi kpi-blue">
+      <div class="kpi-label">Total Clientes</div>
+      <div class="kpi-value">${clientes.length}</div>
+    </div>`;
+
+  document.getElementById('tbodyAbc').innerHTML = rows.join('');
+}
+
+// ─── GERENCIAL ────────────────────────────────────────────────────────────────
+function renderGerencial() {
+  const { mesF } = getFilters();
+
+  // Total por rep
+  const byRep = {};
+  REPS.forEach(r=>byRep[r.nome]=0);
+  VENDAS.filter(v=>mesF==='todos'||v.mes===mesF).forEach(v=>byRep[v.rep]=(byRep[v.rep]||0)+v.total);
+
+  const totalGeral = Object.values(byRep).reduce((a,b)=>a+b,0);
+  const metaTotal  = REPS.reduce((a,r)=>a+r.meta*(mesF==='todos'?6:1),0);
+  const margTotal  = VENDAS.filter(v=>mesF==='todos'||v.mes===mesF).reduce((a,v)=>a+v.total*MARGEM_LAB[v.lab]/100,0);
+
+  document.getElementById('kpiGerencial').innerHTML = `
+    <div class="kpi kpi-green">
+      <div class="kpi-label">Faturamento Equipe</div>
+      <div class="kpi-value">${fmt(totalGeral)}</div>
+    </div>
+    <div class="kpi kpi-blue">
+      <div class="kpi-label">Margem Bruta</div>
+      <div class="kpi-value">${fmt(margTotal)}</div>
+      <div class="kpi-delta up">${(margTotal/totalGeral*100).toFixed(1)}%</div>
+    </div>
+    <div class="kpi kpi-warn">
+      <div class="kpi-label">Atingimento Geral</div>
+      <div class="kpi-value">${(totalGeral/metaTotal*100).toFixed(0)}%</div>
+    </div>
+    <div class="kpi kpi-green">
+      <div class="kpi-label">Meta Total</div>
+      <div class="kpi-value">${fmt(metaTotal)}</div>
+    </div>`;
+
+  // Chart empilhado por rep
+  makeChart('chartGerencial',{
+    type:'bar',
+    data:{
+      labels: MESES,
+      datasets: REPS.map((r,i)=>({
+        label: r.nome,
+        data: MESES.map(m=>VENDAS.filter(v=>v.rep===r.nome&&v.mes===m).reduce((a,v)=>a+v.total,0)),
+        backgroundColor: COLORS[i%COLORS.length],
+        borderRadius: 3,
+        stack: 'total'
+      }))
+    },
+    options:{
+      ...baseChartOpts, responsive:true, maintainAspectRatio:false,
+      scales:{
+        x:{ stacked:true, ticks:{color:'#5a6a78'}, grid:{color:'rgba(255,255,255,0.04)'} },
+        y:{ stacked:true, ticks:{color:'#5a6a78',callback:v=>fmt(v)}, grid:{color:'rgba(255,255,255,0.04)'} }
+      }
+    }
+  });
+
+  // Ranking
+  const sorted = [...REPS].sort((a,b)=>(byRep[b.nome]||0)-(byRep[a.nome]||0));
+  const maxVal = byRep[sorted[0].nome] || 1;
+  const medals = ['🥇','🥈','🥉'];
+
+  document.getElementById('rankingBody').innerHTML = sorted.map((r,i)=>{
+    const val = byRep[r.nome]||0;
+    const metaR = r.meta*(mesF==='todos'?6:1);
+    const ating = (val/metaR*100).toFixed(0);
+    const barPct = (val/maxVal*100).toFixed(1);
+    return `<div class="ranking-row">
+      <div class="rank-pos">${medals[i]||i+1}</div>
+      <div class="rank-name">${r.nome}</div>
+      <div class="rank-bar-wrap">
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${barPct}%;background:${COLORS[i%COLORS.length]}"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">${r.area} · meta ${ating}%</div>
+      </div>
+      <div class="rank-val">${fmt(val)}</div>
+      <div class="rank-pct" style="color:${parseFloat(ating)>=100?'var(--accent)':'var(--danger)'}">${ating}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── TAB SWITCH ───────────────────────────────────────────────────────────────
+const navItems = [];
+
+function switchTab(tab, navEl, tabEl) {
+  activeTab = tab;
+
+  // Panels
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+
+  // Tab buttons
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(tabEl) tabEl.classList.add('active');
+  else {
+    // Sync tab from nav click
+    document.querySelectorAll('.tab').forEach(t=>{
+      if(t.textContent.toLowerCase().includes(tab.slice(0,4))) t.classList.add('active');
+    });
+  }
+
+  // Nav items
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(navEl) navEl.classList.add('active');
+  else {
+    document.querySelectorAll('.nav-item').forEach(n=>{
+      if(n.textContent.toLowerCase().includes(tab.slice(0,4))) n.classList.add('active');
+    });
+  }
+}
+
+init();
+</script>
+</body>
+</html>

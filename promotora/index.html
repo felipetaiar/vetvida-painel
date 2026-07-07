@@ -2598,6 +2598,9 @@ function mostrarToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
+
+// Auto-login SSO
+window.addEventListener('load', function() { verificarSSO(); });
 </script>
 </body>
 </html>

@@ -80,9 +80,9 @@ const USUARIOS = {
 
 // URLs dos sistemas (trocar para domínios próprios após configurar DNS)
 const URLS = {
-  gestor:  '/rep/',
-  nicolle: '/promotora/',
-  rep:     '/rep/',
+  gestor:  '/rep',
+  nicolle: '/promotora',
+  rep:     '/rep',
 };
 // Nota: após configurar domínios próprios, trocar para:
 // gestor:  'https://rep.vetvidasp.com/'
@@ -104,12 +104,13 @@ function fazerLogin() {
 
   erro.style.display = 'none';
 
-  // Passar credenciais via URL para auto-login no sistema destino
-  const perfil  = match.perfil === 'rep' ? match.rep : match.perfil;
-  const token   = btoa(user + ':' + pass);
-  const baseUrl = URLS[match.perfil] || URLS.rep;
-  // Para gestor e reps, passar o user original também
-  window.location.href = baseUrl + '?vv_auth=ok&vv_perfil=' + encodeURIComponent(perfil) + '&vv_tk=' + encodeURIComponent(token) + '&vv_user=' + encodeURIComponent(user);
+  // Salvar sessão — mesmo domínio, sessionStorage funciona
+  const perfil = match.perfil === 'rep' ? match.rep : match.perfil;
+  sessionStorage.setItem('vv_auth', 'ok');
+  sessionStorage.setItem('vv_perfil', perfil);
+  sessionStorage.setItem('vv_user', user);
+  // Redirecionar para o sistema correto
+  window.location.href = URLS[match.perfil] || URLS.rep;
 }
 
 function toggleSenha() {

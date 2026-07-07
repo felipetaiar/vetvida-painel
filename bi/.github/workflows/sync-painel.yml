@@ -8,11 +8,6 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
-      PASTA: bi
-      REPO_SRC: felipetaiar/vetvida-bi
-      EXCLUIR: vercel.json
 
     steps:
       - name: Setup Python
@@ -24,6 +19,8 @@ jobs:
         run: pip install requests
 
       - name: Baixar script de sync
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
           curl -H "Authorization: token $GH_TOKEN" \
                -H "Accept: application/vnd.github.v3.raw" \
@@ -31,4 +28,9 @@ jobs:
                "https://api.github.com/repos/felipetaiar/vetvida-painel/contents/sync.py"
 
       - name: Executar sync
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+          PASTA: bi
+          REPO_SRC: felipetaiar/vetvida-bi
+          EXCLUIR: vercel.json
         run: python3 sync.py

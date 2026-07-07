@@ -683,34 +683,6 @@ body {
 
 </style>
 
-<script>
-// Auto-login SSO — verificar sessão ao carregar
-(function() {
-  var auth   = sessionStorage.getItem('vv_auth');
-  var perfil = sessionStorage.getItem('vv_perfil');
-  if (auth !== 'ok' || !perfil) return;
-  // Aguardar DOM e fazer login automático
-  window.addEventListener('load', function() {
-    // Mapear perfil para usuário da promotora
-    var mapa = { 'nicolle': 'nicolle', 'gestor': 'felipe' };
-    var user = mapa[perfil];
-    if (!user || !window.USUARIOS || !window.USUARIOS[user]) return;
-    var match = window.USUARIOS[user];
-    // Executar login programático
-    window.PERFIL = match.perfil;
-    var loginScreen = document.getElementById('login-screen');
-    var app = document.getElementById('app');
-    if (loginScreen) loginScreen.style.display = 'none';
-    if (app) app.style.display = 'block';
-    if (typeof init === 'function') init();
-    if (typeof carregarDados === 'function') carregarDados();
-    // Atualizar header com nome
-    var headerEl = document.getElementById('header-usuario');
-    if (headerEl) headerEl.textContent = perfil === 'nicolle' ? 'Nicolle · Promotora' : 'Felipe · Gestor';
-    if (typeof renderNav === 'function') renderNav();
-  });
-})();
-</script>
 
 </head>
 <body>
@@ -1261,7 +1233,23 @@ function fazerLogin() {
   entrar(match.perfil);
 }
 
+function verificarSSO() {
+  // Auto-login se vier do painel unificado
+  const auth   = sessionStorage.getItem('vv_auth');
+  const perfil = sessionStorage.getItem('vv_perfil');
+  if (auth !== 'ok' || !perfil) return false;
+  // nicolle → perfil nicolle, gestor → perfil gestor
+  const perfilProm = (perfil === 'gestor') ? 'gestor' : 'nicolle';
+  entrar(perfilProm);
+  return true;
+}
+
 emailjs.init(EMAILJS_KEY);
+
+// Verificar SSO ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+  verificarSSO();
+});
 let sb = null;
 
 function entrar(perfil) {

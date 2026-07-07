@@ -1,8 +1,17 @@
 {
+  "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/rep",
+      "destination": "/rep/index.html"
+    },
+    {
+      "source": "/promotora",
+      "destination": "/promotora/index.html"
+    },
+    {
+      "source": "/bi",
+      "destination": "/bi/index.html"
     }
   ]
 }

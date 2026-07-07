@@ -1,0 +1,34 @@
+name: Sync para vetvida-painel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+      PASTA: bi
+      REPO_SRC: felipetaiar/vetvida-bi
+      EXCLUIR: vercel.json
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Instalar requests
+        run: pip install requests
+
+      - name: Baixar script de sync
+        run: |
+          curl -H "Authorization: token $GH_TOKEN" \
+               -H "Accept: application/vnd.github.v3.raw" \
+               -o sync.py \
+               "https://api.github.com/repos/felipetaiar/vetvida-painel/contents/sync.py"
+
+      - name: Executar sync
+        run: python3 sync.py

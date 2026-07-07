@@ -682,8 +682,6 @@ body {
 .roteiro-dot.active { background: var(--red); }
 
 </style>
-
-
 </head>
 <body>
 <script>
@@ -1233,23 +1231,7 @@ function fazerLogin() {
   entrar(match.perfil);
 }
 
-function verificarSSO() {
-  // Auto-login se vier do painel unificado
-  const auth   = sessionStorage.getItem('vv_auth');
-  const perfil = sessionStorage.getItem('vv_perfil');
-  if (auth !== 'ok' || !perfil) return false;
-  // nicolle → perfil nicolle, gestor → perfil gestor
-  const perfilProm = (perfil === 'gestor') ? 'gestor' : 'nicolle';
-  entrar(perfilProm);
-  return true;
-}
-
 emailjs.init(EMAILJS_KEY);
-
-// Verificar SSO ao carregar
-document.addEventListener('DOMContentLoaded', function() {
-  verificarSSO();
-});
 let sb = null;
 
 function entrar(perfil) {
@@ -1330,8 +1312,8 @@ async function carregarDados() {
 
 function sair() {
   PERFIL = null;
-  sessionStorage.clear();
-  window.location.href = '/';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
 }
 
 // ─── NAVEGAÇÃO ───────────────────────────────────────────────────────────────

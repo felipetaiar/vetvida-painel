@@ -1218,13 +1218,8 @@ const USUARIOS = {
 function verificarSSO() {
   const auth   = sessionStorage.getItem('vv_auth');
   const perfil = sessionStorage.getItem('vv_perfil');
-  // Debug temporário
-  console.log('SSO check:', auth, perfil);
-  document.title = 'SSO:' + auth + '|' + perfil;
   if (auth !== 'ok' || !perfil) return false;
-  const perfilProm = (perfil === 'gestor') ? 'gestor' : 'nicolle';
-  console.log('Fazendo login como:', perfilProm);
-  entrar(perfilProm);
+  entrar(perfil === 'gestor' ? 'gestor' : 'nicolle');
   return true;
 }
 

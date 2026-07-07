@@ -366,7 +366,7 @@ var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 
 var REP = '', CLI_ATUAL = null, PRODS_CLI = [], HIST_CARREGADO = false;
 
-function sair(){sessionStorage.clear();window.location.href='index.html';}
+function sair(){sessionStorage.clear();window.location.href='/';}
 
 function toast(msg){
   var t=document.getElementById('tst'); t.textContent=msg;
@@ -375,7 +375,7 @@ function toast(msg){
 
 function init(){
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
-  if(au!=='ok'||!pf||pf==='gestor'){window.location.href='index.html';return;}
+  if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
   REP=pf;
   document.getElementById('badge').textContent=REP;
   document.getElementById('sub').textContent='Area: '+(AREAS_LABEL_DATA[REP]||'');

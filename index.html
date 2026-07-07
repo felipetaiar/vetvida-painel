@@ -80,13 +80,11 @@ const USUARIOS = {
 
 // URLs dos sistemas (trocar para domínios próprios após configurar DNS)
 const URLS = {
-  gestor:  '/rep',
+  gestor:  '/rep/gestor.html',
   nicolle: '/promotora',
-  rep:     '/rep',
+  rep:     '/rep/rep.html',
 };
-// Nota: após configurar domínios próprios, trocar para:
-// gestor:  'https://rep.vetvidasp.com/'
-// nicolle: 'https://promotora.vetvidasp.com/'
+// promotora.vetvidasp.com/'
 // rep:     'https://rep.vetvidasp.com/'
 
 function fazerLogin() {
@@ -110,7 +108,8 @@ function fazerLogin() {
   sessionStorage.setItem('vv_perfil', perfil);
   sessionStorage.setItem('vv_user', user);
   // Redirecionar para o sistema correto
-  window.location.href = URLS[match.perfil] || URLS.rep;
+  const destino = URLS[match.perfil] || URLS.rep;
+  window.location.href = destino;
 }
 
 function toggleSenha() {

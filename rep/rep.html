@@ -411,6 +411,7 @@ function init(){
   document.getElementById('cr').textContent=CL.filter(function(c){return c.tipo==='reativacao';}).length;
 
   // Botoes de labs
+  if(typeof LABS_LIST==='undefined') var LABS_LIST=['ORGANNACT','LABYES','SYNTEC','DECHRA','HOMEOPET','VANSIL','BIOGENESIS'];
   var btns='';
   LABS_LIST.forEach(function(lab){
     btns+='<button class="lab-btn" onclick="setLab(\''+lab+'\',this)">'+lab+'</button>';

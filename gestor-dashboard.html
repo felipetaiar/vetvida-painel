@@ -201,7 +201,7 @@ function abrirAba(id, btn) {
   if(id==='alertas') renderAlertas();
 }
 
-function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/';}
+function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/?logout=1';}
 
 // ── HOME ───────────────────────────────────────────
 async function renderHome() {

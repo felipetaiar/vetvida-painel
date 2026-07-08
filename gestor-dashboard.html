@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>VetVida — Gestor</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f5f7;min-height:100vh;color:#1f2937;}
+
+/* HEADER */
+.hdr{background:#CC0000;color:white;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.hdr-logo{display:flex;align-items:center;gap:10px;}
+.hdr-logo img{height:32px;border-radius:6px;}
+.hdr-title{font-size:15px;font-weight:700;}
+.hdr-sub{font-size:11px;opacity:.8;}
+.btn-sair{background:rgba(255,255,255,.2);border:none;color:white;padding:5px 10px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;}
+
+/* ABAS */
+.tabs{display:flex;background:white;border-bottom:1px solid #e5e7eb;position:sticky;top:57px;z-index:99;overflow-x:auto;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex:1;min-width:70px;padding:10px 6px;text-align:center;font-size:12px;font-weight:600;color:#6b7280;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;}
+.tab.active{color:#CC0000;border-bottom-color:#CC0000;}
+
+/* CONTEÚDO */
+.screen{display:none;padding:14px;}
+.screen.active{display:block;}
+
+/* CARDS KPI */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.kpi{background:white;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-top:3px solid #e5e7eb;}
+.kpi.red{border-top-color:#CC0000;}
+.kpi.green{border-top-color:#16a34a;}
+.kpi.blue{border-top-color:#2563eb;}
+.kpi.yellow{border-top-color:#d97706;}
+.kpi.pink{border-top-color:#db2777;}
+.kpi-val{font-size:26px;font-weight:700;line-height:1;}
+.kpi-lbl{font-size:11px;color:#6b7280;margin-top:4px;line-height:1.3;}
+.kpi-bar{height:3px;background:#f3f4f6;border-radius:2px;margin-top:8px;}
+.kpi-fill{height:3px;border-radius:2px;}
+
+/* SEÇÕES */
+.sec-title{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6b7280;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.sec{margin-bottom:16px;}
+
+/* ALERTAS */
+.alerta{display:flex;align-items:flex-start;gap:10px;background:white;border-radius:10px;padding:11px 12px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.alerta.vermelho{border-left:3px solid #CC0000;}
+.alerta.amarelo{border-left:3px solid #d97706;}
+.alerta.verde{border-left:3px solid #16a34a;}
+.alerta-icon{font-size:18px;flex-shrink:0;}
+.alerta-titulo{font-size:13px;font-weight:600;}
+.alerta-sub{font-size:11px;color:#6b7280;margin-top:2px;}
+
+/* CARDS ATIVIDADE */
+.ativ-card{background:white;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.ativ-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.ativ-nome{font-size:13px;font-weight:600;}
+.ativ-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;}
+.badge-ok{background:#dcfce7;color:#15803d;}
+.badge-warn{background:#fef3c7;color:#92400e;}
+.badge-err{background:#fee2e2;color:#991b1b;}
+.ativ-meta{font-size:11px;color:#6b7280;line-height:1.5;}
+
+/* REPS TABLE */
+.rep-row{background:white;border-radius:10px;padding:11px 14px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:center;gap:10px;}
+.rep-avatar{width:36px;height:36px;border-radius:50%;background:#CC0000;color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
+.rep-info{flex:1;}
+.rep-nome{font-size:13px;font-weight:600;}
+.rep-area{font-size:11px;color:#6b7280;}
+.rep-stats{text-align:right;}
+.rep-stat-val{font-size:15px;font-weight:700;color:#CC0000;}
+.rep-stat-lbl{font-size:10px;color:#9ca3af;}
+
+/* VISITAS PROMOTORA */
+.vis-card{background:white;border-radius:10px;padding:11px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:3px solid #e5e7eb;}
+.vis-card.lead{border-left-color:#d97706;}
+.vis-nome{font-size:13px;font-weight:600;}
+.vis-meta{font-size:11px;color:#6b7280;margin-top:2px;}
+.vis-resultado{font-size:11px;margin-top:4px;}
+
+/* BI EMBED */
+.bi-wrap{background:white;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.bi-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f3f4f6;}
+.bi-row:last-child{border-bottom:none;}
+.bi-rep{font-size:13px;font-weight:500;}
+.bi-val{font-size:13px;font-weight:700;color:#CC0000;}
+.bi-meta{font-size:11px;color:#9ca3af;}
+
+/* LOADING */
+.loading{text-align:center;padding:30px;color:#9ca3af;font-size:13px;}
+.empty{text-align:center;padding:30px;color:#9ca3af;font-size:13px;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">
+    <img src="/logo.jpg" onerror="this.style.display='none'">
+    <div>
+      <div class="hdr-title">VetVida</div>
+      <div class="hdr-sub">Felipe · Gestor</div>
+    </div>
+  </div>
+  <button class="btn-sair" onclick="sair()">Sair</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="abrirAba('home',this)">🏠 Home</div>
+  <div class="tab" onclick="abrirAba('reps',this)">👥 Reps</div>
+  <div class="tab" onclick="abrirAba('promotora',this)">🌸 Promotora</div>
+  <div class="tab" onclick="abrirAba('bi',this)">📊 BI</div>
+  <div class="tab" onclick="abrirAba('alertas',this)">⚠️ Alertas</div>
+</div>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="kpi-grid" id="kpis-home"><div class="loading">⏳ Carregando...</div></div>
+  <div class="sec">
+    <div class="sec-title">⚠️ Atenção agora</div>
+    <div id="alertas-home"><div class="loading">⏳</div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-title">📅 Atividade recente</div>
+    <div id="atividade-home"><div class="loading">⏳</div></div>
+  </div>
+</div>
+
+<!-- REPS -->
+<div id="screen-reps" class="screen">
+  <div class="sec">
+    <div class="sec-title">📊 Performance do mês</div>
+    <div id="reps-perf"><div class="loading">⏳ Carregando...</div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-title">🔔 Leads abertos</div>
+    <div id="reps-leads"><div class="loading">⏳</div></div>
+  </div>
+</div>
+
+<!-- PROMOTORA -->
+<div id="screen-promotora" class="screen">
+  <div class="kpi-grid" id="kpis-prom"></div>
+  <div class="sec">
+    <div class="sec-title">📍 Visitas recentes</div>
+    <div id="prom-visitas"><div class="loading">⏳ Carregando...</div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-title">🧪 Amostras sem feedback</div>
+    <div id="prom-amostras"><div class="loading">⏳</div></div>
+  </div>
+</div>
+
+<!-- BI -->
+<div id="screen-bi" class="screen">
+  <div class="bi-wrap">
+    <div id="bi-content"><div class="loading">⏳ Carregando...</div></div>
+  </div>
+</div>
+
+<!-- ALERTAS -->
+<div id="screen-alertas" class="screen">
+  <div id="alertas-todos"><div class="loading">⏳ Carregando...</div></div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────
+var SB_PROM_URL = 'https://waiujqbzncemkpznvnct.supabase.co';
+var SB_PROM_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhaXVqcWJ6bmNlbWtwem52bmN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNjgwMjEsImV4cCI6MjA5NDk0NDAyMX0.JYAoQh7Oyauzk_EXeH2NHRSjyYPx-UQNfKDv-0r-eyI';
+var SB_POS_URL  = 'https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_POS_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+var HP = {'apikey':SB_PROM_KEY,'Authorization':'Bearer '+SB_PROM_KEY};
+var HQ = {'apikey':SB_POS_KEY,'Authorization':'Bearer '+SB_POS_KEY};
+
+var TODOS_DADOS = typeof window.TODOS_DADOS_REP !== 'undefined' ? window.TODOS_DADOS_REP : {};
+
+function fmt(v){ return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtD(iso){ var d=new Date(iso); return d.toLocaleDateString('pt-BR'); }
+
+// ── NAVEGAÇÃO ──────────────────────────────────────
+function abrirAba(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('screen-'+id).classList.add('active');
+  if(id==='home') renderHome();
+  if(id==='reps') renderReps();
+  if(id==='promotora') renderPromotora();
+  if(id==='bi') renderBI();
+  if(id==='alertas') renderAlertas();
+}
+
+function sair(){ sessionStorage.clear(); window.location.href='/'; }
+
+// ── HOME ───────────────────────────────────────────
+async function renderHome() {
+  var hoje = new Date();
+  var inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
+
+  // Visitas promotora do mês
+  var rv = await fetch(SB_PROM_URL+'/rest/v1/visitas?select=*&created_at=gte.'+inicioMes+'&order=created_at.desc', {headers:HP});
+  var visitas = await rv.json();
+
+  // Amostras pendentes
+  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status=eq.pendente', {headers:HP});
+  var amostras = await ra.json();
+
+  // Leads abertos
+  var rl = await fetch(SB_POS_URL+'/rest/v1/leads?select=*&status_lead=eq.aberto', {headers:HQ});
+  var leads = await rl.json();
+
+  // Contatos do mês (reps)
+  var rc = await fetch(SB_POS_URL+'/rest/v1/contatos?select=*&data_hora=gte.'+inicioMes, {headers:HQ});
+  var contatos = await rc.json();
+
+  var hoje2 = new Date();
+  var am45 = (amostras||[]).filter(function(a){ return Math.floor((hoje2-new Date(a.created_at))/86400000)>=45; });
+
+  // KPIs
+  document.getElementById('kpis-home').innerHTML =
+    kpiCard('red', (visitas||[]).length, 'Visitas promotora no mês', null) +
+    kpiCard('blue', (leads||[]).length, 'Leads abertos', null) +
+    kpiCard('yellow', am45.length, 'Amostras +45 dias', null) +
+    kpiCard('green', (contatos||[]).length, 'Contatos reps no mês', null);
+
+  // Alertas home
+  var alertas = [];
+  am45.forEach(function(a){
+    var dias = Math.floor((hoje2-new Date(a.created_at))/86400000);
+    alertas.push({tipo:'vermelho', icon:'🧪', titulo:'Amostra sem feedback há '+dias+' dias', sub:a.produto+' · '+a.estabelecimento_nome});
+  });
+  (leads||[]).slice(0,3).forEach(function(l){
+    alertas.push({tipo:'amarelo', icon:'🔔', titulo:'Lead aberto — '+(l.estabelecimento||''), sub:(l.obs||'Aguardando ação')+' · '+fmtD(l.created_at)});
+  });
+
+  if(!alertas.length) {
+    document.getElementById('alertas-home').innerHTML = '<div class="empty">✅ Nenhum alerta no momento</div>';
+  } else {
+    document.getElementById('alertas-home').innerHTML = alertas.map(function(a){
+      return '<div class="alerta '+a.tipo+'"><div class="alerta-icon">'+a.icon+'</div><div><div class="alerta-titulo">'+a.titulo+'</div><div class="alerta-sub">'+a.sub+'</div></div></div>';
+    }).join('');
+  }
+
+  // Atividade recente
+  var recentes = (visitas||[]).slice(0,5);
+  if(!recentes.length) {
+    document.getElementById('atividade-home').innerHTML = '<div class="empty">Nenhuma atividade hoje</div>';
+  } else {
+    document.getElementById('atividade-home').innerHTML = recentes.map(function(v){
+      return '<div class="ativ-card">'+
+        '<div class="ativ-header"><div class="ativ-nome">'+v.estabelecimento+'</div>'+
+        '<span class="ativ-badge '+(v.tem_lead?'badge-warn':'badge-ok')+'">'+
+        (v.tem_lead?'🔔 Lead':'✓ Visita')+'</span></div>'+
+        '<div class="ativ-meta">🌸 Nicolle · '+(v.objetivo||'')+' · '+fmtD(v.created_at)+'</div>'+
+      '</div>';
+    }).join('');
+  }
+}
+
+function kpiCard(cor, val, lbl, pct) {
+  return '<div class="kpi '+cor+'"><div class="kpi-val">'+val+'</div><div class="kpi-lbl">'+lbl+'</div>'+
+    (pct!==null?'<div class="kpi-bar"><div class="kpi-fill" style="width:'+Math.min(100,pct)+'%;background:currentColor"></div></div>':'')+
+  '</div>';
+}
+
+// ── REPS ───────────────────────────────────────────
+async function renderReps() {
+  var hoje = new Date();
+  var inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
+
+  var rc = await fetch(SB_POS_URL+'/rest/v1/contatos?select=rep,cod_cliente&data_hora=gte.'+inicioMes, {headers:HQ});
+  var contatos = await rc.json();
+
+  var rl = await fetch(SB_POS_URL+'/rest/v1/leads?select=*&order=created_at.desc', {headers:HQ});
+  var leads = await rl.json();
+
+  // Agrupar contatos por rep
+  var porRep = {};
+  (contatos||[]).forEach(function(c){
+    if(!porRep[c.rep]) porRep[c.rep] = new Set();
+    porRep[c.rep].add(c.cod_cliente);
+  });
+
+  var reps = ['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
+  var areas = {PAULA:'Guarulhos 1',MAURO:'Zona Leste 1',SUANE:'Zona Leste 2',VANESSA:'Zona Norte 2',LUIZ:'Zona Leste 3',PAULO:'Zona Norte 3',NAYARA:'Alto Tietê 1'};
+
+  document.getElementById('reps-perf').innerHTML = reps.map(function(rep){
+    var conts = (porRep[rep]||new Set()).size;
+    var cor = conts >= 20 ? 'badge-ok' : conts >= 10 ? 'badge-warn' : 'badge-err';
+    return '<div class="rep-row">'+
+      '<div class="rep-avatar">'+rep[0]+'</div>'+
+      '<div class="rep-info"><div class="rep-nome">'+rep+'</div><div class="rep-area">'+areas[rep]+'</div></div>'+
+      '<div class="rep-stats">'+
+        '<div class="rep-stat-val">'+conts+'</div>'+
+        '<div class="rep-stat-lbl">contatados</div>'+
+        '<span class="ativ-badge '+cor+'" style="font-size:9px;">'+
+        (conts>=20?'Ótimo':conts>=10?'Regular':'Baixo')+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  // Leads por rep
+  var leadsAbertos = (leads||[]).filter(function(l){ return l.status_lead==='aberto'; });
+  if(!leadsAbertos.length) {
+    document.getElementById('reps-leads').innerHTML = '<div class="empty">Nenhum lead aberto</div>';
+  } else {
+    document.getElementById('reps-leads').innerHTML = leadsAbertos.map(function(l){
+      return '<div class="ativ-card">'+
+        '<div class="ativ-header">'+
+          '<div class="ativ-nome">'+(l.estabelecimento||'')+'</div>'+
+          '<span class="ativ-badge badge-warn">🔔 Aberto</span>'+
+        '</div>'+
+        '<div class="ativ-meta">Rep: '+(l.rep_responsavel||'—')+' · '+fmtD(l.created_at)+(l.obs?' · '+l.obs:'')+'</div>'+
+      '</div>';
+    }).join('');
+  }
+}
+
+// ── PROMOTORA ──────────────────────────────────────
+async function renderPromotora() {
+  var hoje = new Date();
+  var inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
+
+  var rv = await fetch(SB_PROM_URL+'/rest/v1/visitas?select=*&created_at=gte.'+inicioMes+'&order=created_at.desc', {headers:HP});
+  var visitas = await rv.json();
+
+  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&order=created_at.desc', {headers:HP});
+  var amostras = await ra.json();
+
+  var leads = (visitas||[]).filter(function(v){ return v.tem_lead; }).length;
+  var amPend = (amostras||[]).filter(function(a){ return a.status==='pendente'; }).length;
+
+  document.getElementById('kpis-prom').innerHTML =
+    kpiCard('pink', (visitas||[]).length, 'Visitas no mês', null) +
+    kpiCard('yellow', leads, 'Leads gerados', null) +
+    kpiCard('blue', (amostras||[]).length, 'Amostras deixadas', null) +
+    kpiCard('red', amPend, 'Sem feedback', null);
+
+  // Visitas recentes
+  document.getElementById('prom-visitas').innerHTML = (visitas||[]).slice(0,10).map(function(v){
+    return '<div class="vis-card '+(v.tem_lead?'lead':'')+'">'+
+      '<div class="vis-nome">'+v.estabelecimento+(v.tem_lead?' 🔔':'')+'</div>'+
+      '<div class="vis-meta">'+(v.objetivo||'')+' · '+(v.cidade||'')+' · '+fmtD(v.created_at)+'</div>'+
+      '<div class="vis-resultado" style="color:#374151;">'+(v.resultado||'')+(v.obs?' — '+v.obs:'')+'</div>'+
+    '</div>';
+  }).join('') || '<div class="empty">Nenhuma visita no mês</div>';
+
+  // Amostras sem feedback
+  var pendentes = (amostras||[]).filter(function(a){ return a.status==='pendente'; });
+  document.getElementById('prom-amostras').innerHTML = pendentes.map(function(a){
+    var dias = Math.floor((hoje-new Date(a.created_at))/86400000);
+    var urgente = dias >= 45;
+    return '<div class="alerta '+(urgente?'vermelho':'amarelo')+'">'+
+      '<div class="alerta-icon">🧪</div>'+
+      '<div><div class="alerta-titulo">'+a.produto+' · '+a.quantidade+'un</div>'+
+      '<div class="alerta-sub">'+a.estabelecimento_nome+' · '+dias+' dias'+(a.contato_nome?' · '+a.contato_nome:'')+'</div></div>'+
+    '</div>';
+  }).join('') || '<div class="empty">✅ Todas amostras com feedback</div>';
+}
+
+// ── BI ─────────────────────────────────────────────
+async function renderBI() {
+  var hoje = new Date();
+  var inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
+
+  // Usar contatos como proxy de atividade por rep
+  var rc = await fetch(SB_POS_URL+'/rest/v1/contatos?select=rep,cod_cliente&data_hora=gte.'+inicioMes, {headers:HQ});
+  var contatos = await rc.json();
+
+  var rl = await fetch(SB_POS_URL+'/rest/v1/leads?select=rep_responsavel,status_lead', {headers:HQ});
+  var leads = await rl.json();
+
+  var reps = ['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
+  var porRep = {};
+  (contatos||[]).forEach(function(c){ if(!porRep[c.rep]) porRep[c.rep]=new Set(); porRep[c.rep].add(c.cod_cliente); });
+  var leadsPorRep = {};
+  (leads||[]).forEach(function(l){ if(l.rep_responsavel) { if(!leadsPorRep[l.rep_responsavel]) leadsPorRep[l.rep_responsavel]=0; if(l.status_lead==='aberto') leadsPorRep[l.rep_responsavel]++; } });
+
+  document.getElementById('bi-content').innerHTML =
+    '<div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Atividade do mês por rep</div>'+
+    reps.map(function(rep){
+      var conts = (porRep[rep]||new Set()).size;
+      var leadsA = leadsPorRep[rep]||0;
+      var pct = Math.min(100, Math.round(conts/50*100));
+      return '<div class="bi-row">'+
+        '<div><div class="bi-rep">'+rep+'</div>'+
+        '<div class="bi-meta">'+conts+' contatados · '+leadsA+' leads abertos</div></div>'+
+        '<div style="text-align:right;">'+
+          '<div style="background:#f3f4f6;border-radius:4px;height:6px;width:80px;margin-bottom:3px;">'+
+            '<div style="background:#CC0000;height:6px;border-radius:4px;width:'+pct+'%;"></div></div>'+
+          '<div style="font-size:10px;color:#9ca3af;">'+pct+'% meta</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+}
+
+// ── ALERTAS ────────────────────────────────────────
+async function renderAlertas() {
+  var hoje = new Date();
+  var alertas = [];
+
+  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status=eq.pendente', {headers:HP});
+  var amostras = await ra.json();
+  (amostras||[]).forEach(function(a){
+    var dias = Math.floor((hoje-new Date(a.created_at))/86400000);
+    if(dias>=45) alertas.push({tipo:'vermelho',icon:'🧪',titulo:'Amostra +45 dias sem feedback',sub:a.produto+' · '+a.estabelecimento_nome+' · '+dias+' dias'});
+    else if(dias>=30) alertas.push({tipo:'amarelo',icon:'🧪',titulo:'Amostra sem feedback — '+a.produto,sub:a.estabelecimento_nome+' · '+dias+' dias'});
+  });
+
+  var rl = await fetch(SB_POS_URL+'/rest/v1/leads?select=*&status_lead=eq.aberto&order=created_at.asc', {headers:HQ});
+  var leads = await rl.json();
+  (leads||[]).forEach(function(l){
+    var dias = Math.floor((hoje-new Date(l.created_at))/86400000);
+    if(dias>=7) alertas.push({tipo:'vermelho',icon:'🔔',titulo:'Lead aberto há '+dias+' dias — '+(l.estabelecimento||''),sub:'Rep: '+(l.rep_responsavel||'—')});
+    else alertas.push({tipo:'amarelo',icon:'🔔',titulo:'Lead aberto — '+(l.estabelecimento||''),sub:'Rep: '+(l.rep_responsavel||'—')+' · '+fmtD(l.created_at)});
+  });
+
+  var rc = await fetch(SB_POS_URL+'/rest/v1/contatos?select=rep&data_hora=gte.'+new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-3).toISOString(), {headers:HQ});
+  var conts = await rc.json();
+  var repsAtivos = new Set((conts||[]).map(function(c){return c.rep;}));
+  ['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'].forEach(function(rep){
+    if(!repsAtivos.has(rep)) alertas.push({tipo:'amarelo',icon:'👤',titulo:rep+' sem contatos nos últimos 3 dias',sub:'Verificar atividade'});
+  });
+
+  if(!alertas.length) {
+    document.getElementById('alertas-todos').innerHTML = '<div class="empty" style="padding:60px;">✅ Nenhum alerta no momento</div>';
+  } else {
+    document.getElementById('alertas-todos').innerHTML = alertas.map(function(a){
+      return '<div class="alerta '+a.tipo+'"><div class="alerta-icon">'+a.icon+'</div><div><div class="alerta-titulo">'+a.titulo+'</div><div class="alerta-sub">'+a.sub+'</div></div></div>';
+    }).join('');
+  }
+}
+
+// ── INIT ───────────────────────────────────────────
+window.addEventListener('load', function() {
+  var auth = sessionStorage.getItem('vv_auth');
+  var perfil = sessionStorage.getItem('vv_perfil');
+  if(auth !== 'ok' || perfil !== 'gestor') {
+    window.location.href = '/';
+    return;
+  }
+  renderHome();
+});
+</script>
+</body>
+</html>

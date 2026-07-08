@@ -53,6 +53,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:2px;">
+    <input type="checkbox" id="lembrar" style="width:16px;height:16px;cursor:pointer;accent-color:#CC0000;">
+    <label for="lembrar" style="font-size:13px;color:#374151;cursor:pointer;">Lembrar meu acesso</label>
+  </div>
   <button class="btn-login" onclick="fazerLogin()">Entrar</button>
   <div class="erro" id="erro">Usuário ou senha incorretos.</div>
 
@@ -102,12 +106,27 @@ function fazerLogin() {
 
   erro.style.display = 'none';
 
-  // Salvar sessão — mesmo domínio, sessionStorage funciona
   const perfil = match.perfil === 'rep' ? match.rep : match.perfil;
+  const lembrar = document.getElementById('lembrar').checked;
+
+  // Sempre salvar em sessionStorage (sessão atual)
   sessionStorage.setItem('vv_auth', 'ok');
   sessionStorage.setItem('vv_perfil', perfil);
   sessionStorage.setItem('vv_user', user);
-  // Redirecionar para o sistema correto
+
+  // Se marcou "lembrar", salvar também em localStorage (persiste entre sessões)
+  if (lembrar) {
+    localStorage.setItem('vv_auth', 'ok');
+    localStorage.setItem('vv_perfil', perfil);
+    localStorage.setItem('vv_user', user);
+    localStorage.setItem('vv_lembrar', '1');
+  } else {
+    localStorage.removeItem('vv_auth');
+    localStorage.removeItem('vv_perfil');
+    localStorage.removeItem('vv_user');
+    localStorage.removeItem('vv_lembrar');
+  }
+
   const destino = URLS[match.perfil] || URLS.rep;
   window.location.href = destino;
 }
@@ -124,9 +143,34 @@ function toggleSenha() {
   }
 }
 
-// Focar no campo usuário ao carregar
 window.addEventListener('load', function() {
-  document.getElementById('login-user').focus();
+  // Verificar se há sessão salva no localStorage
+  var lsAuth   = localStorage.getItem('vv_auth');
+  var lsPerfil = localStorage.getItem('vv_perfil');
+  var lsUser   = localStorage.getItem('vv_user');
+  var lsLembrar = localStorage.getItem('vv_lembrar');
+
+  if (lsAuth === 'ok' && lsPerfil) {
+    // Restaurar sessão e redirecionar direto
+    sessionStorage.setItem('vv_auth', lsAuth);
+    sessionStorage.setItem('vv_perfil', lsPerfil);
+    sessionStorage.setItem('vv_user', lsUser || '');
+    const perfMatch = Object.entries(USUARIOS).find(function(e){ return e[1].perfil === 'rep' ? e[0] === lsUser : e[1].perfil === lsPerfil; });
+    if (perfMatch) {
+      const m = perfMatch[1];
+      window.location.href = URLS[m.perfil] || URLS.rep;
+      return;
+    }
+  }
+
+  // Preencher usuário se lembrado
+  if (lsUser && lsLembrar) {
+    document.getElementById('login-user').value = lsUser;
+    document.getElementById('lembrar').checked = true;
+    document.getElementById('login-pass').focus();
+  } else {
+    document.getElementById('login-user').focus();
+  }
 });
 </script>
 </body>

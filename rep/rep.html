@@ -407,7 +407,7 @@ var STATUS_CORES={
   'Cliente inativo':{bg:'#D9D9D9',txt:'#333'}
 };
 
-function sair(){sessionStorage.clear();window.location.href='/';}
+function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/';}
 function fmtFat(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 function init(){

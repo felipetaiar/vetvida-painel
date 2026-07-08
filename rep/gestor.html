@@ -620,7 +620,7 @@ const TD={"PAULA":[{"cod": 1634, "nome": "PILLE PET", "segmento": "PET SHOP", "m
 let CONTATOS_GLOBAL={};
 let MODAL_REP='', MODAL_FILTRO='todos';
 
-function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/';}
+function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/?logout=1';}
 
 async function carregar(){
   if(sessionStorage.getItem('vv_auth')!=='ok'||sessionStorage.getItem('vv_perfil')!=='gestor'){

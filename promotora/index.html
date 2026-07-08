@@ -1333,6 +1333,10 @@ async function carregarDados() {
 function sair() {
   PERFIL = null;
   sessionStorage.clear();
+  localStorage.removeItem('vv_auth');
+  localStorage.removeItem('vv_perfil');
+  localStorage.removeItem('vv_user');
+  localStorage.removeItem('vv_lembrar');
   window.location.href = '/';
 }
 

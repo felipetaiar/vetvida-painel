@@ -1,17 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<script>
-// Restaurar sessão do localStorage se sessionStorage estiver vazio
-(function() {
-  if (!sessionStorage.getItem('vv_auth') && localStorage.getItem('vv_auth') === 'ok') {
-    sessionStorage.setItem('vv_auth',   localStorage.getItem('vv_auth'));
-    sessionStorage.setItem('vv_perfil', localStorage.getItem('vv_perfil'));
-    sessionStorage.setItem('vv_user',   localStorage.getItem('vv_user') || '');
-  }
-})();
-</script>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>VetVida — Reativação Comercial</title>
@@ -407,7 +396,7 @@ var STATUS_CORES={
   'Cliente inativo':{bg:'#D9D9D9',txt:'#333'}
 };
 
-function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/?logout=1';}
+function sair(){sessionStorage.clear();window.location.href='/';}
 function fmtFat(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 function init(){

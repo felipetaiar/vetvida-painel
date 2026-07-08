@@ -362,7 +362,7 @@ var MAPA_REP={'PAULO':'ZONA NORTE 3','VANESSA':'ZONA NORTE 2','PAULA':'GUARULHOS
               'MAURO':'ZONA LESTE 1','SUANE':'ZONA LESTE 2','LUIZ':'ZONA LESTE 3','NAYARA':'ALTO TIETE 1'};
 var REPS_ORDEM=['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
 
-function sair(){sessionStorage.clear();window.location.href='index.html';}
+function sair(){sessionStorage.clear();window.location.href='/';}
 function toast(msg,dur){
   var t=document.getElementById('tst');t.textContent=msg;t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},dur||2500);
@@ -382,7 +382,7 @@ function getDiaSemanaAtual(){
 // ── INIT ─────────────────────────────────────────────────
 function init(){
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
-  if(au!=='ok'||!pf){window.location.href='index.html';return;}
+  if(au!=='ok'||!pf){window.location.href='/';return;}
   REP=pf; IS_GESTOR=(pf==='gestor');
   document.getElementById('badge').textContent=IS_GESTOR?'Felipe':REP;
   document.getElementById('sub').textContent=IS_GESTOR?'Visão Consolidada':'Area: '+(AREAS_LABEL_DATA&&AREAS_LABEL_DATA[REP]?AREAS_LABEL_DATA[REP]:REP);

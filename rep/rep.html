@@ -420,12 +420,12 @@ var STATUS_CORES={
   'Cliente inativo':{bg:'#D9D9D9',txt:'#333'}
 };
 
-function sair(){sessionStorage.clear();window.location.href='index.html';}
+function sair(){sessionStorage.clear();window.location.href='/';}
 function fmtFat(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 function init(){
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
-  if(au!=='ok'||!pf||pf==='gestor'){window.location.href='index.html';return;}
+  if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
   REP=pf; CL=TODOS_DADOS[REP]||[]; TG=CL.length;
   document.getElementById('badge').textContent=REP;
   var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').textContent='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+' - Area: '+(AREAS_LABEL_DATA[REP]||'');

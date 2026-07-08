@@ -400,6 +400,7 @@ function sair(){sessionStorage.clear();window.location.href='/';}
 function fmtFat(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 function init(){
+  if(typeof LABS_LIST==='undefined') LABS_LIST=['ORGANNACT','LABYES','SYNTEC','DECHRA','HOMEOPET','VANSIL','BIOGENESIS'];
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
   if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
   REP=pf; CL=TODOS_DADOS[REP]||[]; TG=CL.length;
@@ -733,6 +734,5 @@ function irEstoque(cod, nomeEnc, munEnc){
   sessionStorage.setItem('estoque_mun', decodeURIComponent(munEnc));
   window.location.href = 'estoque.html';
 }
-if(typeof LABS_LIST==='undefined') LABS_LIST=['ORGANNACT','LABYES','SYNTEC','DECHRA','HOMEOPET','VANSIL','BIOGENESIS'];
 init();
 </script></body></html>

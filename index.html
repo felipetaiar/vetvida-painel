@@ -144,6 +144,19 @@ function toggleSenha() {
 }
 
 window.addEventListener('load', function() {
+  // Se veio de logout, limpar tudo e mostrar login
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('logout') === '1') {
+    sessionStorage.clear();
+    localStorage.removeItem('vv_auth');
+    localStorage.removeItem('vv_perfil');
+    localStorage.removeItem('vv_user');
+    localStorage.removeItem('vv_lembrar');
+    window.history.replaceState({}, '', '/');
+    document.getElementById('login-user').focus();
+    return;
+  }
+
   // Verificar se há sessão salva no localStorage
   var lsAuth   = localStorage.getItem('vv_auth');
   var lsPerfil = localStorage.getItem('vv_perfil');
@@ -155,15 +168,16 @@ window.addEventListener('load', function() {
     sessionStorage.setItem('vv_auth', lsAuth);
     sessionStorage.setItem('vv_perfil', lsPerfil);
     sessionStorage.setItem('vv_user', lsUser || '');
-    const perfMatch = Object.entries(USUARIOS).find(function(e){ return e[1].perfil === 'rep' ? e[0] === lsUser : e[1].perfil === lsPerfil; });
+    const perfMatch = Object.entries(USUARIOS).find(function(e){
+      return e[1].perfil === 'rep' ? e[0] === lsUser : e[1].perfil === lsPerfil;
+    });
     if (perfMatch) {
-      const m = perfMatch[1];
-      window.location.href = URLS[m.perfil] || URLS.rep;
+      window.location.href = URLS[perfMatch[1].perfil] || URLS.rep;
       return;
     }
   }
 
-  // Preencher usuário se lembrado
+  // Preencher usuário se lembrado mas sem auto-login
   if (lsUser && lsLembrar) {
     document.getElementById('login-user').value = lsUser;
     document.getElementById('lembrar').checked = true;

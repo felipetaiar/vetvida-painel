@@ -420,12 +420,12 @@ var STATUS_CORES={
 };
 
 function sair(){sessionStorage.clear();window.location.href='/';}
-function fmtFat(v){var n=parseFloat(v)||0;return 'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtFat(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 function init(){
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
   if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
-  REP=pf; CL=(TODOS_DADOS[REP]||[]).slice(); TG=CL.length;
+  REP=pf; CL=TODOS_DADOS[REP]||[]; TG=CL.length;
   document.getElementById('badge').textContent=REP;
   var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').textContent='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+' - Area: '+(AREAS_LABEL_DATA[REP]||'');
   document.getElementById('ct').textContent=TG;
@@ -841,15 +841,8 @@ function restManuais(){
   sv.forEach(function(cod){
     if(!_codsCL.has(cod)){
       var f=null;
-      // Buscar em TODOS_DADOS (ativos)
       Object.values(TODOS_DADOS||{}).forEach(function(a){if(!f)f=(a||[]).find(function(c){return c.cod===cod;});});
-      // Se não achou, buscar em BASE_INATIVOS
-      if(!f && typeof BASE_INATIVOS!=='undefined'){
-        Object.values(BASE_INATIVOS||{}).forEach(function(a){if(!f)f=(a||[]).find(function(c){return c.cod===cod;});});
-      }
-      var base={cod:cod,nome:'Cliente '+cod,segmento:'',municipio:'',tipo:'manual',status_label:'Manual',fat:0,fone:'',prods:[],labs:[],hist:{}};
-      if(f) CL.push(Object.assign({},base,f,{tipo:'manual',status_label:'Manual',fat:f.fat||0,prods:f.prods||[],labs:f.labs||[],hist:f.hist||{}}));
-      else CL.push(base);
+      CL.push(f||{cod:cod,nome:'Cliente '+cod,segmento:'',municipio:'',tipo:'manual',status_label:'Manual',fat:0,fone:'',prods:[],labs:[],hist:{}});
     }
   });
   TG=CL.length;
@@ -934,9 +927,8 @@ async function verPromotor(nomeCli){
 }
 
 carregarMesAnt();
+restManuais();
 init();
-// restManuais roda após todos os scripts (dados.js) carregarem
-window.addEventListener('load', function(){ restManuais(); rnd(); pg(); });
 </script>
 <!-- Modal: add cliente -->
 <div class="mfvv" id="m-ac">

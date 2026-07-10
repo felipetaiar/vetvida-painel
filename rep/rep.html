@@ -837,6 +837,7 @@ function addCLI(cod){
 }
 function restManuais(){
   var sv=JSON.parse(localStorage.getItem('vv_m_'+REP)||'[]');
+  if(!REP) return;
   var _codsCL=new Set(CL.map(function(c){return c.cod;}));
   sv.forEach(function(cod){
     if(!_codsCL.has(cod)){
@@ -927,8 +928,8 @@ async function verPromotor(nomeCli){
 }
 
 carregarMesAnt();
-restManuais();
 init();
+restManuais();
 </script>
 <!-- Modal: add cliente -->
 <div class="mfvv" id="m-ac">

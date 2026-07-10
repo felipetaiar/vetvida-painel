@@ -934,7 +934,8 @@ async function verPromotor(nomeCli){
 
 carregarMesAnt();
 init();
-restManuais();
+// restManuais roda após todos os scripts (dados.js) carregarem
+window.addEventListener('load', function(){ restManuais(); rnd(); pg(); });
 </script>
 <!-- Modal: add cliente -->
 <div class="mfvv" id="m-ac">

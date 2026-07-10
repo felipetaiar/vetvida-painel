@@ -221,7 +221,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   <img src="logo.jpg" alt="Vet Vida" onerror="this.style.display='none'">
   <div class="hdiv"></div>
   <div class="hi"><h1>Reativacao via WhatsApp</h1><p id="sub">Carregando...</p></div>
-  <div class="hr"><a href="estoque.html" style="background:#1F4E79;color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:bold;text-decoration:none">📦 Estoque</a><a href="roteiro.html" style="background:#375623;color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:bold;text-decoration:none">🗓 Roteiro</a><button id="btn-hist-main" class="btn-hist" onclick="toggleHist()">📅 Mês ant.</button> <button class="btn-prom-h" onclick="abrirTelaPromo()">🌸</button> <button style="background:#CC0000;color:white;padding:4px 9px;border-radius:14px;font-size:11px;font-weight:700;border:none;cursor:pointer;" onclick="abrirAC()">+ Cliente</button> <span class="hrep" id="badge">...</span><button class="bs" onclick="sair()">Sair</button></div>
+  <div class="hr"><a href="estoque.html" style="background:#1F4E79;color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:bold;text-decoration:none">📦 Estoque</a><a href="roteiro.html" style="background:#375623;color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:bold;text-decoration:none">🗓 Roteiro</a><button class="btn-prom-h" onclick="abrirTelaPromo()">🌸</button> <button style="background:#CC0000;color:white;padding:4px 9px;border-radius:14px;font-size:11px;font-weight:700;border:none;cursor:pointer;" onclick="abrirAC()">+ Cliente</button> <span class="hrep" id="badge">...</span><button class="bs" onclick="sair()">Sair</button></div>
 </div>
 <div class="stats">
   <div class="st d"><div class="sn" id="ct">-</div><div class="sl">Para contatar</div></div>
@@ -793,6 +793,11 @@ async function carregarMesAnt(){
 function abrirAC(){
   var cp=new Set(CL.map(function(c){return c.cod;}));
   var base=(typeof BASE_INATIVOS!=='undefined'&&BASE_INATIVOS[REP])||[];
+  document.getElementById('m-ac').classList.add('on');
+  if(!base.length){
+    document.getElementById('lista-ac').innerHTML='<p style="text-align:center;padding:30px;color:#9ca3af;font-size:13px;">Base de inativos não disponível.<br>Rode o gerar_painel.py para gerar.</p>';
+    return;
+  }
   var todos=base.filter(function(c){return !cp.has(c.cod);});
   window._BAC=todos; window._BAC_MAP={};
   todos.forEach(function(c){window._BAC_MAP[c.cod]=c;});
@@ -832,8 +837,9 @@ function addCLI(cod){
 }
 function restManuais(){
   var sv=JSON.parse(localStorage.getItem('vv_m_'+REP)||'[]');
+  var _codsCL=new Set(CL.map(function(c){return c.cod;}));
   sv.forEach(function(cod){
-    if(!CL.find(function(c){return c.cod===cod;})){
+    if(!_codsCL.has(cod)){
       var f=null;
       Object.values(TODOS_DADOS||{}).forEach(function(a){if(!f)f=(a||[]).find(function(c){return c.cod===cod;});});
       CL.push(f||{cod:cod,nome:'Cliente '+cod,segmento:'',municipio:'',tipo:'manual',status_label:'Manual',fat:0,fone:'',prods:[],labs:[],hist:{}});
@@ -848,7 +854,11 @@ async function _carregarPromo(){
   try{
     var hp={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhaXVqcWJ6bmNlbWtwem52bmN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNjgwMjEsImV4cCI6MjA5NDk0NDAyMX0.JYAoQh7Oyauzk_EXeH2NHRSjyYPx-UQNfKDv-0r-eyI','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhaXVqcWJ6bmNlbWtwem52bmN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNjgwMjEsImV4cCI6MjA5NDk0NDAyMX0.JYAoQh7Oyauzk_EXeH2NHRSjyYPx-UQNfKDv-0r-eyI'};
     var hq={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4'};
-    var rv=await fetch('https://waiujqbzncemkpznvnct.supabase.co/rest/v1/visitas?select=*&order=created_at.desc&limit=500',{headers:hp});
+    // Pegar área do rep logado (ex: "GUARULHOS 1")
+    var areaRep = (AREAS_LABEL_DATA[REP]||'').toUpperCase();
+    var urlVisitas = 'https://waiujqbzncemkpznvnct.supabase.co/rest/v1/visitas?select=*&order=created_at.desc&limit=500';
+    if(areaRep) urlVisitas += '&area=eq.' + encodeURIComponent(areaRep);
+    var rv=await fetch(urlVisitas,{headers:hp});
     _VP=await rv.json(); if(!Array.isArray(_VP))_VP=[];
     var ra=await fetch('https://waiujqbzncemkpznvnct.supabase.co/rest/v1/amostras?select=*&order=created_at.desc',{headers:hp});
     _AP=await ra.json(); if(!Array.isArray(_AP))_AP=[];

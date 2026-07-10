@@ -420,7 +420,7 @@ var STATUS_CORES={
 };
 
 function sair(){sessionStorage.clear();window.location.href='/';}
-function fmtFat(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtFat(v){var n=parseFloat(v)||0;return 'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 function init(){
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');

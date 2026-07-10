@@ -420,7 +420,7 @@ var STATUS_CORES={
 };
 
 function sair(){sessionStorage.clear();window.location.href='/';}
-function fmtFat(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtFat(v){var n=parseFloat(v)||0;return 'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 function init(){
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
@@ -842,7 +842,12 @@ function restManuais(){
     if(!_codsCL.has(cod)){
       var f=null;
       Object.values(TODOS_DADOS||{}).forEach(function(a){if(!f)f=(a||[]).find(function(c){return c.cod===cod;});});
-      CL.push(f||{cod:cod,nome:'Cliente '+cod,segmento:'',municipio:'',tipo:'manual',status_label:'Manual',fat:0,fone:'',prods:[],labs:[],hist:{}});
+      if(!f && typeof BASE_INATIVOS!=='undefined'){
+        Object.values(BASE_INATIVOS||{}).forEach(function(a){if(!f)f=(a||[]).find(function(c){return c.cod===cod;});});
+      }
+      var _b={cod:cod,nome:'Cliente '+cod,segmento:'',municipio:'',tipo:'manual',status_label:'Manual',fat:0,fone:'',prods:[],labs:[],hist:{}};
+      if(f) CL.push({cod:f.cod||cod,nome:f.nome||_b.nome,segmento:f.segmento||'',municipio:f.municipio||'',tipo:'manual',status_label:'Manual',fat:parseFloat(f.fat)||0,fone:f.fone||'',prods:f.prods||[],labs:f.labs||[],hist:f.hist||{}});
+      else CL.push(_b);
     }
   });
   TG=CL.length;
@@ -927,8 +932,8 @@ async function verPromotor(nomeCli){
 }
 
 carregarMesAnt();
-restManuais();
 init();
+restManuais();
 </script>
 <!-- Modal: add cliente -->
 <div class="mfvv" id="m-ac">

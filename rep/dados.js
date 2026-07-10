@@ -5,5 +5,3 @@ var MES_REF = 7;
 var ANO_REF = 2026;
 var MES_NOME = "Julho";
 var MES_ANT = "Junho";
-
-var LABS_LIST = ["ORGANNACT","LABYES","SYNTEC","DECHRA","HOMEOPET","VANSIL","BIOGENESIS"];

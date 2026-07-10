@@ -425,7 +425,7 @@ function fmtFat(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:
 function init(){
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
   if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
-  REP=pf; CL=TODOS_DADOS[REP]||[]; TG=CL.length;
+  REP=pf; CL=(TODOS_DADOS[REP]||[]).slice(); TG=CL.length;
   document.getElementById('badge').textContent=REP;
   var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').textContent='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+' - Area: '+(AREAS_LABEL_DATA[REP]||'');
   document.getElementById('ct').textContent=TG;
@@ -927,8 +927,8 @@ async function verPromotor(nomeCli){
 }
 
 carregarMesAnt();
-restManuais();
 init();
+restManuais();
 </script>
 <!-- Modal: add cliente -->
 <div class="mfvv" id="m-ac">

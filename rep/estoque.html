@@ -542,6 +542,34 @@ function renderProdutos(cod){
        '</div>';
   });
   document.getElementById('prod-lista').innerHTML=h;
+  // Restaurar produtos manuais salvos para este cliente
+  var _chave = 'vv_prods_manuais_' + CLI_ATUAL;
+  var _salvos = JSON.parse(localStorage.getItem(_chave)||'[]');
+  var _nomes = new Set(PRODS_CLI.map(function(p){return p.nome;}));
+  var _adicionados = false;
+  _salvos.forEach(function(p){
+    if(!_nomes.has(p.nome)){
+      PRODS_CLI.push({nome:p.nome, lab:p.lab, qtd:0, totalQtde:0, nPedidos:0, mediaMensal:0, manual:true});
+      _adicionados = true;
+    }
+  });
+  if(_adicionados){
+    var h2='';
+    PRODS_CLI.forEach(function(p,i){
+      var labTag=p.lab&&p.lab!=='OUTRO'?'<span class="prod-lab">'+p.lab+'</span>':'';
+      var mediaStr=p.mediaMensal>0?'Média: '+p.mediaMensal+' un/compra':(p.manual?'Produto novo':'Parado');
+      h2+='<div class="prod-item">'+
+         '<div class="prod-nome">'+p.nome+labTag+'<div class="prod-media">'+mediaStr+'</div></div>'+
+         '<div class="qtde-wrap">'+
+         '<button class="qtde-btn" onclick="ajustarQtde('+i+',-1)">−</button>'+
+         '<input class="qtde-input" id="qtde-'+i+'" type="number" value="0" min="0" oninput="calcDias('+i+')">'+
+         '<button class="qtde-btn" onclick="ajustarQtde('+i+',1)">+</button>'+
+         '</div>'+
+         '<div id="dias-'+i+'" class="dias-badge" style="min-width:60px"></div>'+
+         '</div>';
+    });
+    document.getElementById('prod-lista').innerHTML=h2;
+  }
 }
 
 function ajustarQtde(i, delta){
@@ -965,6 +993,10 @@ function adicionarProdVV(cod){
        '</div>';
   });
   document.getElementById('prod-lista').innerHTML=h;
+  // Salvar produtos manuais no localStorage por cliente
+  var chave = 'vv_prods_manuais_' + CLI_ATUAL;
+  var salvos = PRODS_CLI.filter(function(p){ return p.manual; }).map(function(p){ return {nome:p.nome, lab:p.lab}; });
+  localStorage.setItem(chave, JSON.stringify(salvos));
   toast('✓ '+prod.nome+' adicionado!');
 }
 function filtrarProdutosVV(){

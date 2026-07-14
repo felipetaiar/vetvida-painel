@@ -313,7 +313,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
     </div>
     <div class="pc-body">
       <div class="pc-secao">
-        <div class="pc-secao-titulo">Produtos em estoque agora</div>
+        <div class="pc-secao-titulo" style="display:flex;justify-content:space-between;align-items:center;">Produtos em estoque agora<button onclick="abrirAddProd()" style="background:#1F4E79;color:white;border:none;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Produto</button></div>
         <div id="prod-lista"><div class="empty">Carregando produtos...</div></div>
       </div>
       <div class="obs-wrap" style="margin-bottom:12px">
@@ -924,4 +924,65 @@ function abrirJanelaPdf(html, nome){
 }
 
 init();
-</script></body></html>
+</script>
+<!-- Modal: adicionar produto -->
+<div id="m-add-prod" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:flex-end;justify-content:center;">
+  <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:18px 14px;max-height:88vh;overflow-y:auto;">
+    <div style="width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 14px;"></div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px;">+ Adicionar produto</div>
+    <p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Busque na lista oficial de produtos VetVida.</p>
+    <input id="ap-busca" type="text" placeholder="🔍 Nome, laboratório ou categoria..." oninput="filtrarProdutosVV()" style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:13px;margin-bottom:10px;outline:none;">
+    <div id="ap-lista" style="max-height:55vh;overflow-y:auto;"></div>
+    <button onclick="document.getElementById('m-add-prod').style.display='none'" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Fechar</button>
+  </div>
+</div>
+
+<script>
+function abrirAddProd(){
+  document.getElementById('ap-busca').value='';
+  filtrarProdutosVV();
+  document.getElementById('m-add-prod').style.display='flex';
+}
+function adicionarProdVV(cod){
+  var prod=(typeof PRODUTOS_VV!=='undefined'?PRODUTOS_VV:[]).find(function(p){return p.cod===cod;});
+  if(!prod)return;
+  if(PRODS_CLI.find(function(x){return x.nome===prod.nome;})){toast('Produto já está na lista');return;}
+  PRODS_CLI.push({nome:prod.nome,lab:prod.lab,qtd:0,totalQtde:0,nPedidos:0,mediaMensal:0,manual:true});
+  document.getElementById('m-add-prod').style.display='none';
+  // Re-renderizar lista de produtos (mesmo padrão da renderização original)
+  var h='';
+  PRODS_CLI.forEach(function(p,i){
+    var labTag=p.lab&&p.lab!=='OUTRO'?'<span class="prod-lab">'+p.lab+'</span>':'';
+    var mediaStr=p.mediaMensal>0?'Média: '+p.mediaMensal+' un/compra':(p.manual?'Produto novo':'Parado');
+    h+='<div class="prod-item">'+
+       '<div class="prod-nome">'+p.nome+labTag+'<div class="prod-media">'+mediaStr+'</div></div>'+
+       '<div class="qtde-wrap">'+
+       '<button class="qtde-btn" onclick="ajustarQtde('+i+',-1)">−</button>'+
+       '<input class="qtde-input" id="qtde-'+i+'" type="number" value="0" min="0" oninput="calcDias('+i+')">'+
+       '<button class="qtde-btn" onclick="ajustarQtde('+i+',1)">+</button>'+
+       '</div>'+
+       '<div id="dias-'+i+'" class="dias-badge" style="min-width:60px"></div>'+
+       '</div>';
+  });
+  document.getElementById('prod-lista').innerHTML=h;
+  toast('✓ '+prod.nome+' adicionado!');
+}
+function filtrarProdutosVV(){
+  var q=document.getElementById('ap-busca').value.toLowerCase();
+  var base=typeof PRODUTOS_VV!=='undefined'?PRODUTOS_VV:[];
+  var lista=base.filter(function(p){return !q||p.nome.toLowerCase().indexOf(q)>=0||p.lab.toLowerCase().indexOf(q)>=0||p.categoria.toLowerCase().indexOf(q)>=0;}).slice(0,60);
+  var el=document.getElementById('ap-lista');
+  if(!lista.length){el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Nenhum produto encontrado.</p>';return;}
+  el.innerHTML=lista.map(function(p){
+    var jatem=PRODS_CLI.find(function(x){return x.nome===p.nome;});
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f3f4f6;">'+
+      '<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+p.nome+'</div>'+
+      '<div style="font-size:11px;color:#9ca3af;">'+p.lab+(p.categoria?' · '+p.categoria:'')+'</div></div>'+
+      (jatem?'<span style="font-size:11px;color:#9ca3af;padding:0 8px;">já adicionado</span>':
+        '<button onclick="adicionarProdVV('+p.cod+')" style="background:#1F4E79;color:white;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Add</button>')+
+    '</div>';
+  }).join('');
+}
+</script>
+<script src="produtos_vv.js" defer></script>
+</body></html>

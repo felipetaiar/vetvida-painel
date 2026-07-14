@@ -542,34 +542,8 @@ function renderProdutos(cod){
        '</div>';
   });
   document.getElementById('prod-lista').innerHTML=h;
-  // Restaurar produtos manuais salvos para este cliente
-  var _chave = 'vv_prods_manuais_' + CLI_ATUAL;
-  var _salvos = JSON.parse(localStorage.getItem(_chave)||'[]');
-  var _nomes = new Set(PRODS_CLI.map(function(p){return p.nome;}));
-  var _adicionados = false;
-  _salvos.forEach(function(p){
-    if(!_nomes.has(p.nome)){
-      PRODS_CLI.push({nome:p.nome, lab:p.lab, qtd:0, totalQtde:0, nPedidos:0, mediaMensal:0, manual:true});
-      _adicionados = true;
-    }
-  });
-  if(_adicionados){
-    var h2='';
-    PRODS_CLI.forEach(function(p,i){
-      var labTag=p.lab&&p.lab!=='OUTRO'?'<span class="prod-lab">'+p.lab+'</span>':'';
-      var mediaStr=p.mediaMensal>0?'Média: '+p.mediaMensal+' un/compra':(p.manual?'Produto novo':'Parado');
-      h2+='<div class="prod-item">'+
-         '<div class="prod-nome">'+p.nome+labTag+'<div class="prod-media">'+mediaStr+'</div></div>'+
-         '<div class="qtde-wrap">'+
-         '<button class="qtde-btn" onclick="ajustarQtde('+i+',-1)">−</button>'+
-         '<input class="qtde-input" id="qtde-'+i+'" type="number" value="0" min="0" oninput="calcDias('+i+')">'+
-         '<button class="qtde-btn" onclick="ajustarQtde('+i+',1)">+</button>'+
-         '</div>'+
-         '<div id="dias-'+i+'" class="dias-badge" style="min-width:60px"></div>'+
-         '</div>';
-    });
-    document.getElementById('prod-lista').innerHTML=h2;
-  }
+  // Carregar produtos manuais do Supabase
+  carregarProdutosManuais();
 }
 
 function ajustarQtde(i, delta){
@@ -993,12 +967,63 @@ function adicionarProdVV(cod){
        '</div>';
   });
   document.getElementById('prod-lista').innerHTML=h;
-  // Salvar produtos manuais no localStorage por cliente
-  var chave = 'vv_prods_manuais_' + CLI_ATUAL;
-  var salvos = PRODS_CLI.filter(function(p){ return p.manual; }).map(function(p){ return {nome:p.nome, lab:p.lab}; });
-  localStorage.setItem(chave, JSON.stringify(salvos));
+  // Salvar produto manual no Supabase
+  salvarProdutoManual(prod.nome, prod.lab);
   toast('✓ '+prod.nome+' adicionado!');
 }
+
+function salvarProdutoManual(nome, lab) {
+  var SB_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+  fetch(SB_URL + '/rest/v1/produtos_manuais_estoque', {
+    method: 'POST',
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=ignore-duplicates'
+    },
+    body: JSON.stringify({cod_cliente: CLI_ATUAL, rep: REP, nome: nome, lab: lab})
+  }).catch(function(e){ console.warn('salvar produto manual:', e); });
+}
+
+async function carregarProdutosManuais() {
+  var SB_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+  try {
+    var r = await fetch(SB_URL + '/rest/v1/produtos_manuais_estoque?cod_cliente=eq.' + CLI_ATUAL + '&rep=eq.' + REP, {
+      headers: {'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY}
+    });
+    var data = await r.json();
+    if (!Array.isArray(data) || !data.length) return;
+    var nomes = new Set(PRODS_CLI.map(function(p){ return p.nome; }));
+    var adicionados = false;
+    data.forEach(function(p) {
+      if (!nomes.has(p.nome)) {
+        PRODS_CLI.push({nome: p.nome, lab: p.lab||'', qtd: 0, totalQtde: 0, nPedidos: 0, mediaMensal: 0, manual: true});
+        adicionados = true;
+      }
+    });
+    if (adicionados) {
+      var h='';
+      PRODS_CLI.forEach(function(p,i){
+        var labTag=p.lab&&p.lab!=='OUTRO'?'<span class="prod-lab">'+p.lab+'</span>':'';
+        var mediaStr=p.mediaMensal>0?'Média: '+p.mediaMensal+' un/compra':(p.manual?'Produto novo':'Parado');
+        h+='<div class="prod-item">'+
+           '<div class="prod-nome">'+p.nome+labTag+'<div class="prod-media">'+mediaStr+'</div></div>'+
+           '<div class="qtde-wrap">'+
+           '<button class="qtde-btn" onclick="ajustarQtde('+i+',-1)">−</button>'+
+           '<input class="qtde-input" id="qtde-'+i+'" type="number" value="0" min="0" oninput="calcDias('+i+')">'+
+           '<button class="qtde-btn" onclick="ajustarQtde('+i+',1)">+</button>'+
+           '</div>'+
+           '<div id="dias-'+i+'" class="dias-badge" style="min-width:60px"></div>'+
+           '</div>';
+      });
+      document.getElementById('prod-lista').innerHTML=h;
+    }
+  } catch(e) { console.warn('carregar produtos manuais:', e); }
+}
+
 function filtrarProdutosVV(){
   var q=document.getElementById('ap-busca').value.toLowerCase();
   var base=typeof PRODUTOS_VV!=='undefined'?PRODUTOS_VV:[];

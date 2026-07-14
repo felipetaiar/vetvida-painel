@@ -983,7 +983,7 @@ function salvarProdutoManual(nome, lab) {
       'Content-Type': 'application/json',
       'Prefer': 'resolution=ignore-duplicates'
     },
-    body: JSON.stringify({cod_cliente: CLI_ATUAL, rep: REP, nome: nome, lab: lab})
+    body: JSON.stringify({cod_cliente: CLI_ATUAL.cod, rep: REP, nome: nome, lab: lab})
   }).catch(function(e){ console.warn('salvar produto manual:', e); });
 }
 
@@ -991,7 +991,7 @@ async function carregarProdutosManuais() {
   var SB_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
   try {
-    var r = await fetch(SB_URL + '/rest/v1/produtos_manuais_estoque?cod_cliente=eq.' + CLI_ATUAL + '&rep=eq.' + REP, {
+    var r = await fetch(SB_URL + '/rest/v1/produtos_manuais_estoque?cod_cliente=eq.' + CLI_ATUAL.cod + '&rep=eq.' + REP, {
       headers: {'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY}
     });
     var data = await r.json();

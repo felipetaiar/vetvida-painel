@@ -375,74 +375,6 @@ var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 
 var REP = '', CLI_ATUAL = null, PRODS_CLI = [], HIST_CARREGADO = false;
 
-
-function abrirAddProd(){
-  document.getElementById('ap-busca').value='';
-  filtrarProdutosVV();
-  document.getElementById('m-add-prod').style.display='flex';
-}
-function filtrarProdutosVV(){
-  var q=document.getElementById('ap-busca').value.toLowerCase();
-  var base=typeof PRODUTOS_VV!=='undefined'?PRODUTOS_VV:[];
-  var lista=base.filter(function(p){return !q||p.nome.toLowerCase().indexOf(q)>=0||p.lab.toLowerCase().indexOf(q)>=0||p.categoria.toLowerCase().indexOf(q)>=0;}).slice(0,60);
-  var el=document.getElementById('ap-lista');
-  if(!lista.length){el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;font-size:13px;">Nenhum produto encontrado.</p>';return;}
-  el.innerHTML=lista.map(function(p){
-    var jatem=PRODS_CLI.find(function(x){return x.nome===p.nome;});
-    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f3f4f6;"><div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+p.nome+'</div><div style="font-size:11px;color:#9ca3af;">'+p.lab+(p.categoria?' · '+p.categoria:'')+'</div></div>'+(jatem?'<span style="font-size:11px;color:#9ca3af;padding:0 8px;">já adicionado</span>':'<button data-cod="'+p.cod+'" class="btn-add-prod-vv" style="background:#1F4E79;color:white;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Add</button>')+'</div>';
-  }).join('');
-  document.querySelectorAll('.btn-add-prod-vv').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var cod=parseInt(this.dataset.cod);
-      var prod=(PRODUTOS_VV||[]).find(function(p){return p.cod===cod;});
-      if(!prod)return;
-      if(PRODS_CLI.find(function(x){return x.nome===prod.nome;})){toast('Produto já está na lista');return;}
-      PRODS_CLI.push({nome:prod.nome,lab:prod.lab,qtd:0,totalQtde:0,nPedidos:0,mediaMensal:0,manual:true});
-      document.getElementById('m-add-prod').style.display='none';
-      rndProds();
-      toast('✓ '+prod.nome+' adicionado!');
-    });
-  });
-}
-document.addEventListener('DOMContentLoaded',function(){
-  var b=document.getElementById('btn-fechar-addprod');
-  if(b)b.onclick=function(){document.getElementById('m-add-prod').style.display='none';};
-});
-
-
-function abrirAddProd(){
-  document.getElementById("ap-busca").value="";
-  filtrarProdutosVV();
-  document.getElementById("m-add-prod").style.display="flex";
-}
-function filtrarProdutosVV(){
-  var q=document.getElementById("ap-busca").value.toLowerCase();
-  var base=typeof PRODUTOS_VV!=="undefined"?PRODUTOS_VV:[];
-  var lista=base.filter(function(p){return !q||p.nome.toLowerCase().indexOf(q)>=0||p.lab.toLowerCase().indexOf(q)>=0||p.categoria.toLowerCase().indexOf(q)>=0;}).slice(0,60);
-  var el=document.getElementById("ap-lista");
-  if(!lista.length){el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;font-size:13px;">Nenhum produto encontrado.</p>';return;}
-  el.innerHTML=lista.map(function(p){
-    var jatem=PRODS_CLI.find(function(x){return x.nome===p.nome;});
-    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f3f4f6;"><div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+p.nome+'</div><div style="font-size:11px;color:#9ca3af;">'+p.lab+(p.categoria?" · "+p.categoria:"")+'</div></div>'+(jatem?'<span style="font-size:11px;color:#9ca3af;padding:0 8px;">já adicionado</span>':'<button data-cod="'+p.cod+'" class="btn-add-prod-vv" style="background:#1F4E79;color:white;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Add</button>')+'</div>';
-  }).join("");
-  document.querySelectorAll(".btn-add-prod-vv").forEach(function(btn){
-    btn.addEventListener("click",function(){
-      var cod=parseInt(this.dataset.cod);
-      var prod=(PRODUTOS_VV||[]).find(function(p){return p.cod===cod;});
-      if(!prod)return;
-      if(PRODS_CLI.find(function(x){return x.nome===prod.nome;})){toast("Produto já está na lista");return;}
-      PRODS_CLI.push({nome:prod.nome,lab:prod.lab,qtd:0,totalQtde:0,nPedidos:0,mediaMensal:0,manual:true});
-      document.getElementById("m-add-prod").style.display="none";
-      rndProds();
-      toast("✓ "+prod.nome+" adicionado!");
-    });
-  });
-}
-document.addEventListener("DOMContentLoaded",function(){
-  var b=document.getElementById("btn-fechar-addprod");
-  if(b)b.onclick=function(){document.getElementById("m-add-prod").style.display="none";};
-});
-
 function sair(){sessionStorage.clear();window.location.href='/';}
 
 function toast(msg){
@@ -980,31 +912,7 @@ function gerarRodapePdf(){
   return '</div><div style="position:fixed;bottom:0;left:0;right:0;padding:10px 24px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:10px;color:#aaa;background:white">'
     +'<span>Vet Vida Distribuidora Veterinária</span>'
     +'<span>Documento gerado em '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'</span>'
-    +'</div>
-<!-- Modal: adicionar produto -->
-<div id="m-add-prod" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:flex-end;justify-content:center;">
-  <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:18px 14px;max-height:88vh;overflow-y:auto;">
-    <div style="width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 14px;"></div>
-    <div style="font-size:15px;font-weight:700;margin-bottom:4px;color:#1f2937;">+ Adicionar produto</div>
-    <p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Busque na lista oficial de produtos VetVida.</p>
-    <input id="ap-busca" type="text" placeholder="🔍 Nome, laboratório ou categoria..." oninput="filtrarProdutosVV()" style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:13px;margin-bottom:10px;outline:none;">
-    <div id="ap-lista" style="max-height:55vh;overflow-y:auto;"></div>
-    <button id="btn-fechar-addprod" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Fechar</button>
-  </div>
-</div>
-
-<div id="m-add-prod" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:flex-end;justify-content:center;">
-  <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:18px 14px;max-height:88vh;overflow-y:auto;">
-    <div style="width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 14px;"></div>
-    <div style="font-size:15px;font-weight:700;margin-bottom:4px;color:#1f2937;">+ Adicionar produto</div>
-    <p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Busque na lista oficial de produtos VetVida.</p>
-    <input id="ap-busca" type="text" placeholder="🔍 Nome, laboratório ou categoria..." oninput="filtrarProdutosVV()" style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:13px;margin-bottom:10px;outline:none;">
-    <div id="ap-lista" style="max-height:55vh;overflow-y:auto;"></div>
-    <button id="btn-fechar-addprod" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Fechar</button>
-  </div>
-</div>
-<script src="produtos_vv.js" defer></script>
-</body></html>';
+    +'</div></body></html>';
 }
 
 function abrirJanelaPdf(html, nome){
@@ -1021,23 +929,45 @@ init();
 <div id="m-add-prod" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:flex-end;justify-content:center;">
   <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:18px 14px;max-height:88vh;overflow-y:auto;">
     <div style="width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 14px;"></div>
-    <div style="font-size:15px;font-weight:700;margin-bottom:4px;color:#1f2937;">+ Adicionar produto</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px;">+ Adicionar produto</div>
     <p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Busque na lista oficial de produtos VetVida.</p>
     <input id="ap-busca" type="text" placeholder="🔍 Nome, laboratório ou categoria..." oninput="filtrarProdutosVV()" style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:13px;margin-bottom:10px;outline:none;">
     <div id="ap-lista" style="max-height:55vh;overflow-y:auto;"></div>
-    <button id="btn-fechar-addprod" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Fechar</button>
+    <button onclick="document.getElementById('m-add-prod').style.display='none'" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Fechar</button>
   </div>
 </div>
 
-<div id="m-add-prod" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:flex-end;justify-content:center;">
-  <div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:18px 14px;max-height:88vh;overflow-y:auto;">
-    <div style="width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 14px;"></div>
-    <div style="font-size:15px;font-weight:700;margin-bottom:4px;color:#1f2937;">+ Adicionar produto</div>
-    <p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Busque na lista oficial de produtos VetVida.</p>
-    <input id="ap-busca" type="text" placeholder="🔍 Nome, laboratório ou categoria..." oninput="filtrarProdutosVV()" style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:13px;margin-bottom:10px;outline:none;">
-    <div id="ap-lista" style="max-height:55vh;overflow-y:auto;"></div>
-    <button id="btn-fechar-addprod" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Fechar</button>
-  </div>
-</div>
+<script>
+function abrirAddProd(){
+  document.getElementById('ap-busca').value='';
+  filtrarProdutosVV();
+  document.getElementById('m-add-prod').style.display='flex';
+}
+function adicionarProdVV(cod){
+  var prod=(typeof PRODUTOS_VV!=='undefined'?PRODUTOS_VV:[]).find(function(p){return p.cod===cod;});
+  if(!prod)return;
+  if(PRODS_CLI.find(function(x){return x.nome===prod.nome;})){toast('Produto já está na lista');return;}
+  PRODS_CLI.push({nome:prod.nome,lab:prod.lab,qtd:0,totalQtde:0,nPedidos:0,mediaMensal:0,manual:true});
+  document.getElementById('m-add-prod').style.display='none';
+  rndProds();
+  toast('✓ '+prod.nome+' adicionado!');
+}
+function filtrarProdutosVV(){
+  var q=document.getElementById('ap-busca').value.toLowerCase();
+  var base=typeof PRODUTOS_VV!=='undefined'?PRODUTOS_VV:[];
+  var lista=base.filter(function(p){return !q||p.nome.toLowerCase().indexOf(q)>=0||p.lab.toLowerCase().indexOf(q)>=0||p.categoria.toLowerCase().indexOf(q)>=0;}).slice(0,60);
+  var el=document.getElementById('ap-lista');
+  if(!lista.length){el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Nenhum produto encontrado.</p>';return;}
+  el.innerHTML=lista.map(function(p){
+    var jatem=PRODS_CLI.find(function(x){return x.nome===p.nome;});
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f3f4f6;">'+
+      '<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+p.nome+'</div>'+
+      '<div style="font-size:11px;color:#9ca3af;">'+p.lab+(p.categoria?' · '+p.categoria:'')+'</div></div>'+
+      (jatem?'<span style="font-size:11px;color:#9ca3af;padding:0 8px;">já adicionado</span>':
+        '<button onclick="adicionarProdVV('+p.cod+')" style="background:#1F4E79;color:white;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Add</button>')+
+    '</div>';
+  }).join('');
+}
+</script>
 <script src="produtos_vv.js" defer></script>
 </body></html>

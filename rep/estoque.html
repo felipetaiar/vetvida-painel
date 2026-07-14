@@ -949,21 +949,20 @@ function adicionarProdVV(cod){
   if(PRODS_CLI.find(function(x){return x.nome===prod.nome;})){toast('Produto já está na lista');return;}
   PRODS_CLI.push({nome:prod.nome,lab:prod.lab,qtd:0,totalQtde:0,nPedidos:0,mediaMensal:0,manual:true});
   document.getElementById('m-add-prod').style.display='none';
-  // Re-renderizar lista de produtos
+  // Re-renderizar lista de produtos (mesmo padrão da renderização original)
   var h='';
   PRODS_CLI.forEach(function(p,i){
+    var labTag=p.lab&&p.lab!=='OUTRO'?'<span class="prod-lab">'+p.lab+'</span>':'';
+    var mediaStr=p.mediaMensal>0?'Média: '+p.mediaMensal+' un/compra':(p.manual?'Produto novo':'Parado');
     h+='<div class="prod-item">'+
-      '<div class="prod-info">'+
-        '<div class="prod-nome">'+p.nome+(p.manual?' <span style="font-size:10px;background:#e0f0ff;color:#1F4E79;padding:1px 5px;border-radius:8px;">novo</span>':'')+'</div>'+
-        '<div class="prod-lab">'+(p.lab||'')+'</div>'+
-      '</div>'+
-      '<div class="qtde-wrap">'+
-        '<button class="qtde-btn" onclick="ajustarQtde('+i+',-1)">−</button>'+
-        '<input class="qtde-input" id="qtde-'+i+'" type="number" value="0" min="0" oninput="calcDias('+i+')">'+
-        '<button class="qtde-btn" onclick="ajustarQtde('+i+',1)">+</button>'+
-      '</div>'+
-      '<div id="dias-'+i+'" class="dias-badge" style="min-width:60px"></div>'+
-    '</div>';
+       '<div class="prod-nome">'+p.nome+labTag+'<div class="prod-media">'+mediaStr+'</div></div>'+
+       '<div class="qtde-wrap">'+
+       '<button class="qtde-btn" onclick="ajustarQtde('+i+',-1)">−</button>'+
+       '<input class="qtde-input" id="qtde-'+i+'" type="number" value="0" min="0" oninput="calcDias('+i+')">'+
+       '<button class="qtde-btn" onclick="ajustarQtde('+i+',1)">+</button>'+
+       '</div>'+
+       '<div id="dias-'+i+'" class="dias-badge" style="min-width:60px"></div>'+
+       '</div>';
   });
   document.getElementById('prod-lista').innerHTML=h;
   toast('✓ '+prod.nome+' adicionado!');

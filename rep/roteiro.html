@@ -286,6 +286,8 @@ tr:hover td{background:#f8fafc!important;}
   <!-- Clientes sem roteiro -->
   <div class="sem-roteiro" id="sem-roteiro-section" style="display:none">
     <div class="sem-roteiro-titulo">⚠ Clientes sem roteiro configurado <span id="sem-roteiro-count"></span></div>
+    <input id="sem-roteiro-busca" type="text" placeholder="🔍 Buscar cliente..." oninput="filtrarSemRoteiro()"
+      style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 10px;font-size:13px;margin:6px 0 8px;outline:none;box-sizing:border-box;">
     <div class="sem-roteiro-lista" id="sem-roteiro-lista"></div>
   </div>
 
@@ -517,21 +519,29 @@ function atualizarBarraLimite(){
 
 // ── SEM ROTEIRO ───────────────────────────────────────────
 function renderSemRoteiro(){
-  if(IS_GESTOR) return; // gestor vê tudo — não mostra alerta por ora
+  if(IS_GESTOR) return;
   var carteira=typeof TODOS_DADOS!=='undefined'?(TODOS_DADOS[REP]||[]):[];
   var meuRoteiro=ROTEIROS[REP]||{};
-  var semRoteiro=carteira.filter(function(c){return !meuRoteiro[c.cod];});
+  window._SEM_ROTEIRO_TODOS=carteira.filter(function(c){return !meuRoteiro[c.cod];});
   var sec=document.getElementById('sem-roteiro-section');
-  var lista=document.getElementById('sem-roteiro-lista');
-  if(!semRoteiro.length){sec.style.display='none';return;}
+  if(!window._SEM_ROTEIRO_TODOS.length){sec.style.display='none';return;}
   sec.style.display='block';
-  document.getElementById('sem-roteiro-count').textContent='('+semRoteiro.length+')';
+  document.getElementById('sem-roteiro-count').textContent='('+window._SEM_ROTEIRO_TODOS.length+')';
+  filtrarSemRoteiro();
+}
+
+function filtrarSemRoteiro(){
+  var q=(document.getElementById('sem-roteiro-busca')?document.getElementById('sem-roteiro-busca').value:'').toLowerCase();
+  var lista=q?(window._SEM_ROTEIRO_TODOS||[]).filter(function(c){
+    return c.nome.toLowerCase().indexOf(q)>=0||(c.municipio||'').toLowerCase().indexOf(q)>=0;
+  }):(window._SEM_ROTEIRO_TODOS||[]);
   var h='';
-  semRoteiro.slice(0,20).forEach(function(c){
-    h+='<div class="sem-cli" onclick="abrirModal('+c.cod+',\''+encodeURIComponent(c.nome)+'\',\''+encodeURIComponent(c.municipio)+'\')">'+c.nome+'</div>';
+  lista.forEach(function(c){
+    h+='<div class="sem-cli" onclick="abrirModal('+c.cod+',\''+encodeURIComponent(c.nome)+'\',\''+encodeURIComponent(c.municipio)+'\')">'+
+      c.nome+'<span style="font-size:11px;color:#9ca3af;margin-left:6px;">'+(c.municipio||'')+'</span></div>';
   });
-  if(semRoteiro.length>20) h+='<div class="sem-cli" style="cursor:default;background:var(--surface2)">+'+( semRoteiro.length-20)+' mais</div>';
-  lista.innerHTML=h;
+  if(!h) h='<p style="text-align:center;padding:12px;color:#9ca3af;font-size:13px;">Nenhum cliente encontrado.</p>';
+  document.getElementById('sem-roteiro-lista').innerHTML=h;
 }
 
 // ── GRADE SEMANAL ─────────────────────────────────────────

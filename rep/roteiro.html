@@ -520,7 +520,7 @@ function atualizarBarraLimite(){
 // ── SEM ROTEIRO ───────────────────────────────────────────
 function renderSemRoteiro(){
   if(IS_GESTOR) return;
-  var carteira=typeof TODOS_DADOS!=='undefined'?(TODOS_DADOS[REP]||[]):[];
+  var carteira=typeof TODOS_DADOS!=='undefined'?(TODOS_DADOS[REP]||[]).slice():[];
   var meuRoteiro=ROTEIROS[REP]||{};
   window._SEM_ROTEIRO_TODOS=carteira.filter(function(c){return !meuRoteiro[c.cod];});
   var sec=document.getElementById('sem-roteiro-section');

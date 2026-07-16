@@ -2459,7 +2459,9 @@ async function abrirDetalheVisita(id) {
 
   // Buscar amostras vinculadas a esta visita — apenas por visita_id, sem aproximação
   try {
-    const { data: porId } = await sb.from('amostras').select('*').eq('visita_id', v.id);
+    console.log('Buscando amostras para visita id:', v.id, typeof v.id);
+    const { data: porId, error: erroAm } = await sb.from('amostras').select('*').eq('visita_id', v.id);
+    console.log('Amostras encontradas:', porId, 'erro:', erroAm);
     const amostrasDaVisita = porId || [];
     const elAm = document.getElementById('detalhe-visita-amostras');
     if (!elAm) return;

@@ -964,14 +964,51 @@ body {
       <label class="form-label required">Nome</label>
       <input type="text" class="form-input" id="ct-nome" placeholder="Nome do contato">
     </div>
+
     <div class="form-group">
-      <label class="form-label">Estabelecimento / Clínica</label>
-      <input type="text" class="form-input" id="ct-estab" placeholder="Onde atende">
+      <label class="form-label required">Função</label>
+      <select class="form-select" id="ct-funcao" onchange="onMudarFuncaoContato()">
+        <option value="">Selecione...</option>
+        <option value="Veterinário(a)">Veterinário(a)</option>
+        <option value="Comprador(a)">Comprador(a)</option>
+        <option value="Gerente">Gerente</option>
+        <option value="Dono(a)">Dono(a)</option>
+        <option value="Balconista">Balconista</option>
+        <option value="Outro">Outro</option>
+      </select>
     </div>
+
+    <!-- Especialidades: só aparece se função = Veterinário -->
+    <div class="form-group" id="grupo-ct-especialidades" style="display:none;">
+      <label class="form-label">Especialidades</label>
+      <div class="check-group" id="check-ct-especialidades"><!-- gerado via JS --></div>
+    </div>
+
     <div class="form-group">
-      <label class="form-label">Especialidade</label>
-      <input type="text" class="form-input" id="ct-especialidade" placeholder="Ex: Dermatologia, Clínico geral...">
+      <label class="form-label required">Estabelecimento / Clínica principal</label>
+      <div class="dropdown-wrap">
+        <input type="text" class="form-input" id="ct-estab" placeholder="Buscar estabelecimento..." autocomplete="off" oninput="filtrarDropdownCt()" onfocus="abrirDropdownCt()" onblur="fecharDropdownCt()">
+        <div class="dropdown-list" id="dropdown-ct-estab"></div>
+      </div>
     </div>
+
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer;">
+        <input type="checkbox" id="ct-multi-clinica" onchange="toggleMultiClinica()" style="width:16px;height:16px;">
+        Atende em mais de uma clínica
+      </label>
+    </div>
+
+    <!-- Clínicas adicionais -->
+    <div class="form-group" id="grupo-ct-outras-clinicas" style="display:none;">
+      <label class="form-label">Outras clínicas</label>
+      <div id="lista-ct-outras-clinicas" style="margin-bottom:8px;"></div>
+      <div class="dropdown-wrap">
+        <input type="text" class="form-input" id="ct-outra-clinica-busca" placeholder="Buscar e adicionar clínica..." autocomplete="off" oninput="filtrarDropdownCtOutra()" onfocus="abrirDropdownCtOutra()" onblur="fecharDropdownCtOutra()">
+        <div class="dropdown-list" id="dropdown-ct-outra-clinica"></div>
+      </div>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Telefone / WhatsApp</label>
       <input type="text" class="form-input" id="ct-telefone" placeholder="(11) 90000-0000">

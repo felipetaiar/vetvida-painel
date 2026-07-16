@@ -2939,12 +2939,20 @@ async function salvarContato() {
       }
       fecharModalContato();
       renderContatos();
-    } else {
-      mostrarToast('Erro ao salvar contato');
     }
   } catch(e) {
-    mostrarToast('Erro de conexão');
+    console.error(e);
+    mostrarToast('Erro ao salvar contato');
   }
+}
+
+// Adiciona um contato (objeto do banco) à lista da visita atual
+function adicionarContatoNaVisita(contato) {
+  if (!CONTATOS_VISITA_TEMP.find(c => c.id === contato.id)) {
+    CONTATOS_VISITA_TEMP.push(contato);
+  }
+  renderListaContatosVisita();
+  fecharSeletorContato();
 }
 
 // ═══════════════ AMOSTRAS (vinculadas à visita) ═══════════════

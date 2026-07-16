@@ -2945,7 +2945,7 @@ function editarContato(id) {
   document.getElementById('ct-telefone').value = c.telefone || '';
   document.getElementById('ct-aniversario').value = c.data_aniversario || '';
   document.getElementById('ct-hobbies').value = c.hobbies || '';
-  document.getElementById('ct-obs').value = c.observacoes || '';
+  document.getElementById('ct-obs').value = c.tipo || '';
 
   montarEspecialidadesContato();
   document.getElementById('grupo-ct-especialidades').style.display = (c.funcao === 'Veterinário(a)') ? 'block' : 'none';
@@ -3135,7 +3135,7 @@ async function salvarContato() {
     telefone: document.getElementById('ct-telefone').value.trim(),
     data_aniversario: document.getElementById('ct-aniversario').value || null,
     hobbies: document.getElementById('ct-hobbies').value.trim(),
-    observacoes: document.getElementById('ct-obs').value.trim(),
+    tipo: document.getElementById('ct-obs').value.trim(),
   };
 
   try {

@@ -1744,7 +1744,7 @@ function verificarLead() {
 }
 
 // ─── SALVAR VISITA ────────────────────────────────────────────────────────────
-async function salvarVisita() {
+async async function salvarVisita() {
   const estab   = document.getElementById('input-estab').value.trim();
   const cidade  = document.getElementById('visita-cidade').value;
   const tipo    = document.getElementById('visita-tipo').value;
@@ -1780,6 +1780,7 @@ async function salvarVisita() {
         .insert([{ nome: estab, cidade, tipo, contato }]).select().single();
       if(novoEstab) { ESTABELECIMENTOS.push(novoEstab); renderDropdown(); }
     }
+    await persistirAmostrasDaVisita(estab);
     mostrarToast('✓ Visita registrada!');
   } catch(e) {
     console.error('Erro ao salvar:', e);

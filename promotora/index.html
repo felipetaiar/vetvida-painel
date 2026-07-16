@@ -2917,12 +2917,18 @@ function filtrarContatos() {
 function abrirModalContato() {
   CONTATO_EDITANDO = null;
   document.getElementById('ct-nome').value = '';
+  document.getElementById('ct-funcao').value = '';
+  document.getElementById('grupo-ct-especialidades').style.display = 'none';
   document.getElementById('ct-estab').value = '';
-  document.getElementById('ct-especialidade').value = '';
+  document.getElementById('ct-multi-clinica').checked = false;
+  document.getElementById('grupo-ct-outras-clinicas').style.display = 'none';
+  CT_OUTRAS_CLINICAS = [];
   document.getElementById('ct-telefone').value = '';
   document.getElementById('ct-aniversario').value = '';
   document.getElementById('ct-hobbies').value = '';
   document.getElementById('ct-obs').value = '';
+  montarEspecialidadesContato();
+  renderListaOutrasClinicas();
   document.getElementById('modal-contato').classList.add('open');
 }
 
@@ -2931,12 +2937,25 @@ function editarContato(id) {
   if (!c) return;
   CONTATO_EDITANDO = id;
   document.getElementById('ct-nome').value = c.nome || '';
+  document.getElementById('ct-funcao').value = c.funcao || '';
   document.getElementById('ct-estab').value = c.estabelecimento || '';
-  document.getElementById('ct-especialidade').value = c.especialidade || '';
   document.getElementById('ct-telefone').value = c.telefone || '';
   document.getElementById('ct-aniversario').value = c.aniversario || '';
   document.getElementById('ct-hobbies').value = c.hobbies || '';
   document.getElementById('ct-obs').value = c.observacoes || '';
+
+  montarEspecialidadesContato();
+  document.getElementById('grupo-ct-especialidades').style.display = (c.funcao === 'Veterinário(a)') ? 'block' : 'none';
+  const espSalvas = (c.especialidade || '').split(',').map(s => s.trim()).filter(Boolean);
+  document.querySelectorAll('#check-ct-especialidades input').forEach(inp => {
+    if (espSalvas.includes(inp.value)) { inp.checked = true; inp.closest('.check-pill').classList.add('checked'); }
+  });
+
+  CT_OUTRAS_CLINICAS = (c.outras_clinicas || '').split(',').map(s => s.trim()).filter(Boolean);
+  document.getElementById('ct-multi-clinica').checked = CT_OUTRAS_CLINICAS.length > 0;
+  document.getElementById('grupo-ct-outras-clinicas').style.display = CT_OUTRAS_CLINICAS.length > 0 ? 'block' : 'none';
+  renderListaOutrasClinicas();
+
   document.getElementById('modal-contato').classList.add('open');
 }
 

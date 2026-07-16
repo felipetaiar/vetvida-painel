@@ -3187,7 +3187,12 @@ let AMOSTRAS_FILTRO_ATUAL = 'todos';
 function abrirModalAmostraVisita() {
   document.getElementById('amv-produto').value = '';
   document.getElementById('amv-qtde').value = '1';
-  document.getElementById('amv-destinatario').value = document.getElementById('visita-contato') ? document.getElementById('visita-contato').value : '';
+  const sel = document.getElementById('amv-destinatario');
+  if (!CONTATOS_VISITA_TEMP.length) {
+    sel.innerHTML = '<option value="">Nenhum contato adicionado ainda</option>';
+  } else {
+    sel.innerHTML = CONTATOS_VISITA_TEMP.map(c => `<option value="${c.nome}">${c.nome}${c.funcao?' ('+c.funcao+')':''}</option>`).join('');
+  }
   document.getElementById('modal-amostra-visita').classList.add('open');
 }
 function fecharModalAmostraVisita() {

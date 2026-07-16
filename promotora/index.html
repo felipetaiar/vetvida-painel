@@ -1158,32 +1158,53 @@ body {
   </div>
 </div>
 
-<!-- Modal amostra -->
-<div class="modal-overlay" id="modal-amostra">
+<!-- Modal amostra (vinculada à visita) -->
+<div class="modal-overlay" id="modal-amostra-visita">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">📦 Entrega de amostra</div>
+    <div class="modal-title">📦 Registrar amostra</div>
 
     <div class="form-group">
-      <label class="form-label required">Estabelecimento / Veterinário</label>
-      <input type="text" class="form-input" id="am-destino" placeholder="Para quem foi entregue">
-    </div>
-    <div class="form-group">
       <label class="form-label required">Produto</label>
-      <input type="text" class="form-input" id="am-produto" placeholder="Nome do produto amostrado">
+      <input type="text" class="form-input" id="amv-produto" placeholder="Nome do produto amostrado">
     </div>
     <div class="form-group">
       <label class="form-label">Quantidade</label>
-      <input type="number" class="form-input" id="am-qtde" placeholder="1" min="1" value="1">
+      <input type="number" class="form-input" id="amv-qtde" placeholder="1" min="1" value="1">
     </div>
     <div class="form-group">
-      <label class="form-label">Observações</label>
-      <textarea class="form-input" id="am-obs" rows="3" placeholder="Feedback, contexto da entrega..."></textarea>
+      <label class="form-label">Destinatário (contato da visita)</label>
+      <input type="text" class="form-input" id="amv-destinatario" placeholder="Nome do veterinário/contato">
     </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="btn-secondary" onclick="fecharModalAmostra()" style="flex:1;">Cancelar</button>
-      <button class="btn-primary" onclick="salvarAmostra()" style="flex:1;">Registrar</button>
+      <button class="btn-secondary" onclick="fecharModalAmostraVisita()" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarAmostraVisita()" style="flex:1;">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal feedback de amostra -->
+<div class="modal-overlay" id="modal-feedback-amostra">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💬 Feedback da amostra</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:12px;" id="fb-amostra-info"></div>
+    <div class="form-group">
+      <label class="form-label">Resultado</label>
+      <select class="form-select" id="fb-status">
+        <option value="aprovado">👍 Aprovado / vai prescrever</option>
+        <option value="neutro">🤔 Neutro / ainda avaliando</option>
+        <option value="recusado">👎 Não gostou / recusou</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <textarea class="form-input" id="fb-obs" rows="3" placeholder="Detalhes do feedback..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn-secondary" onclick="fecharModalFeedback()" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" onclick="salvarFeedbackAmostra()" style="flex:1;">Salvar feedback</button>
     </div>
   </div>
 </div>

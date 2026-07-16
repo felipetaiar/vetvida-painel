@@ -751,10 +751,12 @@ body {
         </div>
       </div>
 
-      <!-- Contato -->
+      <!-- Contatos da visita (múltiplos) -->
       <div class="form-group">
-        <label class="form-label">Nome do contato</label>
-        <input type="text" class="form-input" id="visita-contato" placeholder="Dr. João Silva...">
+        <label class="form-label">Pessoas atendidas nesta visita</label>
+        <input type="hidden" id="visita-contato">
+        <div id="lista-contatos-visita" style="margin-bottom:8px;"></div>
+        <button type="button" onclick="abrirSeletorContatoVisita()" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">+ Adicionar contato</button>
       </div>
 
       <!-- Objetivo -->

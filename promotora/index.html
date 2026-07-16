@@ -1710,7 +1710,9 @@ async function salvarVisita() {
 }
 
 // ─── HISTÓRICO ────────────────────────────────────────────────────────────────
-function renderHistorico() {
+let AMOSTRAS_POR_ESTAB_DIA = {}; // cache: "estabLower|YYYY-MM-DD" -> count
+
+async function renderHistorico() {
   const cidade = document.getElementById('filtro-cidade')?.value || '';
   const resultado = document.getElementById('filtro-resultado')?.value || '';
 
@@ -1722,7 +1724,22 @@ function renderHistorico() {
   const el = document.getElementById('lista-historico');
   if(!lista.length) { el.innerHTML = '<p style="color:var(--gray-400);text-align:center;padding:30px 0;">Nenhuma visita encontrada.</p>'; return; }
 
-  el.innerHTML = lista.map(v => `
+  // Pré-carregar amostras para marcar badge nos cards
+  try {
+    const { data } = await sb.from('amostras').select('estabelecimento_nome, created_at');
+    AMOSTRAS_POR_ESTAB_DIA = {};
+    (data || []).forEach(a => {
+      const dia = new Date(a.created_at).toISOString().slice(0,10);
+      const key = (a.estabelecimento_nome||'').toLowerCase().trim() + '|' + dia;
+      AMOSTRAS_POR_ESTAB_DIA[key] = (AMOSTRAS_POR_ESTAB_DIA[key] || 0) + 1;
+    });
+  } catch(e) { AMOSTRAS_POR_ESTAB_DIA = {}; }
+
+  el.innerHTML = lista.map(v => {
+    const dia = new Date(v.created_at).toISOString().slice(0,10);
+    const key = (v.estabelecimento||'').toLowerCase().trim() + '|' + dia;
+    const temAmostra = AMOSTRAS_POR_ESTAB_DIA[key] > 0;
+    return `
     <div class="visita-item" onclick="abrirDetalheVisita('${v.id}')">
       <div class="visita-item-header">
         <div class="visita-item-name">${v.estabelecimento}</div>
@@ -1731,10 +1748,11 @@ function renderHistorico() {
       <div class="visita-item-meta">📍 ${v.cidade} · ${v.tipo}</div>
       <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
         ${v.tem_lead ? '<span class="badge badge-lead">🔔 Lead</span>' : ''}
+        ${temAmostra ? '<span class="badge" style="background:#e0f0ff;color:#1F4E79;">🧪 Amostra</span>' : ''}
         <span class="badge badge-gray">${v.resultado}</span>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 // ─── ROTEIRO ─────────────────────────────────────────────────────────────────

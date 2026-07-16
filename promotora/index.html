@@ -2422,7 +2422,7 @@ async function reabrirParaEdicao() {
 }
 
 // ─── DETALHE VISITA ───────────────────────────────────────────────────────────
-function abrirDetalheVisita(id) {
+async function abrirDetalheVisita(id) {
   const v = VISITAS.find(x=>String(x.id)===String(id));
   if(!v) return;
   document.getElementById('modal-visita-title').textContent = v.estabelecimento;
@@ -2438,8 +2438,28 @@ function abrirDetalheVisita(id) {
       ${v.obs?`<div><strong>📝 Observações:</strong> ${v.obs}</div>`:''}
       ${v.data_retorno?`<div><strong>📅 Retorno:</strong> ${formatarDataSimples(v.data_retorno)}</div>`:''}
       ${v.tem_lead?'<div class="badge badge-lead" style="width:fit-content;">🔔 Lead gerado para o rep</div>':''}
+      <div id="detalhe-visita-amostras">🧪 Carregando amostras...</div>
     </div>`;
   document.getElementById('modal-visita').classList.add('open');
+
+  // Buscar amostras dessa visita (mesmo estabelecimento, no mesmo dia)
+  try {
+    const inicioDia = new Date(v.created_at); inicioDia.setHours(0,0,0,0);
+    const fimDia = new Date(v.created_at); fimDia.setHours(23,59,59,999);
+    const { data } = await sb.from('amostras').select('*')
+      .ilike('estabelecimento_nome', v.estabelecimento)
+      .gte('created_at', inicioDia.toISOString())
+      .lte('created_at', fimDia.toISOString());
+    const amostrasDaVisita = data || [];
+    const elAm = document.getElementById('detalhe-visita-amostras');
+    if (!elAm) return;
+    if (!amostrasDaVisita.length) { elAm.innerHTML = ''; return; }
+    elAm.innerHTML = `<div><strong>📦 Amostras entregues:</strong></div>` +
+      amostrasDaVisita.map(a => `<div style="margin-left:8px;font-size:12px;color:#374151;">• ${a.produto} (${a.quantidade}un)${a.contato_nome?' — '+a.contato_nome:''}</div>`).join('');
+  } catch(e) {
+    const elAm = document.getElementById('detalhe-visita-amostras');
+    if (elAm) elAm.innerHTML = '';
+  }
 }
 
 function fecharModal(id) {

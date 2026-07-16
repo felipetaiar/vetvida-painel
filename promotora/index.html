@@ -58,114 +58,6 @@ body {
   min-height: 100vh;
 }
 
-/* ── LOGIN ── */
-#login-screen {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  background: #0c0f12;
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-}
-
-#login-screen::before {
-  content: '';
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(204,0,0,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(204,0,0,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-}
-
-.login-orb {
-  position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none;
-}
-.login-orb1 { width: 400px; height: 400px; background: #cc0000; opacity: 0.07; top: -160px; left: -100px; }
-.login-orb2 { width: 300px; height: 300px; background: #ff6a00; opacity: 0.05; bottom: -100px; right: -60px; }
-
-.login-box {
-  position: relative; z-index: 10;
-  background: #111418;
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 20px;
-  padding: 36px 28px;
-  width: 100%; max-width: 360px;
-  box-shadow: 0 32px 80px rgba(0,0,0,0.5);
-  text-align: center;
-}
-
-.login-brand {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  margin-bottom: 4px;
-}
-
-.login-brand-icon {
-  width: 38px; height: 38px;
-  background: linear-gradient(135deg, var(--red), #ff4040);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 16px rgba(204,0,0,0.3);
-  flex-shrink: 0;
-}
-
-.login-brand-icon svg { width: 20px; height: 20px; fill: white; }
-
-.login-title {
-  font-size: 24px; font-weight: 700;
-  color: #e8edf2; margin-bottom: 0; letter-spacing: -0.3px;
-}
-.login-title span { color: var(--red); }
-
-.login-sub {
-  font-size: 11px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
-  margin-bottom: 28px;
-  margin-top: 4px;
-}
-
-.login-cards { display: flex; flex-direction: column; gap: 10px; }
-
-.login-card {
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  cursor: pointer;
-  text-align: left;
-  background: rgba(255,255,255,0.04);
-  transition: all 0.2s;
-  display: flex; align-items: center; gap: 12px;
-}
-
-.login-card:hover {
-  border-color: var(--red);
-  background: rgba(204,0,0,0.08);
-  transform: translateY(-1px);
-}
-
-.login-card-icon {
-  width: 40px; height: 40px;
-  background: rgba(204,0,0,0.15);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; flex-shrink: 0;
-}
-
-.login-card-name { font-weight: 600; font-size: 14px; color: #e8edf2; }
-.login-card-role { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
-
-.env-badge-login {
-  margin-top: 20px;
-  font-size: 11px;
-  color: rgba(255,200,0,0.7);
-  background: rgba(255,200,0,0.06);
-  border: 1px solid rgba(255,200,0,0.15);
-  padding: 4px 12px; border-radius: 20px;
-  display: inline-block;
-}
-
 /* ── APP SHELL ── */
 #app { display: none; min-height: 100vh; padding-bottom: 70px; }
 
@@ -696,75 +588,9 @@ body {
 </head>
 <body>
 <script>
-// ── SSO AUTO-LOGIN PROMOTORA ────────────────────────────────
-(function() {
-  var params = new URLSearchParams(window.location.search);
-  var auth   = params.get('vv_auth');
-  var perfil = params.get('vv_perfil');
-  var tk     = params.get('vv_tk');
-  if (auth !== 'ok' || !perfil || !tk) return;
-  try {
-    var decoded = atob(tk);
-    var parts   = decoded.split(':');
-    var user    = parts[0];
-    var pass    = parts.slice(1).join(':');
-    window.addEventListener('load', function() {
-      if (!window.USUARIOS) return;
-      var match = USUARIOS[user];
-      if (!match || match.senha !== pass) return;
-      sessionStorage.setItem('vv_auth', 'ok');
-      sessionStorage.setItem('vv_perfil', match.perfil);
-      sessionStorage.setItem('vv_user', user);
-      window.history.replaceState({}, '', window.location.pathname);
-      // Trigger entrar programaticamente
-      if (typeof entrar === 'function') {
-        // Simular login direto
-        PERFIL = match.perfil;
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        if (typeof init === 'function') init();
-        if (typeof carregarDados === 'function') carregarDados();
-      }
-    });
-  } catch(e) { console.warn('SSO prom:', e); }
-})();
+
 </script>
 
-
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-orb login-orb1"></div>
-  <div class="login-orb login-orb2"></div>
-  <div class="login-box">
-    <div class="login-brand">
-      <img src="logo.jpg" alt="VetVida" style="height:72px;display:block;margin:0 auto;background:white;padding:8px 18px;border-radius:12px;">
-    </div>
-    <div class="login-sub">Promotora de Campo</div>
-    <div id="login-error" style="display:none;background:#fff0f0;border:1px solid #fecaca;color:#be123c;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:12px;">
-      Usuário ou senha incorretos.
-    </div>
-    <div style="margin-bottom:12px;">
-      <label style="font-size:12px;font-weight:500;color:#6b7280;display:block;margin-bottom:5px;">Usuário</label>
-      <input type="text" id="login-user" placeholder="nicolle ou felipe"
-        style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;"
-        autocomplete="username">
-    </div>
-    <div style="margin-bottom:16px;">
-      <label style="font-size:12px;font-weight:500;color:#6b7280;display:block;margin-bottom:5px;">Senha</label>
-      <input type="password" id="login-pass" placeholder="••••••••"
-        style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;"
-        autocomplete="current-password"
-        onkeydown="if(event.key==='Enter') fazerLogin()">
-    </div>
-    <button onclick="fazerLogin()"
-      style="width:100%;background:#CC0000;color:white;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
-      Entrar
-    </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- APP -->
 <div id="app">
@@ -783,6 +609,92 @@ body {
     </div>
   </header>
 
+  <!-- ── SCREEN: DASHBOARD (HOME) ── -->
+  <div id="screen-dashboard" class="screen active">
+    <div class="card" id="dash-header-card">
+      <div style="font-size:15px;font-weight:700;" id="dash-saudacao">Olá!</div>
+      <div style="font-size:12px;color:#6b7280;margin-top:2px;" id="dash-data-hoje"></div>
+      <div id="dash-streak" style="display:none;margin-top:8px;background:#fff7ed;border-radius:8px;padding:8px 10px;font-size:12px;color:#c2410c;font-weight:600;">🔥 <span id="dash-streak-num">0</span> dias seguidos com visitas!</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Meu mês</div>
+      <div style="margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;margin-bottom:4px;">
+          <span>Visitas realizadas</span><span id="dash-visitas-fracao">0 / 0</span>
+        </div>
+        <div style="background:#f3f4f6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+          <div id="dash-visitas-barra" style="background:#CC0000;height:8px;width:0%;border-radius:6px;"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;">
+          <div id="dash-conversao" style="font-size:22px;font-weight:800;color:#CC0000;">0%</div>
+          <div style="font-size:11px;color:#6b7280;">Taxa de conversão em leads</div>
+        </div>
+        <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;">
+          <div id="dash-amostras-mes" style="font-size:22px;font-weight:800;color:#CC0000;">0</div>
+          <div style="font-size:11px;color:#6b7280;">Amostras deixadas</div>
+        </div>
+        <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;grid-column:span 2;">
+          <div id="dash-amostras-sem-feedback" style="font-size:22px;font-weight:800;color:#CC0000;">0</div>
+          <div style="font-size:11px;color:#6b7280;">Amostras sem feedback</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 Esta semana</div>
+      <div style="margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;margin-bottom:4px;">
+          <span>Visitas da semana</span><span id="dash-semana-fracao">0 / 0</span>
+        </div>
+        <div style="background:#f3f4f6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:10px;">
+          <div id="dash-semana-barra" style="background:#CC0000;height:8px;width:0%;border-radius:6px;"></div>
+        </div>
+        <div style="font-size:12px;color:#6b7280;">Conversão da semana: <strong id="dash-semana-conversao" style="color:#CC0000;">0%</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🗓️ Roteiro de hoje</div>
+      <div id="dash-roteiro-hoje" style="margin-top:8px;"><div class="empty-state">Carregando...</div></div>
+    </div>
+
+    <div class="card" id="dash-card-alertas" style="display:none;">
+      <div class="card-title">⚠️ Alertas</div>
+      <div id="dash-alertas" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card" id="dash-card-aniversarios" style="display:none;">
+      <div class="card-title">🎂 Aniversários do mês</div>
+      <div id="dash-aniversarios" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: CONTATOS (CRM) ── -->
+  <div id="screen-contatos" class="screen">
+    <div class="card">
+      <div class="card-title">👤 Contatos <button onclick="abrirModalContato()" style="float:right;background:#CC0000;color:white;border:none;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Novo</button></div>
+      <input type="text" class="form-input" id="busca-contato" placeholder="🔍 Buscar por nome ou estabelecimento..." oninput="filtrarContatos()" style="margin-top:8px;">
+    </div>
+    <div id="lista-contatos"><div class="empty-state">Carregando...</div></div>
+  </div>
+
+  <!-- ── SCREEN: AMOSTRAS ── -->
+  <div id="screen-amostras" class="screen">
+    <div class="card">
+      <div class="card-title">📦 Amostras</div>
+      <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;">
+        <button class="filtro-am-btn active" data-status="todos" onclick="filtrarAmostrasStatus('todos',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:#CC0000;color:white;font-size:12px;font-weight:600;cursor:pointer;">Todas</button>
+        <button class="filtro-am-btn" data-status="pendente" onclick="filtrarAmostrasStatus('pendente',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Sem feedback</button>
+        <button class="filtro-am-btn" data-status="aprovado" onclick="filtrarAmostrasStatus('aprovado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Aprovadas</button>
+        <button class="filtro-am-btn" data-status="recusado" onclick="filtrarAmostrasStatus('recusado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Recusadas</button>
+      </div>
+    </div>
+    <div id="lista-amostras"><div class="empty-state">Carregando...</div></div>
+  </div>
+
   <!-- ── SCREEN: NOVA VISITA ── -->
   <div id="screen-visita" class="screen">
     <div class="card">
@@ -798,6 +710,9 @@ body {
         <input type="hidden" id="estab-id">
       </div>
 
+      <!-- Alerta amostra pendente -->
+      <div id="alerta-amostra-pendente" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:13px;color:#92400e;"></div>
+
       <!-- Vendedor e Área (preenchidos automaticamente) -->
       <div class="form-group" id="grupo-vendedor" style="display:none;">
         <div style="display:flex;gap:10px;">
@@ -812,16 +727,8 @@ body {
         </div>
       </div>
 
-      <!-- Cidade -->
-      <div class="form-group">
-        <label class="form-label required">Região / Cidade</label>
-        <select class="form-select" id="visita-cidade">
-          <option value="">Selecione...</option>
-          <option>Zona Leste – SP</option>
-          <option>Zona Norte – SP</option>
-          <option>Guarulhos</option>
-        </select>
-      </div>
+      <!-- Cidade: campo oculto, área já vem da associação vendedor/área -->
+      <input type="hidden" id="visita-cidade" value="">
 
       <!-- Tipo -->
       <div class="form-group">
@@ -844,10 +751,12 @@ body {
         </div>
       </div>
 
-      <!-- Contato -->
+      <!-- Contatos da visita (múltiplos) -->
       <div class="form-group">
-        <label class="form-label">Nome do contato</label>
-        <input type="text" class="form-input" id="visita-contato" placeholder="Dr. João Silva...">
+        <label class="form-label">Pessoas atendidas nesta visita</label>
+        <input type="hidden" id="visita-contato">
+        <div id="lista-contatos-visita" style="margin-bottom:8px;"></div>
+        <button type="button" onclick="abrirSeletorContatoVisita()" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">+ Adicionar contato</button>
       </div>
 
       <!-- Objetivo -->
@@ -888,6 +797,13 @@ body {
       <!-- Alerta lead -->
       <div id="alerta-lead" style="display:none; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:13px; color:#92400e;">
         🔔 <strong>Lead para rep!</strong> Um e-mail de alerta será enviado automaticamente para Felipe.
+      </div>
+
+      <!-- Amostras deixadas -->
+      <div class="form-group">
+        <label class="form-label">Amostras deixadas</label>
+        <div id="lista-amostras-visita" style="margin-bottom:8px;"></div>
+        <button type="button" onclick="abrirModalAmostraVisita()" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">+ Registrar amostra</button>
       </div>
 
       <!-- Observações -->
@@ -1025,6 +941,148 @@ body {
 </div>
 
 <!-- Toast -->
+
+<!-- Modal seletor de contatos da visita -->
+<div class="modal-overlay" id="modal-seletor-contato">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👤 Adicionar contato à visita</div>
+    <input type="text" class="form-input" id="sc-busca" placeholder="🔍 Buscar contato existente..." oninput="filtrarSeletorContato()" style="margin-bottom:10px;">
+    <div id="sc-lista" style="max-height:40vh;overflow-y:auto;margin-bottom:10px;"></div>
+    <button onclick="abrirModalContatoDaVisita()" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;margin-bottom:8px;">+ Cadastrar novo contato</button>
+    <button onclick="fecharSeletorContato()" style="width:100%;background:white;border:1px solid #e5e7eb;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Fechar</button>
+  </div>
+</div>
+
+<!-- Modal contato CRM -->
+<div class="modal-overlay" id="modal-contato">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👤 Contato</div>
+
+    <div class="form-group">
+      <label class="form-label required">Nome</label>
+      <input type="text" class="form-input" id="ct-nome" placeholder="Nome do contato">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label required">Função</label>
+      <select class="form-select" id="ct-funcao" onchange="onMudarFuncaoContato()">
+        <option value="">Selecione...</option>
+        <option value="Veterinário(a)">Veterinário(a)</option>
+        <option value="Comprador(a)">Comprador(a)</option>
+        <option value="Gerente">Gerente</option>
+        <option value="Dono(a)">Dono(a)</option>
+        <option value="Balconista">Balconista</option>
+        <option value="Outro">Outro</option>
+      </select>
+    </div>
+
+    <!-- Especialidades: só aparece se função = Veterinário -->
+    <div class="form-group" id="grupo-ct-especialidades" style="display:none;">
+      <label class="form-label">Especialidades</label>
+      <div class="check-group" id="check-ct-especialidades"><!-- gerado via JS --></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label required">Estabelecimento / Clínica principal</label>
+      <div class="dropdown-wrap">
+        <input type="text" class="form-input" id="ct-estab" placeholder="Buscar estabelecimento..." autocomplete="off" oninput="filtrarDropdownCt()" onfocus="abrirDropdownCt()" onblur="fecharDropdownCt()">
+        <div class="dropdown-list" id="dropdown-ct-estab"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer;">
+        <input type="checkbox" id="ct-multi-clinica" onchange="toggleMultiClinica()" style="width:16px;height:16px;">
+        Atende em mais de uma clínica
+      </label>
+    </div>
+
+    <!-- Clínicas adicionais -->
+    <div class="form-group" id="grupo-ct-outras-clinicas" style="display:none;">
+      <label class="form-label">Outras clínicas</label>
+      <div id="lista-ct-outras-clinicas" style="margin-bottom:8px;"></div>
+      <div class="dropdown-wrap">
+        <input type="text" class="form-input" id="ct-outra-clinica-busca" placeholder="Buscar e adicionar clínica..." autocomplete="off" oninput="filtrarDropdownCtOutra()" onfocus="abrirDropdownCtOutra()" onblur="fecharDropdownCtOutra()">
+        <div class="dropdown-list" id="dropdown-ct-outra-clinica"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Telefone / WhatsApp</label>
+      <input type="text" class="form-input" id="ct-telefone" placeholder="(11) 90000-0000">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Data de aniversário</label>
+      <input type="date" class="form-input" id="ct-aniversario">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Hobbies / Interesses</label>
+      <input type="text" class="form-input" id="ct-hobbies" placeholder="Ex: corrida, pets, culinária...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <textarea class="form-input" id="ct-obs" rows="3" placeholder="Anotações gerais sobre o contato..."></textarea>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn-secondary" onclick="fecharModalContato()" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" onclick="salvarContato()" style="flex:1;">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal amostra (vinculada à visita) -->
+<div class="modal-overlay" id="modal-amostra-visita">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📦 Registrar amostra</div>
+
+    <div class="form-group">
+      <label class="form-label required">Produto</label>
+      <input type="text" class="form-input" id="amv-produto" placeholder="Nome do produto amostrado">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Quantidade</label>
+      <input type="number" class="form-input" id="amv-qtde" placeholder="1" min="1" value="1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Destinatário</label>
+      <select class="form-select" id="amv-destinatario"></select>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn-secondary" onclick="fecharModalAmostraVisita()" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarAmostraVisita()" style="flex:1;">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal feedback de amostra -->
+<div class="modal-overlay" id="modal-feedback-amostra">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💬 Feedback da amostra</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:12px;" id="fb-amostra-info"></div>
+    <div class="form-group">
+      <label class="form-label">Resultado</label>
+      <select class="form-select" id="fb-status">
+        <option value="aprovado">👍 Aprovado / vai prescrever</option>
+        <option value="neutro">🤔 Neutro / ainda avaliando</option>
+        <option value="recusado">👎 Não gostou / recusou</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <textarea class="form-input" id="fb-obs" rows="3" placeholder="Detalhes do feedback..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn-secondary" onclick="fecharModalFeedback()" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" onclick="salvarFeedbackAmostra()" style="flex:1;">Salvar feedback</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal novo estabelecimento -->
 <div class="modal-overlay" id="modal-novo-estab">
@@ -1229,27 +1287,16 @@ const USUARIOS = {
 function verificarSSO() {
   const auth   = sessionStorage.getItem('vv_auth');
   const perfil = sessionStorage.getItem('vv_perfil');
-  if (auth !== 'ok' || !perfil) return false;
+  if (auth !== 'ok' || !perfil) {
+    window.location.href = '/';
+    return false;
+  }
   const perfilProm = (perfil === 'gestor') ? 'gestor' : 'nicolle';
   entrar(perfilProm);
   return true;
 }
 
-function fazerLogin() {
-  const user = (document.getElementById('login-user').value || '').toLowerCase().trim();
-  const pass = document.getElementById('login-pass').value;
-  const erro = document.getElementById('login-error');
 
-  const match = USUARIOS[user];
-  if(!match || match.senha !== pass) {
-    erro.style.display = 'block';
-    document.getElementById('login-pass').value = '';
-    return;
-  }
-
-  erro.style.display = 'none';
-  entrar(match.perfil);
-}
 
 emailjs.init(EMAILJS_KEY);
 let sb = null;
@@ -1257,7 +1304,6 @@ let sb = null;
 function entrar(perfil) {
   PERFIL = perfil;
 
-  document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('header-usuario').textContent = perfil === 'nicolle' ? 'Nicolle · Promotora' : 'Felipe · Gestor';
 
@@ -1272,7 +1318,7 @@ function entrar(perfil) {
   montarRoteiroForm();
   renderDropdown();
 
-  if(perfil === 'nicolle') navegarPara('visita');
+  if(perfil === 'nicolle') navegarPara('dashboard');
   else navegarPara('gestor');
 
   // Carrega dados reais do Supabase em segundo plano
@@ -1342,8 +1388,11 @@ function sair() {
 
 // ─── NAVEGAÇÃO ───────────────────────────────────────────────────────────────
 const NAV_NICOLLE = [
-  { id:'visita',    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>', label:'Nova Visita' },
+  { id:'dashboard', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>', label:'Início' },
+  { id:'visita',    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>', label:'Visita' },
   { id:'historico', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>', label:'Histórico' },
+  { id:'contatos',  icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', label:'Contatos' },
+  { id:'amostras',  icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3z"/><path d="M5 7v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7"/><line x1="10" y1="12" x2="14" y2="12"/></svg>', label:'Amostras' },
   { id:'roteiro',   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', label:'Roteiro' },
 ];
 
@@ -1379,6 +1428,9 @@ function navegarPara(screen) {
   if(screen === 'historico') renderHistorico();
   if(screen === 'roteiro') renderRoteiro();
   if(screen === 'gestor') renderGestor();
+  if(screen === 'dashboard') renderDashboard();
+  if(screen === 'contatos') renderContatos();
+  if(screen === 'amostras') renderAmostras();
 }
 
 // ─── DROPDOWN ESTABELECIMENTO ─────────────────────────────────────────────────
@@ -1489,6 +1541,24 @@ function selecionarEstab(e) {
   if(e.tipo) document.getElementById('visita-tipo').value = e.tipo;
   if(e.contato) document.getElementById('visita-contato').value = e.contato;
   verificarEspecialidades();
+  verificarAmostraPendente(e.nome);
+}
+
+async function verificarAmostraPendente(nomeEstab) {
+  const el = document.getElementById('alerta-amostra-pendente');
+  el.style.display = 'none';
+  if (!nomeEstab) return;
+  try {
+    const { data } = await sb.from('amostras').select('*')
+      .ilike('estabelecimento_nome', `%${nomeEstab}%`)
+      .order('created_at', {ascending:false});
+    const pendente = (data||[]).find(a => !a.feedback && !a.status_feedback);
+    if (pendente) {
+      const dias = Math.floor((new Date() - new Date(pendente.created_at)) / 86400000);
+      el.textContent = `🧪 Este local tem uma amostra pendente de feedback: ${pendente.produto||''} (há ${dias} dias)`;
+      el.style.display = 'block';
+    }
+  } catch(err) { /* silencioso */ }
 }
 
 // ─── CHECKS / PILLS ──────────────────────────────────────────────────────────
@@ -1531,6 +1601,14 @@ function verificarLead() {
 }
 
 // ─── SALVAR VISITA ────────────────────────────────────────────────────────────
+
+function buscarAreaPorEstabelecimento(nomeEstab) {
+  if (!nomeEstab) return null;
+  const baseVV = (typeof BASE_CLIENTES !== 'undefined') ? BASE_CLIENTES : [];
+  const encontrado = baseVV.find(e => e.nome.toLowerCase().trim() === nomeEstab.toLowerCase().trim());
+  return encontrado ? encontrado.area : null;
+}
+
 async function salvarVisita() {
   const estab   = document.getElementById('input-estab').value.trim();
   const cidade  = document.getElementById('visita-cidade').value;
@@ -1538,7 +1616,7 @@ async function salvarVisita() {
   const objetivo= document.getElementById('visita-objetivo').value;
   const resultado=document.getElementById('visita-resultado').value;
 
-  if(!estab || !cidade || !tipo || !objetivo || !resultado) {
+  if(!estab || !tipo || !objetivo || !resultado) {
     mostrarToast('⚠ Preencha os campos obrigatórios'); return;
   }
 
@@ -1549,13 +1627,17 @@ async function salvarVisita() {
   const contato = document.getElementById('visita-contato').value;
   const tem_lead = resultado === 'Interesse confirmado – acionar rep';
 
+  const areaVenda = buscarAreaPorEstabelecimento(estab);
+
   const novaVisita = {
     created_at: new Date().toISOString(),
     estabelecimento: estab,
     estabelecimento_id: document.getElementById('estab-id').value || null,
     cidade, tipo, contato, objetivo, resultado, obs,
     fornecedores, especialidades, tem_lead,
-    data_retorno: retorno || null
+    data_retorno: retorno || null,
+    vendedor: PERFIL === 'nicolle' ? 'Nicolle' : (sessionStorage.getItem('vv_user')||''),
+    area: areaVenda
   };
 
   try {
@@ -1567,6 +1649,7 @@ async function salvarVisita() {
         .insert([{ nome: estab, cidade, tipo, contato }]).select().single();
       if(novoEstab) { ESTABELECIMENTOS.push(novoEstab); renderDropdown(); }
     }
+    await persistirAmostrasDaVisita(estab);
     mostrarToast('✓ Visita registrada!');
   } catch(e) {
     console.error('Erro ao salvar:', e);
@@ -1617,6 +1700,9 @@ async function salvarVisita() {
   document.getElementById('visita-objetivo').value = '';
   document.getElementById('visita-resultado').value = '';
   document.getElementById('visita-obs').value = '';
+  document.getElementById('alerta-amostra-pendente').style.display = 'none';
+  AMOSTRAS_VISITA_TEMP = []; renderListaAmostrasVisita();
+  CONTATOS_VISITA_TEMP = []; renderListaContatosVisita();
   document.getElementById('visita-retorno').value = '';
   document.getElementById('alerta-lead').style.display = 'none';
   document.querySelectorAll('.check-pill').forEach(p => { p.classList.remove('checked'); p.querySelector('input').checked = false; });
@@ -1624,7 +1710,9 @@ async function salvarVisita() {
 }
 
 // ─── HISTÓRICO ────────────────────────────────────────────────────────────────
-function renderHistorico() {
+let AMOSTRAS_POR_ESTAB_DIA = {}; // cache: "estabLower|YYYY-MM-DD" -> count
+
+async function renderHistorico() {
   const cidade = document.getElementById('filtro-cidade')?.value || '';
   const resultado = document.getElementById('filtro-resultado')?.value || '';
 
@@ -1636,7 +1724,22 @@ function renderHistorico() {
   const el = document.getElementById('lista-historico');
   if(!lista.length) { el.innerHTML = '<p style="color:var(--gray-400);text-align:center;padding:30px 0;">Nenhuma visita encontrada.</p>'; return; }
 
-  el.innerHTML = lista.map(v => `
+  // Pré-carregar amostras para marcar badge nos cards
+  try {
+    const { data } = await sb.from('amostras').select('estabelecimento_nome, created_at');
+    AMOSTRAS_POR_ESTAB_DIA = {};
+    (data || []).forEach(a => {
+      const dia = new Date(a.created_at).toISOString().slice(0,10);
+      const key = (a.estabelecimento_nome||'').toLowerCase().trim() + '|' + dia;
+      AMOSTRAS_POR_ESTAB_DIA[key] = (AMOSTRAS_POR_ESTAB_DIA[key] || 0) + 1;
+    });
+  } catch(e) { AMOSTRAS_POR_ESTAB_DIA = {}; }
+
+  el.innerHTML = lista.map(v => {
+    const dia = new Date(v.created_at).toISOString().slice(0,10);
+    const key = (v.estabelecimento||'').toLowerCase().trim() + '|' + dia;
+    const temAmostra = AMOSTRAS_POR_ESTAB_DIA[key] > 0;
+    return `
     <div class="visita-item" onclick="abrirDetalheVisita('${v.id}')">
       <div class="visita-item-header">
         <div class="visita-item-name">${v.estabelecimento}</div>
@@ -1645,10 +1748,11 @@ function renderHistorico() {
       <div class="visita-item-meta">📍 ${v.cidade} · ${v.tipo}</div>
       <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
         ${v.tem_lead ? '<span class="badge badge-lead">🔔 Lead</span>' : ''}
+        ${temAmostra ? '<span class="badge" style="background:#e0f0ff;color:#1F4E79;">🧪 Amostra</span>' : ''}
         <span class="badge badge-gray">${v.resultado}</span>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 // ─── ROTEIRO ─────────────────────────────────────────────────────────────────
@@ -2336,7 +2440,7 @@ async function reabrirParaEdicao() {
 }
 
 // ─── DETALHE VISITA ───────────────────────────────────────────────────────────
-function abrirDetalheVisita(id) {
+async function abrirDetalheVisita(id) {
   const v = VISITAS.find(x=>String(x.id)===String(id));
   if(!v) return;
   document.getElementById('modal-visita-title').textContent = v.estabelecimento;
@@ -2352,8 +2456,28 @@ function abrirDetalheVisita(id) {
       ${v.obs?`<div><strong>📝 Observações:</strong> ${v.obs}</div>`:''}
       ${v.data_retorno?`<div><strong>📅 Retorno:</strong> ${formatarDataSimples(v.data_retorno)}</div>`:''}
       ${v.tem_lead?'<div class="badge badge-lead" style="width:fit-content;">🔔 Lead gerado para o rep</div>':''}
+      <div id="detalhe-visita-amostras">🧪 Carregando amostras...</div>
     </div>`;
   document.getElementById('modal-visita').classList.add('open');
+
+  // Buscar amostras dessa visita (mesmo estabelecimento, no mesmo dia)
+  try {
+    const inicioDia = new Date(v.created_at); inicioDia.setHours(0,0,0,0);
+    const fimDia = new Date(v.created_at); fimDia.setHours(23,59,59,999);
+    const { data } = await sb.from('amostras').select('*')
+      .ilike('estabelecimento_nome', v.estabelecimento)
+      .gte('created_at', inicioDia.toISOString())
+      .lte('created_at', fimDia.toISOString());
+    const amostrasDaVisita = data || [];
+    const elAm = document.getElementById('detalhe-visita-amostras');
+    if (!elAm) return;
+    if (!amostrasDaVisita.length) { elAm.innerHTML = ''; return; }
+    elAm.innerHTML = `<div><strong>📦 Amostras entregues:</strong></div>` +
+      amostrasDaVisita.map(a => `<div style="margin-left:8px;font-size:12px;color:#374151;">• ${a.produto} (${a.quantidade}un)${a.contato_nome?' — '+a.contato_nome:''}</div>`).join('');
+  } catch(e) {
+    const elAm = document.getElementById('detalhe-visita-amostras');
+    if (elAm) elAm.innerHTML = '';
+  }
 }
 
 function fecharModal(id) {
@@ -2609,6 +2733,675 @@ function formatarDataSimples(str) {
 }
 
 window.addEventListener('load', function() { verificarSSO(); });
+
+
+// ═══════════════ DASHBOARD (HOME) ═══════════════
+async function renderDashboard() {
+  const hoje = new Date();
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const diaSemana = hoje.getDay(); // 0=dom
+  const inicioSemana = new Date(hoje);
+  inicioSemana.setDate(hoje.getDate() - (diaSemana===0?6:diaSemana-1));
+  inicioSemana.setHours(0,0,0,0);
+
+  // Saudação
+  const h = hoje.getHours();
+  const saud = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  document.getElementById('dash-saudacao').textContent = `${saud}, Nicolle!`;
+  document.getElementById('dash-data-hoje').textContent = hoje.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+
+  try {
+    const { data: visitasMes } = await sb.from('visitas').select('*').gte('created_at', inicioMes.toISOString()).order('created_at', {ascending:false});
+    const vMes = visitasMes || [];
+
+    const { data: amostrasAll } = await sb.from('amostras').select('*').order('created_at', {ascending:false});
+    const amostras = amostrasAll || [];
+
+    // ── Streak de dias consecutivos com visita ──
+    const diasComVisita = new Set(vMes.map(v => new Date(v.created_at).toDateString()));
+    // olhar também mês anterior se necessário para não cortar o streak no dia 1
+    let streak = 0;
+    let cursor = new Date(hoje);
+    while (diasComVisita.has(cursor.toDateString())) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    if (streak > 1) {
+      document.getElementById('dash-streak').style.display = 'block';
+      document.getElementById('dash-streak-num').textContent = streak;
+    }
+
+    // ── Roteiro do mês (total de visitas esperadas) ──
+    const { data: roteiros } = await sb.from('roteiros').select('*').order('created_at', {ascending:false}).limit(1);
+    const roteiroAtual = (roteiros && roteiros[0]) || null;
+    let totalRoteiroMes = 0;
+    const diasSemanaKeys = ['dom','seg','ter','qua','qui','sex','sab'];
+    if (roteiroAtual && roteiroAtual.dias) {
+      Object.values(roteiroAtual.dias).forEach(semana => {
+        Object.values(semana || {}).forEach(lista => { totalRoteiroMes += (lista||[]).length; });
+      });
+    }
+
+    // ── Meu mês: visitas vs roteiro ──
+    document.getElementById('dash-visitas-fracao').textContent = `${vMes.length} / ${totalRoteiroMes || '—'}`;
+    const pctMes = totalRoteiroMes > 0 ? Math.min(100, Math.round(vMes.length / totalRoteiroMes * 100)) : 0;
+    document.getElementById('dash-visitas-barra').style.width = pctMes + '%';
+
+    // ── Conversão em leads ──
+    const leadsMes = vMes.filter(v => v.tem_lead).length;
+    const pctConv = vMes.length > 0 ? Math.round(leadsMes / vMes.length * 100) : 0;
+    document.getElementById('dash-conversao').textContent = pctConv + '%';
+
+    // ── Amostras do mês ──
+    const amMes = amostras.filter(a => new Date(a.created_at) >= inicioMes);
+    document.getElementById('dash-amostras-mes').textContent = amMes.length;
+    const amSemFeedback = amostras.filter(a => !a.feedback && !a.status_feedback);
+    document.getElementById('dash-amostras-sem-feedback').textContent = amSemFeedback.length;
+
+    // ── Esta semana ──
+    const vSemana = vMes.filter(v => new Date(v.created_at) >= inicioSemana);
+    let totalRoteiroSemana = 0;
+    if (roteiroAtual && roteiroAtual.dias) {
+      // aproximação: usa a semana do mês atual (1-4) baseada no dia
+      const semanaNum = Math.min(4, Math.ceil(hoje.getDate() / 7));
+      const diasS = (roteiroAtual.dias[semanaNum]) || {};
+      Object.values(diasS).forEach(lista => { totalRoteiroSemana += (lista||[]).length; });
+    }
+    document.getElementById('dash-semana-fracao').textContent = `${vSemana.length} / ${totalRoteiroSemana || '—'}`;
+    const pctSemana = totalRoteiroSemana > 0 ? Math.min(100, Math.round(vSemana.length / totalRoteiroSemana * 100)) : 0;
+    document.getElementById('dash-semana-barra').style.width = pctSemana + '%';
+    const leadsSemana = vSemana.filter(v => v.tem_lead).length;
+    const pctConvSemana = vSemana.length > 0 ? Math.round(leadsSemana / vSemana.length * 100) : 0;
+    document.getElementById('dash-semana-conversao').textContent = pctConvSemana + '%';
+
+    // ── Roteiro de hoje ──
+    const diaSemanaKey = diasSemanaKeys[hoje.getDay()];
+    let listaHoje = [];
+    if (roteiroAtual && roteiroAtual.dias) {
+      const semanaNum = Math.min(4, Math.ceil(hoje.getDate() / 7));
+      listaHoje = ((roteiroAtual.dias[semanaNum]||{})[diaSemanaKey]) || [];
+    }
+    const nomesVisitadosHoje = new Set(vMes.filter(v => new Date(v.created_at).toDateString() === hoje.toDateString()).map(v => (v.estabelecimento||'').toLowerCase().trim()));
+    const elRotHoje = document.getElementById('dash-roteiro-hoje');
+    if (!listaHoje.length) {
+      elRotHoje.innerHTML = '<div class="empty-state">Nenhum estabelecimento no roteiro de hoje.</div>';
+    } else {
+      elRotHoje.innerHTML = listaHoje.map(estabNome => {
+        const nome = typeof estabNome === 'string' ? estabNome : (estabNome.nome || '');
+        const feito = nomesVisitadosHoje.has(nome.toLowerCase().trim());
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f3f4f6;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${feito ? '<span style="color:#16a34a;">✅</span>' : '<span style="width:16px;display:inline-block;"></span>'}
+            <span style="font-size:13px;${feito?'color:#9ca3af;text-decoration:line-through;':''}">${nome}</span>
+          </div>
+          ${!feito ? `<button onclick="irParaNovaVisitaCom('${nome.replace(/'/g,"\\'")}')" style="background:#CC0000;color:white;border:none;border-radius:50%;width:26px;height:26px;font-size:15px;font-weight:700;cursor:pointer;">+</button>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    // ── Alertas ──
+    const alertas = [];
+    // Clientes do roteiro não visitados em dias anteriores desta semana
+    if (roteiroAtual && roteiroAtual.dias) {
+      const semanaNum = Math.min(4, Math.ceil(hoje.getDate() / 7));
+      const diasS = (roteiroAtual.dias[semanaNum]) || {};
+      const nomesVisitadosSemana = new Set(vSemana.map(v => (v.estabelecimento||'').toLowerCase().trim()));
+      for (let d = 1; d < diaSemana; d++) {
+        const key = diasSemanaKeys[d];
+        (diasS[key] || []).forEach(e => {
+          const nome = typeof e === 'string' ? e : (e.nome || '');
+          if (!nomesVisitadosSemana.has(nome.toLowerCase().trim())) {
+            alertas.push({icon:'📍', texto:`${nome} não foi visitado (previsto para ${key})`});
+          }
+        });
+      }
+    }
+    // Amostras 30+/45+ dias sem feedback
+    amSemFeedback.forEach(a => {
+      const dias = Math.floor((hoje - new Date(a.created_at)) / 86400000);
+      if (dias >= 45) alertas.push({icon:'🧪', texto:`Amostra sem feedback há ${dias} dias — ${a.produto||''} (${a.estabelecimento_nome||''})`, urgente:true});
+      else if (dias >= 30) alertas.push({icon:'🧪', texto:`Amostra sem feedback há ${dias} dias — ${a.produto||''}`});
+    });
+    // Retornos vencidos/próximos
+    vMes.forEach(v => {
+      if (v.data_retorno) {
+        const dr = new Date(v.data_retorno);
+        const diffDias = Math.floor((dr - hoje) / 86400000);
+        if (diffDias <= 2) alertas.push({icon:'🔔', texto:`Retorno ${diffDias<0?'vencido':'próximo'} — ${v.estabelecimento} (${dr.toLocaleDateString('pt-BR')})`, urgente: diffDias < 0});
+      }
+    });
+
+    if (alertas.length) {
+      document.getElementById('dash-card-alertas').style.display = 'block';
+      document.getElementById('dash-alertas').innerHTML = alertas.map(a => `
+        <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+          <span>${a.icon}</span>
+          <span style="font-size:12px;${a.urgente?'color:#CC0000;font-weight:600;':'color:#374151;'}">${a.texto}</span>
+        </div>`).join('');
+    }
+
+    // ── Aniversariantes do mês ──
+    try {
+      const { data: contatos } = await sb.from('contatos_crm').select('*');
+      const mesAtual = hoje.getMonth() + 1;
+      const diaAtual = hoje.getDate();
+      const aniversariantes = (contatos || []).filter(c => {
+        if (!c.data_aniversario) return false;
+        return parseInt(c.data_aniversario.split('-')[1]) === mesAtual;
+      }).sort((a,b) => parseInt(a.data_aniversario.split('-')[2]) - parseInt(b.data_aniversario.split('-')[2]));
+
+      if (aniversariantes.length) {
+        document.getElementById('dash-card-aniversarios').style.display = 'block';
+        document.getElementById('dash-aniversarios').innerHTML = aniversariantes.map(c => {
+          const dia = parseInt(c.data_aniversario.split('-')[2]);
+          const hoje_flag = dia === diaAtual;
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;${hoje_flag?'background:#fff7ed;border-radius:6px;padding-left:6px;':''}">
+            <div><div style="font-weight:600;font-size:13px;">${c.nome}${hoje_flag?' 🎉':''}</div><div style="font-size:11px;color:#9ca3af;">${c.estabelecimento_nome||''}</div></div>
+            <div style="font-size:13px;font-weight:700;color:#CC0000;">${String(dia).padStart(2,'0')}/${c.data_aniversario.split('-')[1]}</div>
+          </div>`;
+        }).join('');
+      }
+    } catch(e) { /* tabela pode não existir ainda */ }
+
+  } catch(e) {
+    console.warn('dashboard:', e);
+  }
+}
+
+function irParaNovaVisitaCom(nomeEstab) {
+  navegarPara('visita');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === 'visita'));
+  setTimeout(() => {
+    const input = document.getElementById('input-estab');
+    if (input) { input.value = nomeEstab; input.dispatchEvent(new Event('input')); }
+  }, 100);
+}
+
+// ═══════════════ CONTATOS (CRM) ═══════════════
+let CONTATOS_CACHE = [];
+let CONTATO_EDITANDO = null;
+
+async function renderContatos() {
+  const el = document.getElementById('lista-contatos');
+  el.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/contatos_crm?select=*&order=nome.asc`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    const data = await r.json();
+    CONTATOS_CACHE = Array.isArray(data) ? data : [];
+    exibirContatos(CONTATOS_CACHE);
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state">Erro ao carregar contatos.</div>';
+  }
+}
+
+function exibirContatos(lista) {
+  const el = document.getElementById('lista-contatos');
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-state">Nenhum contato cadastrado.</div>';
+    return;
+  }
+  el.innerHTML = lista.map(c => `
+    <div class="card" onclick="editarContato(${c.id})" style="cursor:pointer;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="font-weight:700;font-size:14px;">${c.nome}</div>
+        ${c.funcao ? `<span style="font-size:10px;background:#f3f4f6;color:#374151;padding:2px 7px;border-radius:8px;">${c.funcao}</span>` : ''}
+      </div>
+      <div style="font-size:12px;color:#6b7280;">${c.estabelecimento_nome || ''}${(c.outros_estabelecimentos && c.outros_estabelecimentos.length) ? ` + ${c.outros_estabelecimentos.length} local(is)` : ''}</div>
+      ${c.especialidade ? `<div style="font-size:11px;color:#CC0000;margin-top:2px;">${c.especialidade}</div>` : ''}
+      <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:#9ca3af;">
+        ${c.telefone ? `<span>📞 ${c.telefone}</span>` : ''}
+        ${c.data_aniversario ? `<span>🎂 ${c.data_aniversario.split('-').reverse().slice(0,2).join('/')}</span>` : ''}
+      </div>
+      ${c.hobbies ? `<div style="font-size:11px;color:#6b7280;margin-top:4px;">🎯 ${c.hobbies}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function filtrarContatos() {
+  const q = document.getElementById('busca-contato').value.toLowerCase();
+  const filtrados = CONTATOS_CACHE.filter(c =>
+    (c.nome||'').toLowerCase().includes(q) || (c.estabelecimento_nome||'').toLowerCase().includes(q)
+  );
+  exibirContatos(filtrados);
+}
+
+function abrirModalContato() {
+  CONTATO_EDITANDO = null;
+  document.getElementById('ct-nome').value = '';
+  document.getElementById('ct-funcao').value = '';
+  document.getElementById('grupo-ct-especialidades').style.display = 'none';
+  document.getElementById('ct-estab').value = '';
+  document.getElementById('ct-multi-clinica').checked = false;
+  document.getElementById('grupo-ct-outras-clinicas').style.display = 'none';
+  CT_OUTRAS_CLINICAS = [];
+  document.getElementById('ct-telefone').value = '';
+  document.getElementById('ct-aniversario').value = '';
+  document.getElementById('ct-hobbies').value = '';
+  document.getElementById('ct-obs').value = '';
+  montarEspecialidadesContato();
+  renderListaOutrasClinicas();
+  document.getElementById('modal-contato').classList.add('open');
+}
+
+function editarContato(id) {
+  const c = CONTATOS_CACHE.find(x => x.id === id);
+  if (!c) return;
+  CONTATO_EDITANDO = id;
+  document.getElementById('ct-nome').value = c.nome || '';
+  document.getElementById('ct-funcao').value = c.funcao || '';
+  document.getElementById('ct-estab').value = c.estabelecimento_nome || '';
+  document.getElementById('ct-telefone').value = c.telefone || '';
+  document.getElementById('ct-aniversario').value = c.data_aniversario || '';
+  document.getElementById('ct-hobbies').value = c.hobbies || '';
+  document.getElementById('ct-obs').value = c.tipo || '';
+
+  montarEspecialidadesContato();
+  document.getElementById('grupo-ct-especialidades').style.display = (c.funcao === 'Veterinário(a)') ? 'block' : 'none';
+  const espSalvas = (c.especialidade || '').split(',').map(s => s.trim()).filter(Boolean);
+  document.querySelectorAll('#check-ct-especialidades input').forEach(inp => {
+    if (espSalvas.includes(inp.value)) { inp.checked = true; inp.closest('.check-pill').classList.add('checked'); }
+  });
+
+  CT_OUTRAS_CLINICAS = Array.isArray(c.outros_estabelecimentos) ? [...c.outros_estabelecimentos] : [];
+  document.getElementById('ct-multi-clinica').checked = CT_OUTRAS_CLINICAS.length > 0;
+  document.getElementById('grupo-ct-outras-clinicas').style.display = CT_OUTRAS_CLINICAS.length > 0 ? 'block' : 'none';
+  renderListaOutrasClinicas();
+
+  document.getElementById('modal-contato').classList.add('open');
+}
+
+function fecharModalContato() {
+  document.getElementById('modal-contato').classList.remove('open');
+}
+
+
+// ═══════════════ BUSCA GENÉRICA DE ESTABELECIMENTO (reaproveitável) ═══════════════
+function buscarEstabsGenerico(query) {
+  query = (query||'').toLowerCase().trim();
+  if (!query) return [];
+  const baseVV = (typeof BASE_CLIENTES !== 'undefined') ? BASE_CLIENTES : [];
+  const filtradosVV = baseVV.filter(e => e.nome.toLowerCase().includes(query)).slice(0, 8).map(e => ({nome: e.nome, sub: `${e.area||e.cidade||''} · ${e.vendedor||''}`}));
+  const filtradosSB = ESTABELECIMENTOS.filter(e => e.nome.toLowerCase().includes(query)).slice(0, 5).map(e => ({nome: e.nome, sub: e.cidade||''}));
+  return [...filtradosVV, ...filtradosSB];
+}
+
+// ── Campo: Estabelecimento principal do contato ──
+function filtrarDropdownCt() { renderDropdownCt(); document.getElementById('dropdown-ct-estab').classList.add('open'); }
+function abrirDropdownCt() { renderDropdownCt(); document.getElementById('dropdown-ct-estab').classList.add('open'); }
+function fecharDropdownCt() { setTimeout(() => document.getElementById('dropdown-ct-estab').classList.remove('open'), 150); }
+function renderDropdownCt() {
+  const list = document.getElementById('dropdown-ct-estab');
+  const query = document.getElementById('ct-estab').value;
+  const resultados = buscarEstabsGenerico(query);
+  list.innerHTML = resultados.map(e => `<div class="dropdown-item"><strong>${e.nome}</strong> <span style="color:var(--gray-400);font-size:11px;">· ${e.sub}</span></div>`).join('');
+  [...list.children].forEach((el, i) => { el.onmousedown = () => { document.getElementById('ct-estab').value = resultados[i].nome; fecharDropdownCt(); }; });
+}
+
+// ── Campo: Outras clínicas do contato (multi) ──
+let CT_OUTRAS_CLINICAS = [];
+function filtrarDropdownCtOutra() { renderDropdownCtOutra(); document.getElementById('dropdown-ct-outra-clinica').classList.add('open'); }
+function abrirDropdownCtOutra() { renderDropdownCtOutra(); document.getElementById('dropdown-ct-outra-clinica').classList.add('open'); }
+function fecharDropdownCtOutra() { setTimeout(() => document.getElementById('dropdown-ct-outra-clinica').classList.remove('open'), 150); }
+function renderDropdownCtOutra() {
+  const list = document.getElementById('dropdown-ct-outra-clinica');
+  const query = document.getElementById('ct-outra-clinica-busca').value;
+  const resultados = buscarEstabsGenerico(query).filter(e => !CT_OUTRAS_CLINICAS.includes(e.nome) && e.nome !== document.getElementById('ct-estab').value);
+  list.innerHTML = resultados.map(e => `<div class="dropdown-item"><strong>${e.nome}</strong> <span style="color:var(--gray-400);font-size:11px;">· ${e.sub}</span></div>`).join('');
+  [...list.children].forEach((el, i) => { el.onmousedown = () => { adicionarOutraClinica(resultados[i].nome); }; });
+}
+function adicionarOutraClinica(nome) {
+  if (!CT_OUTRAS_CLINICAS.includes(nome)) CT_OUTRAS_CLINICAS.push(nome);
+  document.getElementById('ct-outra-clinica-busca').value = '';
+  fecharDropdownCtOutra();
+  renderListaOutrasClinicas();
+}
+function removerOutraClinica(i) {
+  CT_OUTRAS_CLINICAS.splice(i, 1);
+  renderListaOutrasClinicas();
+}
+function renderListaOutrasClinicas() {
+  const el = document.getElementById('lista-ct-outras-clinicas');
+  el.innerHTML = CT_OUTRAS_CLINICAS.map((nome, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#f9fafb;border-radius:8px;padding:7px 10px;margin-bottom:5px;">
+      <span style="font-size:12px;">${nome}</span>
+      <button onclick="removerOutraClinica(${i})" style="background:none;border:none;color:#CC0000;font-size:15px;cursor:pointer;">✕</button>
+    </div>`).join('');
+}
+function toggleMultiClinica() {
+  const marcado = document.getElementById('ct-multi-clinica').checked;
+  document.getElementById('grupo-ct-outras-clinicas').style.display = marcado ? 'block' : 'none';
+  if (!marcado) { CT_OUTRAS_CLINICAS = []; renderListaOutrasClinicas(); }
+}
+
+// ── Função do contato → mostra/esconde especialidades ──
+function onMudarFuncaoContato() {
+  const funcao = document.getElementById('ct-funcao').value;
+  document.getElementById('grupo-ct-especialidades').style.display = (funcao === 'Veterinário(a)') ? 'block' : 'none';
+}
+
+// ── Especialidades multi-select (pills clicáveis) ──
+function montarEspecialidadesContato() {
+  const cont = document.getElementById('check-ct-especialidades');
+  cont.innerHTML = '';
+  ESPECIALIDADES.forEach(esp => {
+    const label = document.createElement('label');
+    label.className = 'check-pill';
+    label.innerHTML = `<input type="checkbox" value="${esp}"> ${esp}`;
+    label.querySelector('input').onchange = e => label.classList.toggle('checked', e.target.checked);
+    cont.appendChild(label);
+  });
+}
+
+let CONTATOS_VISITA_TEMP = []; // contatos adicionados na visita atual
+let CONTATOS_CRM_CACHE_RAPIDO = [];
+
+async function abrirSeletorContatoVisita() {
+  document.getElementById('sc-busca').value = '';
+  document.getElementById('modal-seletor-contato').classList.add('open');
+  const estabAtual = (document.getElementById('input-estab').value || '').trim();
+  if (!estabAtual) {
+    CONTATOS_CRM_CACHE_RAPIDO = [];
+    document.getElementById('sc-lista').innerHTML = '<p style="text-align:center;color:#9ca3af;font-size:12px;padding:10px 0;">Selecione o estabelecimento da visita primeiro.</p>';
+    return;
+  }
+  try {
+    const { data } = await sb.from('contatos_crm').select('*').order('nome');
+    const todos = data || [];
+    const estabLower = estabAtual.toLowerCase();
+    // Filtrar: contato pertence a este estabelecimento (principal OU nas outras clínicas)
+    CONTATOS_CRM_CACHE_RAPIDO = todos.filter(c => {
+      const principalMatch = (c.estabelecimento_nome||'').toLowerCase().includes(estabLower);
+      const outrosMatch = Array.isArray(c.outros_estabelecimentos) &&
+        c.outros_estabelecimentos.some(nome => (nome||'').toLowerCase().includes(estabLower));
+      return principalMatch || outrosMatch;
+    });
+  } catch(e) { CONTATOS_CRM_CACHE_RAPIDO = []; }
+  filtrarSeletorContato();
+}
+
+function fecharSeletorContato() {
+  document.getElementById('modal-seletor-contato').classList.remove('open');
+}
+
+function filtrarSeletorContato() {
+  const q = document.getElementById('sc-busca').value.toLowerCase();
+  const jaAdicionados = new Set(CONTATOS_VISITA_TEMP.map(c => c.id));
+  const lista = CONTATOS_CRM_CACHE_RAPIDO.filter(c =>
+    !jaAdicionados.has(c.id) && (!q || c.nome.toLowerCase().includes(q) || (c.estabelecimento_nome||'').toLowerCase().includes(q))
+  );
+  const el = document.getElementById('sc-lista');
+  if (!lista.length) {
+    el.innerHTML = '<p style="text-align:center;color:#9ca3af;font-size:12px;padding:10px 0;">Nenhum contato encontrado. Cadastre um novo abaixo.</p>';
+    return;
+  }
+  el.innerHTML = lista.map(c => `
+    <div onclick='adicionarContatoNaVisita(${JSON.stringify(c).replace(/'/g, "&apos;")})' style="padding:10px 8px;border-bottom:1px solid #f3f4f6;cursor:pointer;">
+      <div style="font-weight:600;font-size:13px;">${c.nome}</div>
+      <div style="font-size:11px;color:#9ca3af;">${c.estabelecimento_nome||''}${c.especialidade?' · '+c.especialidade:''}</div>
+    </div>`).join('');
+}
+
+function abrirModalContatoDaVisita() {
+  fecharSeletorContato();
+  CONTATO_ORIGEM_VISITA = true;
+  abrirModalContato();
+  // Pré-preencher estabelecimento com o da visita atual
+  const estabAtual = (document.getElementById('input-estab').value || '').trim();
+  if (estabAtual) document.getElementById('ct-estab').value = estabAtual;
+}
+
+function renderListaContatosVisita() {
+  const el = document.getElementById('lista-contatos-visita');
+  document.getElementById('visita-contato').value = CONTATOS_VISITA_TEMP.map(c => c.nome).join(', ');
+  if (!CONTATOS_VISITA_TEMP.length) { el.innerHTML = ''; return; }
+  el.innerHTML = CONTATOS_VISITA_TEMP.map((c, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
+      <div style="font-size:12px;"><strong>${c.nome}</strong>${c.especialidade?' · '+c.especialidade:''}</div>
+      <button onclick="removerContatoVisita(${i})" style="background:none;border:none;color:#CC0000;font-size:16px;cursor:pointer;">✕</button>
+    </div>`).join('');
+}
+
+function removerContatoVisita(i) {
+  CONTATOS_VISITA_TEMP.splice(i, 1);
+  renderListaContatosVisita();
+}
+
+let CONTATO_ORIGEM_VISITA = false; // true quando o modal foi aberto a partir da visita
+
+async function salvarContato() {
+  const nome = document.getElementById('ct-nome').value.trim();
+  if (!nome) { mostrarToast('Informe o nome do contato'); return; }
+
+  const funcao = document.getElementById('ct-funcao').value;
+  if (!funcao) { mostrarToast('Selecione a função do contato'); return; }
+  const estab = document.getElementById('ct-estab').value.trim();
+  if (!estab) { mostrarToast('Informe o estabelecimento principal'); return; }
+
+  const especialidadesSel = [...document.querySelectorAll('#check-ct-especialidades input:checked')].map(i => i.value);
+
+  const payload = {
+    nome,
+    funcao,
+    estabelecimento_nome: estab,
+    outros_estabelecimentos: CT_OUTRAS_CLINICAS,
+    especialidade: especialidadesSel.join(', '),
+    telefone: document.getElementById('ct-telefone').value.trim(),
+    data_aniversario: document.getElementById('ct-aniversario').value || null,
+    hobbies: document.getElementById('ct-hobbies').value.trim(),
+    tipo: document.getElementById('ct-obs').value.trim(),
+  };
+
+  try {
+    let contatoSalvo, erro;
+    if (CONTATO_EDITANDO) {
+      const { data, error } = await sb.from('contatos_crm').update(payload).eq('id', CONTATO_EDITANDO).select().single();
+      contatoSalvo = data; erro = error;
+    } else {
+      const { data, error } = await sb.from('contatos_crm').insert([payload]).select().single();
+      contatoSalvo = data; erro = error;
+    }
+    if (erro) {
+      console.error('Erro Supabase ao salvar contato:', erro);
+      mostrarToast('Erro: ' + (erro.message || 'falha ao salvar'));
+      return;
+    }
+    mostrarToast('✓ Contato salvo!');
+    if (CONTATO_ORIGEM_VISITA) {
+      const origemVisitaFlag = true;
+      CONTATO_ORIGEM_VISITA = false;
+      if (contatoSalvo) {
+        adicionarContatoNaVisita(contatoSalvo);
+      } else {
+        // fallback: sem retorno do banco, monta objeto local com os dados do formulário
+        adicionarContatoNaVisita({ id: 'tmp-'+Date.now(), nome: payload.nome, funcao: payload.funcao, especialidade: payload.especialidade, estabelecimento: payload.estabelecimento });
+      }
+    }
+    fecharModalContato();
+    renderContatos();
+  } catch(e) {
+    console.error('Exceção ao salvar contato:', e);
+    mostrarToast('Erro ao salvar contato: ' + e.message);
+  }
+}
+
+// Adiciona um contato (objeto do banco) à lista da visita atual
+function adicionarContatoNaVisita(contato) {
+  if (!CONTATOS_VISITA_TEMP.find(c => c.id === contato.id)) {
+    CONTATOS_VISITA_TEMP.push(contato);
+  }
+  renderListaContatosVisita();
+}
+
+// ═══════════════ AMOSTRAS (vinculadas à visita) ═══════════════
+let AMOSTRAS_VISITA_TEMP = []; // amostras adicionadas na visita atual (antes de salvar)
+let AMOSTRAS_CACHE = [];
+let AMOSTRAS_FILTRO_ATUAL = 'todos';
+
+async function abrirModalAmostraVisita() {
+  document.getElementById('amv-produto').value = '';
+  document.getElementById('amv-qtde').value = '1';
+  const sel = document.getElementById('amv-destinatario');
+  sel.innerHTML = '<option value="">Carregando contatos...</option>';
+  document.getElementById('modal-amostra-visita').classList.add('open');
+
+  const estabAtual = (document.getElementById('input-estab').value || '').trim();
+  const idsVisita = new Set(CONTATOS_VISITA_TEMP.map(c => c.id));
+  let outrosDoEstab = [];
+  if (estabAtual) {
+    try {
+      const { data } = await sb.from('contatos_crm').select('*').ilike('estabelecimento_nome', `%${estabAtual}%`);
+      outrosDoEstab = (data || []).filter(c => !idsVisita.has(c.id));
+    } catch(e) { /* silencioso */ }
+  }
+
+  let opcoes = '';
+  if (CONTATOS_VISITA_TEMP.length) {
+    opcoes += '<optgroup label="Contatos desta visita">' +
+      CONTATOS_VISITA_TEMP.map(c => `<option value="${c.nome}">${c.nome}${c.funcao?' ('+c.funcao+')':''}</option>`).join('') +
+      '</optgroup>';
+  }
+  if (outrosDoEstab.length) {
+    opcoes += '<optgroup label="Outros contatos deste local">' +
+      outrosDoEstab.map(c => `<option value="${c.nome}">${c.nome}${c.funcao?' ('+c.funcao+')':''}</option>`).join('') +
+      '</optgroup>';
+  }
+  sel.innerHTML = opcoes || '<option value="">Nenhum contato encontrado</option>';
+}
+function fecharModalAmostraVisita() {
+  document.getElementById('modal-amostra-visita').classList.remove('open');
+}
+function confirmarAmostraVisita() {
+  const produto = document.getElementById('amv-produto').value.trim();
+  if (!produto) { mostrarToast('Informe o produto'); return; }
+  AMOSTRAS_VISITA_TEMP.push({
+    produto,
+    quantidade: parseInt(document.getElementById('amv-qtde').value) || 1,
+    destinatario: document.getElementById('amv-destinatario').value.trim()
+  });
+  renderListaAmostrasVisita();
+  fecharModalAmostraVisita();
+}
+function renderListaAmostrasVisita() {
+  const el = document.getElementById('lista-amostras-visita');
+  if (!AMOSTRAS_VISITA_TEMP.length) { el.innerHTML = ''; return; }
+  el.innerHTML = AMOSTRAS_VISITA_TEMP.map((a, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
+      <div style="font-size:12px;"><strong>${a.produto}</strong> · ${a.quantidade}un${a.destinatario ? ' · '+a.destinatario : ''}</div>
+      <button onclick="removerAmostraVisita(${i})" style="background:none;border:none;color:#CC0000;font-size:16px;cursor:pointer;">✕</button>
+    </div>`).join('');
+}
+function removerAmostraVisita(i) {
+  AMOSTRAS_VISITA_TEMP.splice(i, 1);
+  renderListaAmostrasVisita();
+}
+
+// Chamado por salvarVisita() após a visita ser salva com sucesso
+async function persistirAmostrasDaVisita(estabelecimentoNome) {
+  if (!AMOSTRAS_VISITA_TEMP.length) return;
+  const areaVenda = buscarAreaPorEstabelecimento(estabelecimentoNome);
+  const registros = AMOSTRAS_VISITA_TEMP.map(a => ({
+    produto: a.produto,
+    quantidade: a.quantidade,
+    estabelecimento_nome: estabelecimentoNome,
+    contato_nome: a.destinatario || null,
+    vendedor: PERFIL === 'nicolle' ? 'Nicolle' : (sessionStorage.getItem('vv_user')||''),
+    area: areaVenda,
+    status: 'pendente'
+  }));
+  const { error } = await sb.from('amostras').insert(registros);
+  if (error) {
+    console.error('Erro ao salvar amostras da visita:', error);
+    mostrarToast('⚠ Erro ao salvar amostras: ' + error.message);
+  }
+  AMOSTRAS_VISITA_TEMP = [];
+  renderListaAmostrasVisita();
+}
+
+async function renderAmostras() {
+  const el = document.getElementById('lista-amostras');
+  el.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try {
+    const { data } = await sb.from('amostras').select('*').order('created_at', {ascending:false}).limit(200);
+    AMOSTRAS_CACHE = data || [];
+    exibirAmostrasFiltradas();
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state">Erro ao carregar amostras.</div>';
+  }
+}
+
+function filtrarAmostrasStatus(status, btn) {
+  AMOSTRAS_FILTRO_ATUAL = status;
+  document.querySelectorAll('.filtro-am-btn').forEach(b => {
+    b.classList.toggle('active', b === btn);
+    b.style.background = b === btn ? '#CC0000' : 'white';
+    b.style.color = b === btn ? 'white' : '#374151';
+  });
+  exibirAmostrasFiltradas();
+}
+
+function exibirAmostrasFiltradas() {
+  const hoje = new Date();
+  let lista = AMOSTRAS_CACHE;
+  if (AMOSTRAS_FILTRO_ATUAL === 'pendente') {
+    lista = lista.filter(a => !a.status_feedback);
+  } else if (AMOSTRAS_FILTRO_ATUAL !== 'todos') {
+    lista = lista.filter(a => a.status_feedback === AMOSTRAS_FILTRO_ATUAL);
+  }
+
+  const el = document.getElementById('lista-amostras');
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-state">Nenhuma amostra encontrada.</div>';
+    return;
+  }
+  el.innerHTML = lista.map(a => {
+    const dias = Math.floor((hoje - new Date(a.created_at)) / 86400000);
+    const semFeedback = !a.status_feedback;
+    const urgente = semFeedback && dias >= 45;
+    const statusLabel = { aprovado: '👍 Aprovado', neutro: '🤔 Neutro', recusado: '👎 Recusado' }[a.status_feedback] || null;
+    return `<div class="card" style="${urgente ? 'border-left:4px solid #CC0000;' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-weight:700;font-size:14px;">${a.produto || '—'}</div>
+          <div style="font-size:12px;color:#6b7280;">${a.estabelecimento_nome || ''}${a.contato_nome ? ' · '+a.contato_nome : ''}</div>
+        </div>
+        ${statusLabel ? `<span style="font-size:11px;font-weight:600;">${statusLabel}</span>` : ''}
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:${urgente?'#CC0000':'#9ca3af'};${urgente?'font-weight:700;':''}">
+        <span>Qtd: ${a.quantidade || 1}</span>
+        <span>${new Date(a.created_at).toLocaleDateString('pt-BR')} · ${dias}d</span>
+      </div>
+      ${semFeedback ? `<button onclick="abrirModalFeedback(${a.id})" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;color:#374151;cursor:pointer;">💬 Registrar feedback</button>` : (a.obs_feedback ? `<div style="font-size:11px;color:#6b7280;margin-top:6px;">${a.obs_feedback}</div>` : '')}
+    </div>`;
+  }).join('');
+}
+
+let AMOSTRA_FEEDBACK_ID = null;
+function abrirModalFeedback(id) {
+  AMOSTRA_FEEDBACK_ID = id;
+  const a = AMOSTRAS_CACHE.find(x => x.id === id);
+  document.getElementById('fb-amostra-info').textContent = a ? `${a.produto} — ${a.estabelecimento_nome||''}` : '';
+  document.getElementById('fb-status').value = 'aprovado';
+  document.getElementById('fb-obs').value = '';
+  document.getElementById('modal-feedback-amostra').classList.add('open');
+}
+function fecharModalFeedback() {
+  document.getElementById('modal-feedback-amostra').classList.remove('open');
+}
+async function salvarFeedbackAmostra() {
+  if (!AMOSTRA_FEEDBACK_ID) return;
+  const status = document.getElementById('fb-status').value;
+  const obs = document.getElementById('fb-obs').value.trim();
+  try {
+    await sb.from('amostras').update({ status_feedback: status, obs_feedback: obs }).eq('id', AMOSTRA_FEEDBACK_ID);
+    mostrarToast('✓ Feedback registrado!');
+    fecharModalFeedback();
+    renderAmostras();
+  } catch(e) {
+    mostrarToast('Erro ao salvar feedback');
+  }
+}
 
 function mostrarToast(msg) {
   const t = document.getElementById('toast');

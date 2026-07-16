@@ -2879,7 +2879,7 @@ function abrirModalContato() {
   document.getElementById('ct-aniversario').value = '';
   document.getElementById('ct-hobbies').value = '';
   document.getElementById('ct-obs').value = '';
-  document.getElementById('modal-contato').classList.add('active');
+  document.getElementById('modal-contato').classList.add('open');
 }
 
 function editarContato(id) {
@@ -2893,11 +2893,11 @@ function editarContato(id) {
   document.getElementById('ct-aniversario').value = c.aniversario || '';
   document.getElementById('ct-hobbies').value = c.hobbies || '';
   document.getElementById('ct-obs').value = c.observacoes || '';
-  document.getElementById('modal-contato').classList.add('active');
+  document.getElementById('modal-contato').classList.add('open');
 }
 
 function fecharModalContato() {
-  document.getElementById('modal-contato').classList.remove('active');
+  document.getElementById('modal-contato').classList.remove('open');
 }
 
 async function salvarContato() {
@@ -2950,10 +2950,10 @@ function abrirModalAmostraVisita() {
   document.getElementById('amv-produto').value = '';
   document.getElementById('amv-qtde').value = '1';
   document.getElementById('amv-destinatario').value = document.getElementById('visita-contato') ? document.getElementById('visita-contato').value : '';
-  document.getElementById('modal-amostra-visita').classList.add('active');
+  document.getElementById('modal-amostra-visita').classList.add('open');
 }
 function fecharModalAmostraVisita() {
-  document.getElementById('modal-amostra-visita').classList.remove('active');
+  document.getElementById('modal-amostra-visita').classList.remove('open');
 }
 function confirmarAmostraVisita() {
   const produto = document.getElementById('amv-produto').value.trim();
@@ -3062,10 +3062,10 @@ function abrirModalFeedback(id) {
   document.getElementById('fb-amostra-info').textContent = a ? `${a.produto} — ${a.destino||a.estabelecimento||''}` : '';
   document.getElementById('fb-status').value = 'aprovado';
   document.getElementById('fb-obs').value = '';
-  document.getElementById('modal-feedback-amostra').classList.add('active');
+  document.getElementById('modal-feedback-amostra').classList.add('open');
 }
 function fecharModalFeedback() {
-  document.getElementById('modal-feedback-amostra').classList.remove('active');
+  document.getElementById('modal-feedback-amostra').classList.remove('open');
 }
 async function salvarFeedbackAmostra() {
   if (!AMOSTRA_FEEDBACK_ID) return;

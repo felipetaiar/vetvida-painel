@@ -3050,18 +3050,23 @@ let CONTATOS_CRM_CACHE_RAPIDO = [];
 async function abrirSeletorContatoVisita() {
   document.getElementById('sc-busca').value = '';
   document.getElementById('modal-seletor-contato').classList.add('open');
+  const estabAtual = (document.getElementById('input-estab').value || '').trim();
+  if (!estabAtual) {
+    CONTATOS_CRM_CACHE_RAPIDO = [];
+    document.getElementById('sc-lista').innerHTML = '<p style="text-align:center;color:#9ca3af;font-size:12px;padding:10px 0;">Selecione o estabelecimento da visita primeiro.</p>';
+    return;
+  }
   try {
-    const estabAtual = (document.getElementById('input-estab').value || '').trim();
     const { data } = await sb.from('contatos_crm').select('*').order('nome');
-    CONTATOS_CRM_CACHE_RAPIDO = data || [];
-    // Priorizar contatos do mesmo estabelecimento
-    if (estabAtual) {
-      CONTATOS_CRM_CACHE_RAPIDO.sort((a, b) => {
-        const aMatch = (a.estabelecimento||'').toLowerCase().includes(estabAtual.toLowerCase());
-        const bMatch = (b.estabelecimento||'').toLowerCase().includes(estabAtual.toLowerCase());
-        return (bMatch ? 1 : 0) - (aMatch ? 1 : 0);
-      });
-    }
+    const todos = data || [];
+    const estabLower = estabAtual.toLowerCase();
+    // Filtrar: contato pertence a este estabelecimento (principal OU nas outras clínicas)
+    CONTATOS_CRM_CACHE_RAPIDO = todos.filter(c => {
+      const principalMatch = (c.estabelecimento_nome||'').toLowerCase().includes(estabLower);
+      const outrosMatch = Array.isArray(c.outros_estabelecimentos) &&
+        c.outros_estabelecimentos.some(nome => (nome||'').toLowerCase().includes(estabLower));
+      return principalMatch || outrosMatch;
+    });
   } catch(e) { CONTATOS_CRM_CACHE_RAPIDO = []; }
   filtrarSeletorContato();
 }

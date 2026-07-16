@@ -858,7 +858,13 @@ body {
   <!-- ── SCREEN: AMOSTRAS ── -->
   <div id="screen-amostras" class="screen">
     <div class="card">
-      <div class="card-title">📦 Entrega de Amostras <button onclick="abrirModalAmostra()" style="float:right;background:#CC0000;color:white;border:none;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Registrar</button></div>
+      <div class="card-title">📦 Amostras</div>
+      <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;">
+        <button class="filtro-am-btn active" data-status="todos" onclick="filtrarAmostrasStatus('todos',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:#CC0000;color:white;font-size:12px;font-weight:600;cursor:pointer;">Todas</button>
+        <button class="filtro-am-btn" data-status="pendente" onclick="filtrarAmostrasStatus('pendente',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Sem feedback</button>
+        <button class="filtro-am-btn" data-status="aprovado" onclick="filtrarAmostrasStatus('aprovado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Aprovadas</button>
+        <button class="filtro-am-btn" data-status="recusado" onclick="filtrarAmostrasStatus('recusado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Recusadas</button>
+      </div>
     </div>
     <div id="lista-amostras"><div class="empty-state">Carregando...</div></div>
   </div>

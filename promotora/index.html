@@ -2944,6 +2944,84 @@ function fecharModalContato() {
   document.getElementById('modal-contato').classList.remove('open');
 }
 
+
+// ═══════════════ BUSCA GENÉRICA DE ESTABELECIMENTO (reaproveitável) ═══════════════
+function buscarEstabsGenerico(query) {
+  query = (query||'').toLowerCase().trim();
+  if (!query) return [];
+  const baseVV = (typeof BASE_CLIENTES !== 'undefined') ? BASE_CLIENTES : [];
+  const filtradosVV = baseVV.filter(e => e.nome.toLowerCase().includes(query)).slice(0, 8).map(e => ({nome: e.nome, sub: `${e.area||e.cidade||''} · ${e.vendedor||''}`}));
+  const filtradosSB = ESTABELECIMENTOS.filter(e => e.nome.toLowerCase().includes(query)).slice(0, 5).map(e => ({nome: e.nome, sub: e.cidade||''}));
+  return [...filtradosVV, ...filtradosSB];
+}
+
+// ── Campo: Estabelecimento principal do contato ──
+function filtrarDropdownCt() { renderDropdownCt(); document.getElementById('dropdown-ct-estab').classList.add('open'); }
+function abrirDropdownCt() { renderDropdownCt(); document.getElementById('dropdown-ct-estab').classList.add('open'); }
+function fecharDropdownCt() { setTimeout(() => document.getElementById('dropdown-ct-estab').classList.remove('open'), 150); }
+function renderDropdownCt() {
+  const list = document.getElementById('dropdown-ct-estab');
+  const query = document.getElementById('ct-estab').value;
+  const resultados = buscarEstabsGenerico(query);
+  list.innerHTML = resultados.map(e => `<div class="dropdown-item"><strong>${e.nome}</strong> <span style="color:var(--gray-400);font-size:11px;">· ${e.sub}</span></div>`).join('');
+  [...list.children].forEach((el, i) => { el.onmousedown = () => { document.getElementById('ct-estab').value = resultados[i].nome; fecharDropdownCt(); }; });
+}
+
+// ── Campo: Outras clínicas do contato (multi) ──
+let CT_OUTRAS_CLINICAS = [];
+function filtrarDropdownCtOutra() { renderDropdownCtOutra(); document.getElementById('dropdown-ct-outra-clinica').classList.add('open'); }
+function abrirDropdownCtOutra() { renderDropdownCtOutra(); document.getElementById('dropdown-ct-outra-clinica').classList.add('open'); }
+function fecharDropdownCtOutra() { setTimeout(() => document.getElementById('dropdown-ct-outra-clinica').classList.remove('open'), 150); }
+function renderDropdownCtOutra() {
+  const list = document.getElementById('dropdown-ct-outra-clinica');
+  const query = document.getElementById('ct-outra-clinica-busca').value;
+  const resultados = buscarEstabsGenerico(query).filter(e => !CT_OUTRAS_CLINICAS.includes(e.nome) && e.nome !== document.getElementById('ct-estab').value);
+  list.innerHTML = resultados.map(e => `<div class="dropdown-item"><strong>${e.nome}</strong> <span style="color:var(--gray-400);font-size:11px;">· ${e.sub}</span></div>`).join('');
+  [...list.children].forEach((el, i) => { el.onmousedown = () => { adicionarOutraClinica(resultados[i].nome); }; });
+}
+function adicionarOutraClinica(nome) {
+  if (!CT_OUTRAS_CLINICAS.includes(nome)) CT_OUTRAS_CLINICAS.push(nome);
+  document.getElementById('ct-outra-clinica-busca').value = '';
+  fecharDropdownCtOutra();
+  renderListaOutrasClinicas();
+}
+function removerOutraClinica(i) {
+  CT_OUTRAS_CLINICAS.splice(i, 1);
+  renderListaOutrasClinicas();
+}
+function renderListaOutrasClinicas() {
+  const el = document.getElementById('lista-ct-outras-clinicas');
+  el.innerHTML = CT_OUTRAS_CLINICAS.map((nome, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#f9fafb;border-radius:8px;padding:7px 10px;margin-bottom:5px;">
+      <span style="font-size:12px;">${nome}</span>
+      <button onclick="removerOutraClinica(${i})" style="background:none;border:none;color:#CC0000;font-size:15px;cursor:pointer;">✕</button>
+    </div>`).join('');
+}
+function toggleMultiClinica() {
+  const marcado = document.getElementById('ct-multi-clinica').checked;
+  document.getElementById('grupo-ct-outras-clinicas').style.display = marcado ? 'block' : 'none';
+  if (!marcado) { CT_OUTRAS_CLINICAS = []; renderListaOutrasClinicas(); }
+}
+
+// ── Função do contato → mostra/esconde especialidades ──
+function onMudarFuncaoContato() {
+  const funcao = document.getElementById('ct-funcao').value;
+  document.getElementById('grupo-ct-especialidades').style.display = (funcao === 'Veterinário(a)') ? 'block' : 'none';
+}
+
+// ── Especialidades multi-select (pills clicáveis) ──
+function montarEspecialidadesContato() {
+  const cont = document.getElementById('check-ct-especialidades');
+  cont.innerHTML = '';
+  ESPECIALIDADES.forEach(esp => {
+    const label = document.createElement('label');
+    label.className = 'check-pill';
+    label.innerHTML = `<input type="checkbox" value="${esp}"> ${esp}`;
+    label.querySelector('input').onchange = e => label.classList.toggle('checked', e.target.checked);
+    cont.appendChild(label);
+  });
+}
+
 let CONTATOS_VISITA_TEMP = []; // contatos adicionados na visita atual
 let CONTATOS_CRM_CACHE_RAPIDO = [];
 

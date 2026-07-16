@@ -3184,16 +3184,35 @@ let AMOSTRAS_VISITA_TEMP = []; // amostras adicionadas na visita atual (antes de
 let AMOSTRAS_CACHE = [];
 let AMOSTRAS_FILTRO_ATUAL = 'todos';
 
-function abrirModalAmostraVisita() {
+async function abrirModalAmostraVisita() {
   document.getElementById('amv-produto').value = '';
   document.getElementById('amv-qtde').value = '1';
   const sel = document.getElementById('amv-destinatario');
-  if (!CONTATOS_VISITA_TEMP.length) {
-    sel.innerHTML = '<option value="">Nenhum contato adicionado ainda</option>';
-  } else {
-    sel.innerHTML = CONTATOS_VISITA_TEMP.map(c => `<option value="${c.nome}">${c.nome}${c.funcao?' ('+c.funcao+')':''}</option>`).join('');
-  }
+  sel.innerHTML = '<option value="">Carregando contatos...</option>';
   document.getElementById('modal-amostra-visita').classList.add('open');
+
+  const estabAtual = (document.getElementById('input-estab').value || '').trim();
+  const idsVisita = new Set(CONTATOS_VISITA_TEMP.map(c => c.id));
+  let outrosDoEstab = [];
+  if (estabAtual) {
+    try {
+      const { data } = await sb.from('contatos_crm').select('*').ilike('estabelecimento_nome', `%${estabAtual}%`);
+      outrosDoEstab = (data || []).filter(c => !idsVisita.has(c.id));
+    } catch(e) { /* silencioso */ }
+  }
+
+  let opcoes = '';
+  if (CONTATOS_VISITA_TEMP.length) {
+    opcoes += '<optgroup label="Contatos desta visita">' +
+      CONTATOS_VISITA_TEMP.map(c => `<option value="${c.nome}">${c.nome}${c.funcao?' ('+c.funcao+')':''}</option>`).join('') +
+      '</optgroup>';
+  }
+  if (outrosDoEstab.length) {
+    opcoes += '<optgroup label="Outros contatos deste local">' +
+      outrosDoEstab.map(c => `<option value="${c.nome}">${c.nome}${c.funcao?' ('+c.funcao+')':''}</option>`).join('') +
+      '</optgroup>';
+  }
+  sel.innerHTML = opcoes || '<option value="">Nenhum contato encontrado</option>';
 }
 function fecharModalAmostraVisita() {
   document.getElementById('modal-amostra-visita').classList.remove('open');

@@ -783,36 +783,66 @@ body {
     </div>
   </header>
 
-  <!-- ── SCREEN: DASHBOARD ── -->
+  <!-- ── SCREEN: DASHBOARD (HOME) ── -->
   <div id="screen-dashboard" class="screen active">
+    <div class="card" id="dash-header-card">
+      <div style="font-size:15px;font-weight:700;" id="dash-saudacao">Olá!</div>
+      <div style="font-size:12px;color:#6b7280;margin-top:2px;" id="dash-data-hoje"></div>
+      <div id="dash-streak" style="display:none;margin-top:8px;background:#fff7ed;border-radius:8px;padding:8px 10px;font-size:12px;color:#c2410c;font-weight:600;">🔥 <span id="dash-streak-num">0</span> dias seguidos com visitas!</div>
+    </div>
+
     <div class="card">
-      <div class="card-title">📊 Resumo do mês</div>
-      <div id="dash-metricas" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+      <div class="card-title">📊 Meu mês</div>
+      <div style="margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;margin-bottom:4px;">
+          <span>Visitas realizadas</span><span id="dash-visitas-fracao">0 / 0</span>
+        </div>
+        <div style="background:#f3f4f6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+          <div id="dash-visitas-barra" style="background:#CC0000;height:8px;width:0%;border-radius:6px;"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;">
-          <div id="dash-visitas" style="font-size:24px;font-weight:800;color:#CC0000;">0</div>
-          <div style="font-size:11px;color:#6b7280;">Visitas no mês</div>
+          <div id="dash-conversao" style="font-size:22px;font-weight:800;color:#CC0000;">0%</div>
+          <div style="font-size:11px;color:#6b7280;">Taxa de conversão em leads</div>
         </div>
         <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;">
-          <div id="dash-leads" style="font-size:24px;font-weight:800;color:#CC0000;">0</div>
-          <div style="font-size:11px;color:#6b7280;">Leads gerados</div>
+          <div id="dash-amostras-mes" style="font-size:22px;font-weight:800;color:#CC0000;">0</div>
+          <div style="font-size:11px;color:#6b7280;">Amostras deixadas</div>
         </div>
-        <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;">
-          <div id="dash-amostras" style="font-size:24px;font-weight:800;color:#CC0000;">0</div>
-          <div style="font-size:11px;color:#6b7280;">Amostras entregues</div>
-        </div>
-        <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;">
-          <div id="dash-pendentes" style="font-size:24px;font-weight:800;color:#CC0000;">0</div>
-          <div style="font-size:11px;color:#6b7280;">Retornos pendentes</div>
+        <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;grid-column:span 2;">
+          <div id="dash-amostras-sem-feedback" style="font-size:22px;font-weight:800;color:#CC0000;">0</div>
+          <div style="font-size:11px;color:#6b7280;">Amostras sem feedback</div>
         </div>
       </div>
     </div>
+
     <div class="card">
-      <div class="card-title">🎂 Aniversariantes do mês</div>
-      <div id="dash-aniversarios"><div class="empty-state">Carregando...</div></div>
+      <div class="card-title">📅 Esta semana</div>
+      <div style="margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#6b7280;margin-bottom:4px;">
+          <span>Visitas da semana</span><span id="dash-semana-fracao">0 / 0</span>
+        </div>
+        <div style="background:#f3f4f6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:10px;">
+          <div id="dash-semana-barra" style="background:#CC0000;height:8px;width:0%;border-radius:6px;"></div>
+        </div>
+        <div style="font-size:12px;color:#6b7280;">Conversão da semana: <strong id="dash-semana-conversao" style="color:#CC0000;">0%</strong></div>
+      </div>
     </div>
+
     <div class="card">
-      <div class="card-title">📍 Últimas visitas</div>
-      <div id="dash-ultimas-visitas"><div class="empty-state">Carregando...</div></div>
+      <div class="card-title">🗓️ Roteiro de hoje</div>
+      <div id="dash-roteiro-hoje" style="margin-top:8px;"><div class="empty-state">Carregando...</div></div>
+    </div>
+
+    <div class="card" id="dash-card-alertas" style="display:none;">
+      <div class="card-title">⚠️ Alertas</div>
+      <div id="dash-alertas" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card" id="dash-card-aniversarios" style="display:none;">
+      <div class="card-title">🎂 Aniversários do mês</div>
+      <div id="dash-aniversarios" style="margin-top:8px;"></div>
     </div>
   </div>
 

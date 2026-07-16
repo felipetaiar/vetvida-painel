@@ -3262,12 +3262,14 @@ function removerAmostraVisita(i) {
 // Chamado por salvarVisita() após a visita ser salva com sucesso
 async function persistirAmostrasDaVisita(estabelecimentoNome) {
   if (!AMOSTRAS_VISITA_TEMP.length) return;
+  const areaVenda = buscarAreaPorEstabelecimento(estabelecimentoNome);
   const registros = AMOSTRAS_VISITA_TEMP.map(a => ({
     produto: a.produto,
     quantidade: a.quantidade,
     estabelecimento_nome: estabelecimentoNome,
     contato_nome: a.destinatario || null,
-    vendedor: 'Nicolle',
+    vendedor: PERFIL === 'nicolle' ? 'Nicolle' : (sessionStorage.getItem('vv_user')||''),
+    area: areaVenda,
     status: 'pendente'
   }));
   const { error } = await sb.from('amostras').insert(registros);

@@ -2460,21 +2460,10 @@ async function abrirDetalheVisita(id) {
     </div>`;
   document.getElementById('modal-visita').classList.add('open');
 
-  // Buscar amostras vinculadas a esta visita (por visita_id; fallback por estab+dia para registros antigos)
+  // Buscar amostras vinculadas a esta visita — apenas por visita_id, sem aproximação
   try {
-    let amostrasDaVisita = [];
     const { data: porId } = await sb.from('amostras').select('*').eq('visita_id', v.id);
-    if (porId && porId.length) {
-      amostrasDaVisita = porId;
-    } else {
-      const inicioDia = new Date(v.created_at); inicioDia.setHours(0,0,0,0);
-      const fimDia = new Date(v.created_at); fimDia.setHours(23,59,59,999);
-      const { data: porNomeData } = await sb.from('amostras').select('*')
-        .ilike('estabelecimento_nome', v.estabelecimento)
-        .gte('created_at', inicioDia.toISOString())
-        .lte('created_at', fimDia.toISOString());
-      amostrasDaVisita = porNomeData || [];
-    }
+    const amostrasDaVisita = porId || [];
     const elAm = document.getElementById('detalhe-visita-amostras');
     if (!elAm) return;
     if (!amostrasDaVisita.length) { elAm.innerHTML = ''; return; }

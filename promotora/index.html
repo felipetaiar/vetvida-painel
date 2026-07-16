@@ -1649,7 +1649,7 @@ async function salvarVisita() {
         .insert([{ nome: estab, cidade, tipo, contato }]).select().single();
       if(novoEstab) { ESTABELECIMENTOS.push(novoEstab); renderDropdown(); }
     }
-    await persistirAmostrasDaVisita(estab);
+    await persistirAmostrasDaVisita(estab, data ? data.id : null);
     mostrarToast('✓ Visita registrada!');
   } catch(e) {
     console.error('Erro ao salvar:', e);
@@ -3298,7 +3298,7 @@ function removerAmostraVisita(i) {
 }
 
 // Chamado por salvarVisita() após a visita ser salva com sucesso
-async function persistirAmostrasDaVisita(estabelecimentoNome) {
+async function persistirAmostrasDaVisita(estabelecimentoNome, visitaId) {
   if (!AMOSTRAS_VISITA_TEMP.length) return;
   const areaVenda = buscarAreaPorEstabelecimento(estabelecimentoNome);
   const registros = AMOSTRAS_VISITA_TEMP.map(a => ({
@@ -3308,6 +3308,7 @@ async function persistirAmostrasDaVisita(estabelecimentoNome) {
     contato_nome: a.destinatario || null,
     vendedor: PERFIL === 'nicolle' ? 'Nicolle' : (sessionStorage.getItem('vv_user')||''),
     area: areaVenda,
+    visita_id: visitaId || null,
     status: 'pendente'
   }));
   const { error } = await sb.from('amostras').insert(registros);

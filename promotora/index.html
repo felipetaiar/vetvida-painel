@@ -2906,6 +2906,8 @@ function fecharModalContato() {
   document.getElementById('modal-contato').classList.remove('open');
 }
 
+let CONTATO_ORIGEM_VISITA = false; // true quando o modal foi aberto a partir da visita
+
 async function salvarContato() {
   const nome = document.getElementById('ct-nome').value.trim();
   if (!nome) { mostrarToast('Informe o nome do contato'); return; }
@@ -2921,22 +2923,20 @@ async function salvarContato() {
   };
 
   try {
-    let resp;
+    let contatoSalvo;
     if (CONTATO_EDITANDO) {
-      resp = await fetch(`${SUPABASE_URL}/rest/v1/contatos_crm?id=eq.${CONTATO_EDITANDO}`, {
-        method: 'PATCH',
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-        body: JSON.stringify(payload)
-      });
+      const { data } = await sb.from('contatos_crm').update(payload).eq('id', CONTATO_EDITANDO).select().single();
+      contatoSalvo = data;
     } else {
-      resp = await fetch(`${SUPABASE_URL}/rest/v1/contatos_crm`, {
-        method: 'POST',
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-        body: JSON.stringify(payload)
-      });
+      const { data } = await sb.from('contatos_crm').insert([payload]).select().single();
+      contatoSalvo = data;
     }
-    if (resp.ok || resp.status === 201 || resp.status === 204) {
+    {
       mostrarToast('✓ Contato salvo!');
+      if (CONTATO_ORIGEM_VISITA && contatoSalvo) {
+        adicionarContatoNaVisita(contatoSalvo);
+        CONTATO_ORIGEM_VISITA = false;
+      }
       fecharModalContato();
       renderContatos();
     } else {

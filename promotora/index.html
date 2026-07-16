@@ -1076,6 +1076,78 @@ body {
 
 <!-- Toast -->
 
+<!-- Modal contato CRM -->
+<div class="modal-overlay" id="modal-contato">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👤 Contato</div>
+
+    <div class="form-group">
+      <label class="form-label required">Nome</label>
+      <input type="text" class="form-input" id="ct-nome" placeholder="Nome do contato">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Estabelecimento / Clínica</label>
+      <input type="text" class="form-input" id="ct-estab" placeholder="Onde atende">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Especialidade</label>
+      <input type="text" class="form-input" id="ct-especialidade" placeholder="Ex: Dermatologia, Clínico geral...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Telefone / WhatsApp</label>
+      <input type="text" class="form-input" id="ct-telefone" placeholder="(11) 90000-0000">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Data de aniversário</label>
+      <input type="date" class="form-input" id="ct-aniversario">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Hobbies / Interesses</label>
+      <input type="text" class="form-input" id="ct-hobbies" placeholder="Ex: corrida, pets, culinária...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <textarea class="form-input" id="ct-obs" rows="3" placeholder="Anotações gerais sobre o contato..."></textarea>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn-secondary" onclick="fecharModalContato()" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" onclick="salvarContato()" style="flex:1;">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal amostra -->
+<div class="modal-overlay" id="modal-amostra">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📦 Entrega de amostra</div>
+
+    <div class="form-group">
+      <label class="form-label required">Estabelecimento / Veterinário</label>
+      <input type="text" class="form-input" id="am-destino" placeholder="Para quem foi entregue">
+    </div>
+    <div class="form-group">
+      <label class="form-label required">Produto</label>
+      <input type="text" class="form-input" id="am-produto" placeholder="Nome do produto amostrado">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Quantidade</label>
+      <input type="number" class="form-input" id="am-qtde" placeholder="1" min="1" value="1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <textarea class="form-input" id="am-obs" rows="3" placeholder="Feedback, contexto da entrega..."></textarea>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn-secondary" onclick="fecharModalAmostra()" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" onclick="salvarAmostra()" style="flex:1;">Registrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal novo estabelecimento -->
 <div class="modal-overlay" id="modal-novo-estab">
   <div class="modal">

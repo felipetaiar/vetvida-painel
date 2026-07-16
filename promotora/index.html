@@ -1550,7 +1550,7 @@ async function verificarAmostraPendente(nomeEstab) {
   if (!nomeEstab) return;
   try {
     const { data } = await sb.from('amostras').select('*')
-      .or(`destino.ilike.%${nomeEstab}%,estabelecimento.ilike.%${nomeEstab}%`)
+      .ilike('estabelecimento_nome', `%${nomeEstab}%`)
       .order('created_at', {ascending:false});
     const pendente = (data||[]).find(a => !a.feedback && !a.status_feedback);
     if (pendente) {
@@ -3253,13 +3253,16 @@ async function persistirAmostrasDaVisita(estabelecimentoNome) {
   const registros = AMOSTRAS_VISITA_TEMP.map(a => ({
     produto: a.produto,
     quantidade: a.quantidade,
-    destino: estabelecimentoNome,
+    estabelecimento_nome: estabelecimentoNome,
     contato_nome: a.destinatario || null,
-    vendedor: 'Nicolle'
+    vendedor: 'Nicolle',
+    status: 'pendente'
   }));
-  try {
-    await sb.from('amostras').insert(registros);
-  } catch(e) { console.warn('erro ao salvar amostras da visita:', e); }
+  const { error } = await sb.from('amostras').insert(registros);
+  if (error) {
+    console.error('Erro ao salvar amostras da visita:', error);
+    mostrarToast('⚠ Erro ao salvar amostras: ' + error.message);
+  }
   AMOSTRAS_VISITA_TEMP = [];
   renderListaAmostrasVisita();
 }

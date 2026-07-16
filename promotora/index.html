@@ -3139,26 +3139,35 @@ async function salvarContato() {
   };
 
   try {
-    let contatoSalvo;
+    let contatoSalvo, erro;
     if (CONTATO_EDITANDO) {
-      const { data } = await sb.from('contatos_crm').update(payload).eq('id', CONTATO_EDITANDO).select().single();
-      contatoSalvo = data;
+      const { data, error } = await sb.from('contatos_crm').update(payload).eq('id', CONTATO_EDITANDO).select().single();
+      contatoSalvo = data; erro = error;
     } else {
-      const { data } = await sb.from('contatos_crm').insert([payload]).select().single();
-      contatoSalvo = data;
+      const { data, error } = await sb.from('contatos_crm').insert([payload]).select().single();
+      contatoSalvo = data; erro = error;
     }
-    {
-      mostrarToast('✓ Contato salvo!');
-      if (CONTATO_ORIGEM_VISITA && contatoSalvo) {
+    if (erro) {
+      console.error('Erro Supabase ao salvar contato:', erro);
+      mostrarToast('Erro: ' + (erro.message || 'falha ao salvar'));
+      return;
+    }
+    mostrarToast('✓ Contato salvo!');
+    if (CONTATO_ORIGEM_VISITA) {
+      const origemVisitaFlag = true;
+      CONTATO_ORIGEM_VISITA = false;
+      if (contatoSalvo) {
         adicionarContatoNaVisita(contatoSalvo);
-        CONTATO_ORIGEM_VISITA = false;
+      } else {
+        // fallback: sem retorno do banco, monta objeto local com os dados do formulário
+        adicionarContatoNaVisita({ id: 'tmp-'+Date.now(), nome: payload.nome, funcao: payload.funcao, especialidade: payload.especialidade, estabelecimento: payload.estabelecimento });
       }
-      fecharModalContato();
-      renderContatos();
     }
+    fecharModalContato();
+    renderContatos();
   } catch(e) {
-    console.error(e);
-    mostrarToast('Erro ao salvar contato');
+    console.error('Exceção ao salvar contato:', e);
+    mostrarToast('Erro ao salvar contato: ' + e.message);
   }
 }
 

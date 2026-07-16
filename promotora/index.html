@@ -1649,6 +1649,10 @@ async function salvarVisita() {
         .insert([{ nome: estab, cidade, tipo, contato }]).select().single();
       if(novoEstab) { ESTABELECIMENTOS.push(novoEstab); renderDropdown(); }
     }
+    console.log('Visita salva, data retornado:', data);
+    if (!data || !data.id) {
+      mostrarToast('⚠ Visita salva mas sem ID retornado — amostras podem não vincular');
+    }
     await persistirAmostrasDaVisita(estab, data ? data.id : null);
     mostrarToast('✓ Visita registrada!');
   } catch(e) {

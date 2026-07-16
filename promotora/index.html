@@ -2836,18 +2836,18 @@ async function renderDashboard() {
       const mesAtual = hoje.getMonth() + 1;
       const diaAtual = hoje.getDate();
       const aniversariantes = (contatos || []).filter(c => {
-        if (!c.aniversario) return false;
-        return parseInt(c.aniversario.split('-')[1]) === mesAtual;
-      }).sort((a,b) => parseInt(a.aniversario.split('-')[2]) - parseInt(b.aniversario.split('-')[2]));
+        if (!c.data_aniversario) return false;
+        return parseInt(c.data_aniversario.split('-')[1]) === mesAtual;
+      }).sort((a,b) => parseInt(a.data_aniversario.split('-')[2]) - parseInt(b.aniversario.split('-')[2]));
 
       if (aniversariantes.length) {
         document.getElementById('dash-card-aniversarios').style.display = 'block';
         document.getElementById('dash-aniversarios').innerHTML = aniversariantes.map(c => {
-          const dia = parseInt(c.aniversario.split('-')[2]);
+          const dia = parseInt(c.data_aniversario.split('-')[2]);
           const hoje_flag = dia === diaAtual;
           return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;${hoje_flag?'background:#fff7ed;border-radius:6px;padding-left:6px;':''}">
             <div><div style="font-weight:600;font-size:13px;">${c.nome}${hoje_flag?' 🎉':''}</div><div style="font-size:11px;color:#9ca3af;">${c.estabelecimento||''}</div></div>
-            <div style="font-size:13px;font-weight:700;color:#CC0000;">${String(dia).padStart(2,'0')}/${c.aniversario.split('-')[1]}</div>
+            <div style="font-size:13px;font-weight:700;color:#CC0000;">${String(dia).padStart(2,'0')}/${c.data_aniversario.split('-')[1]}</div>
           </div>`;
         }).join('');
       }
@@ -2898,11 +2898,11 @@ function exibirContatos(lista) {
         <div style="font-weight:700;font-size:14px;">${c.nome}</div>
         ${c.funcao ? `<span style="font-size:10px;background:#f3f4f6;color:#374151;padding:2px 7px;border-radius:8px;">${c.funcao}</span>` : ''}
       </div>
-      <div style="font-size:12px;color:#6b7280;">${c.estabelecimento || ''}${c.outras_clinicas ? ` + ${c.outras_clinicas.split(',').length} local(is)` : ''}</div>
+      <div style="font-size:12px;color:#6b7280;">${c.estabelecimento_nome || ''}${c.outros_estabelecimentos ? ` + ${c.outros_estabelecimentos.split(',').length} local(is)` : ''}</div>
       ${c.especialidade ? `<div style="font-size:11px;color:#CC0000;margin-top:2px;">${c.especialidade}</div>` : ''}
       <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:#9ca3af;">
         ${c.telefone ? `<span>📞 ${c.telefone}</span>` : ''}
-        ${c.aniversario ? `<span>🎂 ${c.aniversario.split('-').reverse().slice(0,2).join('/')}</span>` : ''}
+        ${c.data_aniversario ? `<span>🎂 ${c.data_aniversario.split('-').reverse().slice(0,2).join('/')}</span>` : ''}
       </div>
       ${c.hobbies ? `<div style="font-size:11px;color:#6b7280;margin-top:4px;">🎯 ${c.hobbies}</div>` : ''}
     </div>
@@ -2941,9 +2941,9 @@ function editarContato(id) {
   CONTATO_EDITANDO = id;
   document.getElementById('ct-nome').value = c.nome || '';
   document.getElementById('ct-funcao').value = c.funcao || '';
-  document.getElementById('ct-estab').value = c.estabelecimento || '';
+  document.getElementById('ct-estab').value = c.estabelecimento_nome || '';
   document.getElementById('ct-telefone').value = c.telefone || '';
-  document.getElementById('ct-aniversario').value = c.aniversario || '';
+  document.getElementById('ct-aniversario').value = c.data_aniversario || '';
   document.getElementById('ct-hobbies').value = c.hobbies || '';
   document.getElementById('ct-obs').value = c.observacoes || '';
 
@@ -2954,7 +2954,7 @@ function editarContato(id) {
     if (espSalvas.includes(inp.value)) { inp.checked = true; inp.closest('.check-pill').classList.add('checked'); }
   });
 
-  CT_OUTRAS_CLINICAS = (c.outras_clinicas || '').split(',').map(s => s.trim()).filter(Boolean);
+  CT_OUTRAS_CLINICAS = (c.outros_estabelecimentos || '').split(',').map(s => s.trim()).filter(Boolean);
   document.getElementById('ct-multi-clinica').checked = CT_OUTRAS_CLINICAS.length > 0;
   document.getElementById('grupo-ct-outras-clinicas').style.display = CT_OUTRAS_CLINICAS.length > 0 ? 'block' : 'none';
   renderListaOutrasClinicas();

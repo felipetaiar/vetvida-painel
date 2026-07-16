@@ -1649,7 +1649,10 @@ async function salvarVisita() {
         .insert([{ nome: estab, cidade, tipo, contato }]).select().single();
       if(novoEstab) { ESTABELECIMENTOS.push(novoEstab); renderDropdown(); }
     }
-    await persistirAmostrasDaVisita(estab);
+    if (!data || !data.id) {
+      mostrarToast('⚠ Visita salva mas sem ID retornado — amostras podem não vincular');
+    }
+    await persistirAmostrasDaVisita(estab, data ? data.id : null);
     mostrarToast('✓ Visita registrada!');
   } catch(e) {
     console.error('Erro ao salvar:', e);
@@ -1710,7 +1713,7 @@ async function salvarVisita() {
 }
 
 // ─── HISTÓRICO ────────────────────────────────────────────────────────────────
-let AMOSTRAS_POR_ESTAB_DIA = {}; // cache: "estabLower|YYYY-MM-DD" -> count
+let VISITAS_COM_AMOSTRA = new Set(); // set de visita_id que têm amostra
 
 async function renderHistorico() {
   const cidade = document.getElementById('filtro-cidade')?.value || '';
@@ -1724,21 +1727,14 @@ async function renderHistorico() {
   const el = document.getElementById('lista-historico');
   if(!lista.length) { el.innerHTML = '<p style="color:var(--gray-400);text-align:center;padding:30px 0;">Nenhuma visita encontrada.</p>'; return; }
 
-  // Pré-carregar amostras para marcar badge nos cards
+  // Pré-carregar quais visitas têm amostra vinculada (por visita_id)
   try {
-    const { data } = await sb.from('amostras').select('estabelecimento_nome, created_at');
-    AMOSTRAS_POR_ESTAB_DIA = {};
-    (data || []).forEach(a => {
-      const dia = new Date(a.created_at).toISOString().slice(0,10);
-      const key = (a.estabelecimento_nome||'').toLowerCase().trim() + '|' + dia;
-      AMOSTRAS_POR_ESTAB_DIA[key] = (AMOSTRAS_POR_ESTAB_DIA[key] || 0) + 1;
-    });
-  } catch(e) { AMOSTRAS_POR_ESTAB_DIA = {}; }
+    const { data } = await sb.from('amostras').select('visita_id').not('visita_id', 'is', null);
+    VISITAS_COM_AMOSTRA = new Set((data || []).map(a => String(a.visita_id)));
+  } catch(e) { VISITAS_COM_AMOSTRA = new Set(); }
 
   el.innerHTML = lista.map(v => {
-    const dia = new Date(v.created_at).toISOString().slice(0,10);
-    const key = (v.estabelecimento||'').toLowerCase().trim() + '|' + dia;
-    const temAmostra = AMOSTRAS_POR_ESTAB_DIA[key] > 0;
+    const temAmostra = VISITAS_COM_AMOSTRA.has(String(v.id));
     return `
     <div class="visita-item" onclick="abrirDetalheVisita('${v.id}')">
       <div class="visita-item-header">
@@ -2460,15 +2456,10 @@ async function abrirDetalheVisita(id) {
     </div>`;
   document.getElementById('modal-visita').classList.add('open');
 
-  // Buscar amostras dessa visita (mesmo estabelecimento, no mesmo dia)
+  // Buscar amostras vinculadas a esta visita — apenas por visita_id, sem aproximação
   try {
-    const inicioDia = new Date(v.created_at); inicioDia.setHours(0,0,0,0);
-    const fimDia = new Date(v.created_at); fimDia.setHours(23,59,59,999);
-    const { data } = await sb.from('amostras').select('*')
-      .ilike('estabelecimento_nome', v.estabelecimento)
-      .gte('created_at', inicioDia.toISOString())
-      .lte('created_at', fimDia.toISOString());
-    const amostrasDaVisita = data || [];
+    const { data: porId, error: erroAm } = await sb.from('amostras').select('*').eq('visita_id', v.id);
+    const amostrasDaVisita = porId || [];
     const elAm = document.getElementById('detalhe-visita-amostras');
     if (!elAm) return;
     if (!amostrasDaVisita.length) { elAm.innerHTML = ''; return; }
@@ -3298,7 +3289,7 @@ function removerAmostraVisita(i) {
 }
 
 // Chamado por salvarVisita() após a visita ser salva com sucesso
-async function persistirAmostrasDaVisita(estabelecimentoNome) {
+async function persistirAmostrasDaVisita(estabelecimentoNome, visitaId) {
   if (!AMOSTRAS_VISITA_TEMP.length) return;
   const areaVenda = buscarAreaPorEstabelecimento(estabelecimentoNome);
   const registros = AMOSTRAS_VISITA_TEMP.map(a => ({
@@ -3308,6 +3299,7 @@ async function persistirAmostrasDaVisita(estabelecimentoNome) {
     contato_nome: a.destinatario || null,
     vendedor: PERFIL === 'nicolle' ? 'Nicolle' : (sessionStorage.getItem('vv_user')||''),
     area: areaVenda,
+    visita_id: visitaId || null,
     status: 'pendente'
   }));
   const { error } = await sb.from('amostras').insert(registros);

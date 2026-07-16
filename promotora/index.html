@@ -2738,6 +2738,268 @@ function formatarDataSimples(str) {
 
 window.addEventListener('load', function() { verificarSSO(); });
 
+
+// ═══════════════ DASHBOARD ═══════════════
+async function renderDashboard() {
+  const hoje = new Date();
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
+
+  try {
+    // Visitas do mês
+    const rVisitas = await fetch(`${SUPABASE_URL}/rest/v1/visitas?select=*&created_at=gte.${inicioMes}&vendedor=eq.${encodeURIComponent(USUARIO_NOME||'')}`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    const visitas = await rVisitas.json();
+    const listaVisitas = Array.isArray(visitas) ? visitas : [];
+    document.getElementById('dash-visitas').textContent = listaVisitas.length;
+    document.getElementById('dash-leads').textContent = listaVisitas.filter(v => v.tem_lead).length;
+    document.getElementById('dash-pendentes').textContent = listaVisitas.filter(v => v.resultado === 'Interesse confirmado – acionar rep').length;
+
+    // Amostras do mês
+    try {
+      const rAm = await fetch(`${SUPABASE_URL}/rest/v1/amostras?select=*&created_at=gte.${inicioMes}`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+      });
+      const amostras = await rAm.json();
+      document.getElementById('dash-amostras').textContent = Array.isArray(amostras) ? amostras.length : 0;
+    } catch(e) { document.getElementById('dash-amostras').textContent = '0'; }
+
+    // Últimas visitas
+    const ultimas = listaVisitas.slice(0, 5);
+    const elUlt = document.getElementById('dash-ultimas-visitas');
+    if (!ultimas.length) {
+      elUlt.innerHTML = '<div class="empty-state">Nenhuma visita registrada este mês.</div>';
+    } else {
+      elUlt.innerHTML = ultimas.map(v => `
+        <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+          <div style="font-weight:600;font-size:13px;">${v.estabelecimento || '—'}</div>
+          <div style="font-size:11px;color:#9ca3af;">${v.cidade || ''} · ${new Date(v.created_at).toLocaleDateString('pt-BR')}</div>
+        </div>
+      `).join('');
+    }
+  } catch(e) {
+    console.warn('dashboard:', e);
+  }
+
+  // Aniversariantes do mês
+  try {
+    const rCt = await fetch(`${SUPABASE_URL}/rest/v1/contatos_crm?select=*`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    const contatos = await rCt.json();
+    const mesAtual = hoje.getMonth() + 1;
+    const aniversariantes = (Array.isArray(contatos) ? contatos : []).filter(c => {
+      if (!c.aniversario) return false;
+      const mes = parseInt(c.aniversario.split('-')[1]);
+      return mes === mesAtual;
+    });
+    const elAniv = document.getElementById('dash-aniversarios');
+    if (!aniversariantes.length) {
+      elAniv.innerHTML = '<div class="empty-state">Nenhum aniversariante este mês.</div>';
+    } else {
+      elAniv.innerHTML = aniversariantes.map(c => {
+        const dia = c.aniversario.split('-')[2];
+        return `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;">
+          <div><div style="font-weight:600;font-size:13px;">${c.nome}</div><div style="font-size:11px;color:#9ca3af;">${c.estabelecimento||''}</div></div>
+          <div style="font-size:13px;font-weight:700;color:#CC0000;">${dia}</div>
+        </div>`;
+      }).join('');
+    }
+  } catch(e) {
+    document.getElementById('dash-aniversarios').innerHTML = '<div class="empty-state">Nenhum aniversariante este mês.</div>';
+  }
+}
+
+// ═══════════════ CONTATOS (CRM) ═══════════════
+let CONTATOS_CACHE = [];
+let CONTATO_EDITANDO = null;
+
+async function renderContatos() {
+  const el = document.getElementById('lista-contatos');
+  el.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/contatos_crm?select=*&order=nome.asc`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    const data = await r.json();
+    CONTATOS_CACHE = Array.isArray(data) ? data : [];
+    exibirContatos(CONTATOS_CACHE);
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state">Erro ao carregar contatos.</div>';
+  }
+}
+
+function exibirContatos(lista) {
+  const el = document.getElementById('lista-contatos');
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-state">Nenhum contato cadastrado.</div>';
+    return;
+  }
+  el.innerHTML = lista.map(c => `
+    <div class="card" onclick="editarContato(${c.id})" style="cursor:pointer;">
+      <div style="font-weight:700;font-size:14px;">${c.nome}</div>
+      <div style="font-size:12px;color:#6b7280;">${c.estabelecimento || ''}</div>
+      ${c.especialidade ? `<div style="font-size:11px;color:#CC0000;margin-top:2px;">${c.especialidade}</div>` : ''}
+      <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:#9ca3af;">
+        ${c.telefone ? `<span>📞 ${c.telefone}</span>` : ''}
+        ${c.aniversario ? `<span>🎂 ${c.aniversario.split('-').reverse().slice(0,2).join('/')}</span>` : ''}
+      </div>
+      ${c.hobbies ? `<div style="font-size:11px;color:#6b7280;margin-top:4px;">🎯 ${c.hobbies}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function filtrarContatos() {
+  const q = document.getElementById('busca-contato').value.toLowerCase();
+  const filtrados = CONTATOS_CACHE.filter(c =>
+    (c.nome||'').toLowerCase().includes(q) || (c.estabelecimento||'').toLowerCase().includes(q)
+  );
+  exibirContatos(filtrados);
+}
+
+function abrirModalContato() {
+  CONTATO_EDITANDO = null;
+  document.getElementById('ct-nome').value = '';
+  document.getElementById('ct-estab').value = '';
+  document.getElementById('ct-especialidade').value = '';
+  document.getElementById('ct-telefone').value = '';
+  document.getElementById('ct-aniversario').value = '';
+  document.getElementById('ct-hobbies').value = '';
+  document.getElementById('ct-obs').value = '';
+  document.getElementById('modal-contato').classList.add('active');
+}
+
+function editarContato(id) {
+  const c = CONTATOS_CACHE.find(x => x.id === id);
+  if (!c) return;
+  CONTATO_EDITANDO = id;
+  document.getElementById('ct-nome').value = c.nome || '';
+  document.getElementById('ct-estab').value = c.estabelecimento || '';
+  document.getElementById('ct-especialidade').value = c.especialidade || '';
+  document.getElementById('ct-telefone').value = c.telefone || '';
+  document.getElementById('ct-aniversario').value = c.aniversario || '';
+  document.getElementById('ct-hobbies').value = c.hobbies || '';
+  document.getElementById('ct-obs').value = c.observacoes || '';
+  document.getElementById('modal-contato').classList.add('active');
+}
+
+function fecharModalContato() {
+  document.getElementById('modal-contato').classList.remove('active');
+}
+
+async function salvarContato() {
+  const nome = document.getElementById('ct-nome').value.trim();
+  if (!nome) { mostrarToast('Informe o nome do contato'); return; }
+
+  const payload = {
+    nome,
+    estabelecimento: document.getElementById('ct-estab').value.trim(),
+    especialidade: document.getElementById('ct-especialidade').value.trim(),
+    telefone: document.getElementById('ct-telefone').value.trim(),
+    aniversario: document.getElementById('ct-aniversario').value || null,
+    hobbies: document.getElementById('ct-hobbies').value.trim(),
+    observacoes: document.getElementById('ct-obs').value.trim(),
+  };
+
+  try {
+    let resp;
+    if (CONTATO_EDITANDO) {
+      resp = await fetch(`${SUPABASE_URL}/rest/v1/contatos_crm?id=eq.${CONTATO_EDITANDO}`, {
+        method: 'PATCH',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      resp = await fetch(`${SUPABASE_URL}/rest/v1/contatos_crm`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+    }
+    if (resp.ok || resp.status === 201 || resp.status === 204) {
+      mostrarToast('✓ Contato salvo!');
+      fecharModalContato();
+      renderContatos();
+    } else {
+      mostrarToast('Erro ao salvar contato');
+    }
+  } catch(e) {
+    mostrarToast('Erro de conexão');
+  }
+}
+
+// ═══════════════ AMOSTRAS ═══════════════
+async function renderAmostras() {
+  const el = document.getElementById('lista-amostras');
+  el.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/amostras?select=*&order=created_at.desc&limit=100`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    const data = await r.json();
+    const lista = Array.isArray(data) ? data : [];
+    if (!lista.length) {
+      el.innerHTML = '<div class="empty-state">Nenhuma amostra registrada.</div>';
+      return;
+    }
+    el.innerHTML = lista.map(a => `
+      <div class="card">
+        <div style="font-weight:700;font-size:14px;">${a.produto || '—'}</div>
+        <div style="font-size:12px;color:#6b7280;">${a.destino || ''}</div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#9ca3af;">
+          <span>Qtd: ${a.quantidade || 1}</span>
+          <span>${new Date(a.created_at).toLocaleDateString('pt-BR')}</span>
+        </div>
+        ${a.observacoes ? `<div style="font-size:11px;color:#6b7280;margin-top:4px;">${a.observacoes}</div>` : ''}
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state">Erro ao carregar amostras.</div>';
+  }
+}
+
+function abrirModalAmostra() {
+  document.getElementById('am-destino').value = '';
+  document.getElementById('am-produto').value = '';
+  document.getElementById('am-qtde').value = '1';
+  document.getElementById('am-obs').value = '';
+  document.getElementById('modal-amostra').classList.add('active');
+}
+
+function fecharModalAmostra() {
+  document.getElementById('modal-amostra').classList.remove('active');
+}
+
+async function salvarAmostra() {
+  const destino = document.getElementById('am-destino').value.trim();
+  const produto = document.getElementById('am-produto').value.trim();
+  if (!destino || !produto) { mostrarToast('Preencha destino e produto'); return; }
+
+  const payload = {
+    destino, produto,
+    quantidade: parseInt(document.getElementById('am-qtde').value) || 1,
+    observacoes: document.getElementById('am-obs').value.trim(),
+    vendedor: USUARIO_NOME || '',
+  };
+
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/amostras`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (resp.ok || resp.status === 201) {
+      mostrarToast('✓ Amostra registrada!');
+      fecharModalAmostra();
+      renderAmostras();
+    } else {
+      mostrarToast('Erro ao registrar amostra');
+    }
+  } catch(e) {
+    mostrarToast('Erro de conexão');
+  }
+}
+
 function mostrarToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;

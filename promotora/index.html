@@ -2769,75 +2769,186 @@ function formatarDataSimples(str) {
 window.addEventListener('load', function() { verificarSSO(); });
 
 
-// ═══════════════ DASHBOARD ═══════════════
+// ═══════════════ DASHBOARD (HOME) ═══════════════
 async function renderDashboard() {
   const hoje = new Date();
-  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const diaSemana = hoje.getDay(); // 0=dom
+  const inicioSemana = new Date(hoje);
+  inicioSemana.setDate(hoje.getDate() - (diaSemana===0?6:diaSemana-1));
+  inicioSemana.setHours(0,0,0,0);
+
+  // Saudação
+  const h = hoje.getHours();
+  const saud = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  document.getElementById('dash-saudacao').textContent = `${saud}, Nicolle!`;
+  document.getElementById('dash-data-hoje').textContent = hoje.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
 
   try {
-    // Visitas do mês
-    const rVisitas = await fetch(`${SUPABASE_URL}/rest/v1/visitas?select=*&created_at=gte.${inicioMes}`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
-    });
-    const visitas = await rVisitas.json();
-    const listaVisitas = Array.isArray(visitas) ? visitas : [];
-    document.getElementById('dash-visitas').textContent = listaVisitas.length;
-    document.getElementById('dash-leads').textContent = listaVisitas.filter(v => v.tem_lead).length;
-    document.getElementById('dash-pendentes').textContent = listaVisitas.filter(v => v.resultado === 'Interesse confirmado – acionar rep').length;
+    const { data: visitasMes } = await sb.from('visitas').select('*').gte('created_at', inicioMes.toISOString()).order('created_at', {ascending:false});
+    const vMes = visitasMes || [];
 
-    // Amostras do mês
-    try {
-      const rAm = await fetch(`${SUPABASE_URL}/rest/v1/amostras?select=*&created_at=gte.${inicioMes}`, {
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
-      });
-      const amostras = await rAm.json();
-      document.getElementById('dash-amostras').textContent = Array.isArray(amostras) ? amostras.length : 0;
-    } catch(e) { document.getElementById('dash-amostras').textContent = '0'; }
+    const { data: amostrasAll } = await sb.from('amostras').select('*').order('created_at', {ascending:false});
+    const amostras = amostrasAll || [];
 
-    // Últimas visitas
-    const ultimas = listaVisitas.slice(0, 5);
-    const elUlt = document.getElementById('dash-ultimas-visitas');
-    if (!ultimas.length) {
-      elUlt.innerHTML = '<div class="empty-state">Nenhuma visita registrada este mês.</div>';
-    } else {
-      elUlt.innerHTML = ultimas.map(v => `
-        <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
-          <div style="font-weight:600;font-size:13px;">${v.estabelecimento || '—'}</div>
-          <div style="font-size:11px;color:#9ca3af;">${v.cidade || ''} · ${new Date(v.created_at).toLocaleDateString('pt-BR')}</div>
-        </div>
-      `).join('');
+    // ── Streak de dias consecutivos com visita ──
+    const diasComVisita = new Set(vMes.map(v => new Date(v.created_at).toDateString()));
+    // olhar também mês anterior se necessário para não cortar o streak no dia 1
+    let streak = 0;
+    let cursor = new Date(hoje);
+    while (diasComVisita.has(cursor.toDateString())) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
     }
-  } catch(e) {
-    console.warn('dashboard:', e);
-  }
+    if (streak > 1) {
+      document.getElementById('dash-streak').style.display = 'block';
+      document.getElementById('dash-streak-num').textContent = streak;
+    }
 
-  // Aniversariantes do mês
-  try {
-    const rCt = await fetch(`${SUPABASE_URL}/rest/v1/contatos_crm?select=*`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
-    });
-    const contatos = await rCt.json();
-    const mesAtual = hoje.getMonth() + 1;
-    const aniversariantes = (Array.isArray(contatos) ? contatos : []).filter(c => {
-      if (!c.aniversario) return false;
-      const mes = parseInt(c.aniversario.split('-')[1]);
-      return mes === mesAtual;
-    });
-    const elAniv = document.getElementById('dash-aniversarios');
-    if (!aniversariantes.length) {
-      elAniv.innerHTML = '<div class="empty-state">Nenhum aniversariante este mês.</div>';
+    // ── Roteiro do mês (total de visitas esperadas) ──
+    const { data: roteiros } = await sb.from('roteiros').select('*').order('created_at', {ascending:false}).limit(1);
+    const roteiroAtual = (roteiros && roteiros[0]) || null;
+    let totalRoteiroMes = 0;
+    const diasSemanaKeys = ['dom','seg','ter','qua','qui','sex','sab'];
+    if (roteiroAtual && roteiroAtual.dias) {
+      Object.values(roteiroAtual.dias).forEach(semana => {
+        Object.values(semana || {}).forEach(lista => { totalRoteiroMes += (lista||[]).length; });
+      });
+    }
+
+    // ── Meu mês: visitas vs roteiro ──
+    document.getElementById('dash-visitas-fracao').textContent = `${vMes.length} / ${totalRoteiroMes || '—'}`;
+    const pctMes = totalRoteiroMes > 0 ? Math.min(100, Math.round(vMes.length / totalRoteiroMes * 100)) : 0;
+    document.getElementById('dash-visitas-barra').style.width = pctMes + '%';
+
+    // ── Conversão em leads ──
+    const leadsMes = vMes.filter(v => v.tem_lead).length;
+    const pctConv = vMes.length > 0 ? Math.round(leadsMes / vMes.length * 100) : 0;
+    document.getElementById('dash-conversao').textContent = pctConv + '%';
+
+    // ── Amostras do mês ──
+    const amMes = amostras.filter(a => new Date(a.created_at) >= inicioMes);
+    document.getElementById('dash-amostras-mes').textContent = amMes.length;
+    const amSemFeedback = amostras.filter(a => !a.feedback && !a.status_feedback);
+    document.getElementById('dash-amostras-sem-feedback').textContent = amSemFeedback.length;
+
+    // ── Esta semana ──
+    const vSemana = vMes.filter(v => new Date(v.created_at) >= inicioSemana);
+    let totalRoteiroSemana = 0;
+    if (roteiroAtual && roteiroAtual.dias) {
+      // aproximação: usa a semana do mês atual (1-4) baseada no dia
+      const semanaNum = Math.min(4, Math.ceil(hoje.getDate() / 7));
+      const diasS = (roteiroAtual.dias[semanaNum]) || {};
+      Object.values(diasS).forEach(lista => { totalRoteiroSemana += (lista||[]).length; });
+    }
+    document.getElementById('dash-semana-fracao').textContent = `${vSemana.length} / ${totalRoteiroSemana || '—'}`;
+    const pctSemana = totalRoteiroSemana > 0 ? Math.min(100, Math.round(vSemana.length / totalRoteiroSemana * 100)) : 0;
+    document.getElementById('dash-semana-barra').style.width = pctSemana + '%';
+    const leadsSemana = vSemana.filter(v => v.tem_lead).length;
+    const pctConvSemana = vSemana.length > 0 ? Math.round(leadsSemana / vSemana.length * 100) : 0;
+    document.getElementById('dash-semana-conversao').textContent = pctConvSemana + '%';
+
+    // ── Roteiro de hoje ──
+    const diaSemanaKey = diasSemanaKeys[hoje.getDay()];
+    let listaHoje = [];
+    if (roteiroAtual && roteiroAtual.dias) {
+      const semanaNum = Math.min(4, Math.ceil(hoje.getDate() / 7));
+      listaHoje = ((roteiroAtual.dias[semanaNum]||{})[diaSemanaKey]) || [];
+    }
+    const nomesVisitadosHoje = new Set(vMes.filter(v => new Date(v.created_at).toDateString() === hoje.toDateString()).map(v => (v.estabelecimento||'').toLowerCase().trim()));
+    const elRotHoje = document.getElementById('dash-roteiro-hoje');
+    if (!listaHoje.length) {
+      elRotHoje.innerHTML = '<div class="empty-state">Nenhum estabelecimento no roteiro de hoje.</div>';
     } else {
-      elAniv.innerHTML = aniversariantes.map(c => {
-        const dia = c.aniversario.split('-')[2];
-        return `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;">
-          <div><div style="font-weight:600;font-size:13px;">${c.nome}</div><div style="font-size:11px;color:#9ca3af;">${c.estabelecimento||''}</div></div>
-          <div style="font-size:13px;font-weight:700;color:#CC0000;">${dia}</div>
+      elRotHoje.innerHTML = listaHoje.map(estabNome => {
+        const nome = typeof estabNome === 'string' ? estabNome : (estabNome.nome || '');
+        const feito = nomesVisitadosHoje.has(nome.toLowerCase().trim());
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f3f4f6;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${feito ? '<span style="color:#16a34a;">✅</span>' : '<span style="width:16px;display:inline-block;"></span>'}
+            <span style="font-size:13px;${feito?'color:#9ca3af;text-decoration:line-through;':''}">${nome}</span>
+          </div>
+          ${!feito ? `<button onclick="irParaNovaVisitaCom('${nome.replace(/'/g,"\\'")}')" style="background:#CC0000;color:white;border:none;border-radius:50%;width:26px;height:26px;font-size:15px;font-weight:700;cursor:pointer;">+</button>` : ''}
         </div>`;
       }).join('');
     }
+
+    // ── Alertas ──
+    const alertas = [];
+    // Clientes do roteiro não visitados em dias anteriores desta semana
+    if (roteiroAtual && roteiroAtual.dias) {
+      const semanaNum = Math.min(4, Math.ceil(hoje.getDate() / 7));
+      const diasS = (roteiroAtual.dias[semanaNum]) || {};
+      const nomesVisitadosSemana = new Set(vSemana.map(v => (v.estabelecimento||'').toLowerCase().trim()));
+      for (let d = 1; d < diaSemana; d++) {
+        const key = diasSemanaKeys[d];
+        (diasS[key] || []).forEach(e => {
+          const nome = typeof e === 'string' ? e : (e.nome || '');
+          if (!nomesVisitadosSemana.has(nome.toLowerCase().trim())) {
+            alertas.push({icon:'📍', texto:`${nome} não foi visitado (previsto para ${key})`});
+          }
+        });
+      }
+    }
+    // Amostras 30+/45+ dias sem feedback
+    amSemFeedback.forEach(a => {
+      const dias = Math.floor((hoje - new Date(a.created_at)) / 86400000);
+      if (dias >= 45) alertas.push({icon:'🧪', texto:`Amostra sem feedback há ${dias} dias — ${a.produto||''} (${a.destino||a.estabelecimento||''})`, urgente:true});
+      else if (dias >= 30) alertas.push({icon:'🧪', texto:`Amostra sem feedback há ${dias} dias — ${a.produto||''}`});
+    });
+    // Retornos vencidos/próximos
+    vMes.forEach(v => {
+      if (v.data_retorno) {
+        const dr = new Date(v.data_retorno);
+        const diffDias = Math.floor((dr - hoje) / 86400000);
+        if (diffDias <= 2) alertas.push({icon:'🔔', texto:`Retorno ${diffDias<0?'vencido':'próximo'} — ${v.estabelecimento} (${dr.toLocaleDateString('pt-BR')})`, urgente: diffDias < 0});
+      }
+    });
+
+    if (alertas.length) {
+      document.getElementById('dash-card-alertas').style.display = 'block';
+      document.getElementById('dash-alertas').innerHTML = alertas.map(a => `
+        <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+          <span>${a.icon}</span>
+          <span style="font-size:12px;${a.urgente?'color:#CC0000;font-weight:600;':'color:#374151;'}">${a.texto}</span>
+        </div>`).join('');
+    }
+
+    // ── Aniversariantes do mês ──
+    try {
+      const { data: contatos } = await sb.from('contatos_crm').select('*');
+      const mesAtual = hoje.getMonth() + 1;
+      const diaAtual = hoje.getDate();
+      const aniversariantes = (contatos || []).filter(c => {
+        if (!c.aniversario) return false;
+        return parseInt(c.aniversario.split('-')[1]) === mesAtual;
+      }).sort((a,b) => parseInt(a.aniversario.split('-')[2]) - parseInt(b.aniversario.split('-')[2]));
+
+      if (aniversariantes.length) {
+        document.getElementById('dash-card-aniversarios').style.display = 'block';
+        document.getElementById('dash-aniversarios').innerHTML = aniversariantes.map(c => {
+          const dia = parseInt(c.aniversario.split('-')[2]);
+          const hoje_flag = dia === diaAtual;
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;${hoje_flag?'background:#fff7ed;border-radius:6px;padding-left:6px;':''}">
+            <div><div style="font-weight:600;font-size:13px;">${c.nome}${hoje_flag?' 🎉':''}</div><div style="font-size:11px;color:#9ca3af;">${c.estabelecimento||''}</div></div>
+            <div style="font-size:13px;font-weight:700;color:#CC0000;">${String(dia).padStart(2,'0')}/${c.aniversario.split('-')[1]}</div>
+          </div>`;
+        }).join('');
+      }
+    } catch(e) { /* tabela pode não existir ainda */ }
+
   } catch(e) {
-    document.getElementById('dash-aniversarios').innerHTML = '<div class="empty-state">Nenhum aniversariante este mês.</div>';
+    console.warn('dashboard:', e);
   }
+}
+
+function irParaNovaVisitaCom(nomeEstab) {
+  navegarPara('visita');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === 'visita'));
+  setTimeout(() => {
+    const input = document.getElementById('input-estab');
+    if (input) { input.value = nomeEstab; input.dispatchEvent(new Event('input')); }
+  }, 100);
 }
 
 // ═══════════════ CONTATOS (CRM) ═══════════════

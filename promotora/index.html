@@ -3124,75 +3124,143 @@ async function salvarContato() {
   }
 }
 
-// ═══════════════ AMOSTRAS ═══════════════
+// ═══════════════ AMOSTRAS (vinculadas à visita) ═══════════════
+let AMOSTRAS_VISITA_TEMP = []; // amostras adicionadas na visita atual (antes de salvar)
+let AMOSTRAS_CACHE = [];
+let AMOSTRAS_FILTRO_ATUAL = 'todos';
+
+function abrirModalAmostraVisita() {
+  document.getElementById('amv-produto').value = '';
+  document.getElementById('amv-qtde').value = '1';
+  document.getElementById('amv-destinatario').value = document.getElementById('visita-contato') ? document.getElementById('visita-contato').value : '';
+  document.getElementById('modal-amostra-visita').classList.add('active');
+}
+function fecharModalAmostraVisita() {
+  document.getElementById('modal-amostra-visita').classList.remove('active');
+}
+function confirmarAmostraVisita() {
+  const produto = document.getElementById('amv-produto').value.trim();
+  if (!produto) { mostrarToast('Informe o produto'); return; }
+  AMOSTRAS_VISITA_TEMP.push({
+    produto,
+    quantidade: parseInt(document.getElementById('amv-qtde').value) || 1,
+    destinatario: document.getElementById('amv-destinatario').value.trim()
+  });
+  renderListaAmostrasVisita();
+  fecharModalAmostraVisita();
+}
+function renderListaAmostrasVisita() {
+  const el = document.getElementById('lista-amostras-visita');
+  if (!AMOSTRAS_VISITA_TEMP.length) { el.innerHTML = ''; return; }
+  el.innerHTML = AMOSTRAS_VISITA_TEMP.map((a, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
+      <div style="font-size:12px;"><strong>${a.produto}</strong> · ${a.quantidade}un${a.destinatario ? ' · '+a.destinatario : ''}</div>
+      <button onclick="removerAmostraVisita(${i})" style="background:none;border:none;color:#CC0000;font-size:16px;cursor:pointer;">✕</button>
+    </div>`).join('');
+}
+function removerAmostraVisita(i) {
+  AMOSTRAS_VISITA_TEMP.splice(i, 1);
+  renderListaAmostrasVisita();
+}
+
+// Chamado por salvarVisita() após a visita ser salva com sucesso
+async function persistirAmostrasDaVisita(estabelecimentoNome) {
+  if (!AMOSTRAS_VISITA_TEMP.length) return;
+  const registros = AMOSTRAS_VISITA_TEMP.map(a => ({
+    produto: a.produto,
+    quantidade: a.quantidade,
+    destino: estabelecimentoNome,
+    contato_nome: a.destinatario || null,
+    vendedor: 'Nicolle'
+  }));
+  try {
+    await sb.from('amostras').insert(registros);
+  } catch(e) { console.warn('erro ao salvar amostras da visita:', e); }
+  AMOSTRAS_VISITA_TEMP = [];
+  renderListaAmostrasVisita();
+}
+
 async function renderAmostras() {
   const el = document.getElementById('lista-amostras');
   el.innerHTML = '<div class="empty-state">Carregando...</div>';
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/amostras?select=*&order=created_at.desc&limit=100`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
-    });
-    const data = await r.json();
-    const lista = Array.isArray(data) ? data : [];
-    if (!lista.length) {
-      el.innerHTML = '<div class="empty-state">Nenhuma amostra registrada.</div>';
-      return;
-    }
-    el.innerHTML = lista.map(a => `
-      <div class="card">
-        <div style="font-weight:700;font-size:14px;">${a.produto || '—'}</div>
-        <div style="font-size:12px;color:#6b7280;">${a.destino || ''}</div>
-        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#9ca3af;">
-          <span>Qtd: ${a.quantidade || 1}</span>
-          <span>${new Date(a.created_at).toLocaleDateString('pt-BR')}</span>
-        </div>
-        ${a.observacoes ? `<div style="font-size:11px;color:#6b7280;margin-top:4px;">${a.observacoes}</div>` : ''}
-      </div>
-    `).join('');
+    const { data } = await sb.from('amostras').select('*').order('created_at', {ascending:false}).limit(200);
+    AMOSTRAS_CACHE = data || [];
+    exibirAmostrasFiltradas();
   } catch(e) {
     el.innerHTML = '<div class="empty-state">Erro ao carregar amostras.</div>';
   }
 }
 
-function abrirModalAmostra() {
-  document.getElementById('am-destino').value = '';
-  document.getElementById('am-produto').value = '';
-  document.getElementById('am-qtde').value = '1';
-  document.getElementById('am-obs').value = '';
-  document.getElementById('modal-amostra').classList.add('active');
+function filtrarAmostrasStatus(status, btn) {
+  AMOSTRAS_FILTRO_ATUAL = status;
+  document.querySelectorAll('.filtro-am-btn').forEach(b => {
+    b.classList.toggle('active', b === btn);
+    b.style.background = b === btn ? '#CC0000' : 'white';
+    b.style.color = b === btn ? 'white' : '#374151';
+  });
+  exibirAmostrasFiltradas();
 }
 
-function fecharModalAmostra() {
-  document.getElementById('modal-amostra').classList.remove('active');
+function exibirAmostrasFiltradas() {
+  const hoje = new Date();
+  let lista = AMOSTRAS_CACHE;
+  if (AMOSTRAS_FILTRO_ATUAL === 'pendente') {
+    lista = lista.filter(a => !a.status_feedback);
+  } else if (AMOSTRAS_FILTRO_ATUAL !== 'todos') {
+    lista = lista.filter(a => a.status_feedback === AMOSTRAS_FILTRO_ATUAL);
+  }
+
+  const el = document.getElementById('lista-amostras');
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-state">Nenhuma amostra encontrada.</div>';
+    return;
+  }
+  el.innerHTML = lista.map(a => {
+    const dias = Math.floor((hoje - new Date(a.created_at)) / 86400000);
+    const semFeedback = !a.status_feedback;
+    const urgente = semFeedback && dias >= 45;
+    const statusLabel = { aprovado: '👍 Aprovado', neutro: '🤔 Neutro', recusado: '👎 Recusado' }[a.status_feedback] || null;
+    return `<div class="card" style="${urgente ? 'border-left:4px solid #CC0000;' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-weight:700;font-size:14px;">${a.produto || '—'}</div>
+          <div style="font-size:12px;color:#6b7280;">${a.destino || a.estabelecimento || ''}${a.contato_nome ? ' · '+a.contato_nome : ''}</div>
+        </div>
+        ${statusLabel ? `<span style="font-size:11px;font-weight:600;">${statusLabel}</span>` : ''}
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:${urgente?'#CC0000':'#9ca3af'};${urgente?'font-weight:700;':''}">
+        <span>Qtd: ${a.quantidade || 1}</span>
+        <span>${new Date(a.created_at).toLocaleDateString('pt-BR')} · ${dias}d</span>
+      </div>
+      ${semFeedback ? `<button onclick="abrirModalFeedback(${a.id})" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;color:#374151;cursor:pointer;">💬 Registrar feedback</button>` : (a.obs_feedback ? `<div style="font-size:11px;color:#6b7280;margin-top:6px;">${a.obs_feedback}</div>` : '')}
+    </div>`;
+  }).join('');
 }
 
-async function salvarAmostra() {
-  const destino = document.getElementById('am-destino').value.trim();
-  const produto = document.getElementById('am-produto').value.trim();
-  if (!destino || !produto) { mostrarToast('Preencha destino e produto'); return; }
-
-  const payload = {
-    destino, produto,
-    quantidade: parseInt(document.getElementById('am-qtde').value) || 1,
-    observacoes: document.getElementById('am-obs').value.trim(),
-    vendedor: 'Nicolle',
-  };
-
+let AMOSTRA_FEEDBACK_ID = null;
+function abrirModalFeedback(id) {
+  AMOSTRA_FEEDBACK_ID = id;
+  const a = AMOSTRAS_CACHE.find(x => x.id === id);
+  document.getElementById('fb-amostra-info').textContent = a ? `${a.produto} — ${a.destino||a.estabelecimento||''}` : '';
+  document.getElementById('fb-status').value = 'aprovado';
+  document.getElementById('fb-obs').value = '';
+  document.getElementById('modal-feedback-amostra').classList.add('active');
+}
+function fecharModalFeedback() {
+  document.getElementById('modal-feedback-amostra').classList.remove('active');
+}
+async function salvarFeedbackAmostra() {
+  if (!AMOSTRA_FEEDBACK_ID) return;
+  const status = document.getElementById('fb-status').value;
+  const obs = document.getElementById('fb-obs').value.trim();
   try {
-    const resp = await fetch(`${SUPABASE_URL}/rest/v1/amostras`, {
-      method: 'POST',
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-      body: JSON.stringify(payload)
-    });
-    if (resp.ok || resp.status === 201) {
-      mostrarToast('✓ Amostra registrada!');
-      fecharModalAmostra();
-      renderAmostras();
-    } else {
-      mostrarToast('Erro ao registrar amostra');
-    }
+    await sb.from('amostras').update({ status_feedback: status, obs_feedback: obs }).eq('id', AMOSTRA_FEEDBACK_ID);
+    mostrarToast('✓ Feedback registrado!');
+    fecharModalFeedback();
+    renderAmostras();
   } catch(e) {
-    mostrarToast('Erro de conexão');
+    mostrarToast('Erro ao salvar feedback');
   }
 }
 

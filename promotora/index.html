@@ -2838,7 +2838,7 @@ async function renderDashboard() {
       const aniversariantes = (contatos || []).filter(c => {
         if (!c.data_aniversario) return false;
         return parseInt(c.data_aniversario.split('-')[1]) === mesAtual;
-      }).sort((a,b) => parseInt(a.data_aniversario.split('-')[2]) - parseInt(b.aniversario.split('-')[2]));
+      }).sort((a,b) => parseInt(a.data_aniversario.split('-')[2]) - parseInt(b.data_aniversario.split('-')[2]));
 
       if (aniversariantes.length) {
         document.getElementById('dash-card-aniversarios').style.display = 'block';
@@ -2846,7 +2846,7 @@ async function renderDashboard() {
           const dia = parseInt(c.data_aniversario.split('-')[2]);
           const hoje_flag = dia === diaAtual;
           return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;${hoje_flag?'background:#fff7ed;border-radius:6px;padding-left:6px;':''}">
-            <div><div style="font-weight:600;font-size:13px;">${c.nome}${hoje_flag?' 🎉':''}</div><div style="font-size:11px;color:#9ca3af;">${c.estabelecimento||''}</div></div>
+            <div><div style="font-weight:600;font-size:13px;">${c.nome}${hoje_flag?' 🎉':''}</div><div style="font-size:11px;color:#9ca3af;">${c.estabelecimento_nome||''}</div></div>
             <div style="font-size:13px;font-weight:700;color:#CC0000;">${String(dia).padStart(2,'0')}/${c.data_aniversario.split('-')[1]}</div>
           </div>`;
         }).join('');
@@ -2912,7 +2912,7 @@ function exibirContatos(lista) {
 function filtrarContatos() {
   const q = document.getElementById('busca-contato').value.toLowerCase();
   const filtrados = CONTATOS_CACHE.filter(c =>
-    (c.nome||'').toLowerCase().includes(q) || (c.estabelecimento||'').toLowerCase().includes(q)
+    (c.nome||'').toLowerCase().includes(q) || (c.estabelecimento_nome||'').toLowerCase().includes(q)
   );
   exibirContatos(filtrados);
 }
@@ -3074,7 +3074,7 @@ function filtrarSeletorContato() {
   const q = document.getElementById('sc-busca').value.toLowerCase();
   const jaAdicionados = new Set(CONTATOS_VISITA_TEMP.map(c => c.id));
   const lista = CONTATOS_CRM_CACHE_RAPIDO.filter(c =>
-    !jaAdicionados.has(c.id) && (!q || c.nome.toLowerCase().includes(q) || (c.estabelecimento||'').toLowerCase().includes(q))
+    !jaAdicionados.has(c.id) && (!q || c.nome.toLowerCase().includes(q) || (c.estabelecimento_nome||'').toLowerCase().includes(q))
   );
   const el = document.getElementById('sc-lista');
   if (!lista.length) {
@@ -3084,7 +3084,7 @@ function filtrarSeletorContato() {
   el.innerHTML = lista.map(c => `
     <div onclick='adicionarContatoNaVisita(${JSON.stringify(c).replace(/'/g, "&apos;")})' style="padding:10px 8px;border-bottom:1px solid #f3f4f6;cursor:pointer;">
       <div style="font-weight:600;font-size:13px;">${c.nome}</div>
-      <div style="font-size:11px;color:#9ca3af;">${c.estabelecimento||''}${c.especialidade?' · '+c.especialidade:''}</div>
+      <div style="font-size:11px;color:#9ca3af;">${c.estabelecimento_nome||''}${c.especialidade?' · '+c.especialidade:''}</div>
     </div>`).join('');
 }
 

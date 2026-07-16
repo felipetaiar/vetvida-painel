@@ -1649,7 +1649,7 @@ async function salvarVisita() {
         .insert([{ nome: estab, cidade, tipo, contato }]).select().single();
       if(novoEstab) { ESTABELECIMENTOS.push(novoEstab); renderDropdown(); }
     }
-    console.log('Visita salva, data retornado:', data);
+    alert('DEBUG Visita salva. id=' + (data ? data.id : 'SEM DATA') + ' | erro=' + (error ? error.message : 'nenhum'));
     if (!data || !data.id) {
       mostrarToast('⚠ Visita salva mas sem ID retornado — amostras podem não vincular');
     }
@@ -2459,9 +2459,9 @@ async function abrirDetalheVisita(id) {
 
   // Buscar amostras vinculadas a esta visita — apenas por visita_id, sem aproximação
   try {
-    console.log('Buscando amostras para visita id:', v.id, typeof v.id);
+    alert('DEBUG buscando amostras. visita.id=' + v.id + ' tipo=' + typeof v.id);
     const { data: porId, error: erroAm } = await sb.from('amostras').select('*').eq('visita_id', v.id);
-    console.log('Amostras encontradas:', porId, 'erro:', erroAm);
+    alert('DEBUG amostras encontradas: ' + JSON.stringify(porId) + ' | erro: ' + (erroAm ? erroAm.message : 'nenhum'));
     const amostrasDaVisita = porId || [];
     const elAm = document.getElementById('detalhe-visita-amostras');
     if (!elAm) return;

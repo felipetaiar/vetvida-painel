@@ -1710,7 +1710,7 @@ async function salvarVisita() {
 }
 
 // ─── HISTÓRICO ────────────────────────────────────────────────────────────────
-let AMOSTRAS_POR_ESTAB_DIA = {}; // cache: "estabLower|YYYY-MM-DD" -> count
+let VISITAS_COM_AMOSTRA = new Set(); // set de visita_id que têm amostra
 
 async function renderHistorico() {
   const cidade = document.getElementById('filtro-cidade')?.value || '';
@@ -1724,21 +1724,14 @@ async function renderHistorico() {
   const el = document.getElementById('lista-historico');
   if(!lista.length) { el.innerHTML = '<p style="color:var(--gray-400);text-align:center;padding:30px 0;">Nenhuma visita encontrada.</p>'; return; }
 
-  // Pré-carregar amostras para marcar badge nos cards
+  // Pré-carregar quais visitas têm amostra vinculada (por visita_id)
   try {
-    const { data } = await sb.from('amostras').select('estabelecimento_nome, created_at');
-    AMOSTRAS_POR_ESTAB_DIA = {};
-    (data || []).forEach(a => {
-      const dia = new Date(a.created_at).toISOString().slice(0,10);
-      const key = (a.estabelecimento_nome||'').toLowerCase().trim() + '|' + dia;
-      AMOSTRAS_POR_ESTAB_DIA[key] = (AMOSTRAS_POR_ESTAB_DIA[key] || 0) + 1;
-    });
-  } catch(e) { AMOSTRAS_POR_ESTAB_DIA = {}; }
+    const { data } = await sb.from('amostras').select('visita_id').not('visita_id', 'is', null);
+    VISITAS_COM_AMOSTRA = new Set((data || []).map(a => String(a.visita_id)));
+  } catch(e) { VISITAS_COM_AMOSTRA = new Set(); }
 
   el.innerHTML = lista.map(v => {
-    const dia = new Date(v.created_at).toISOString().slice(0,10);
-    const key = (v.estabelecimento||'').toLowerCase().trim() + '|' + dia;
-    const temAmostra = AMOSTRAS_POR_ESTAB_DIA[key] > 0;
+    const temAmostra = VISITAS_COM_AMOSTRA.has(String(v.id));
     return `
     <div class="visita-item" onclick="abrirDetalheVisita('${v.id}')">
       <div class="visita-item-header">

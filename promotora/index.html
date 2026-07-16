@@ -1657,6 +1657,24 @@ function selecionarEstab(e) {
   if(e.tipo) document.getElementById('visita-tipo').value = e.tipo;
   if(e.contato) document.getElementById('visita-contato').value = e.contato;
   verificarEspecialidades();
+  verificarAmostraPendente(e.nome);
+}
+
+async function verificarAmostraPendente(nomeEstab) {
+  const el = document.getElementById('alerta-amostra-pendente');
+  el.style.display = 'none';
+  if (!nomeEstab) return;
+  try {
+    const { data } = await sb.from('amostras').select('*')
+      .or(`destino.ilike.%${nomeEstab}%,estabelecimento.ilike.%${nomeEstab}%`)
+      .order('created_at', {ascending:false});
+    const pendente = (data||[]).find(a => !a.feedback && !a.status_feedback);
+    if (pendente) {
+      const dias = Math.floor((new Date() - new Date(pendente.created_at)) / 86400000);
+      el.textContent = `🧪 Este local tem uma amostra pendente de feedback: ${pendente.produto||''} (há ${dias} dias)`;
+      el.style.display = 'block';
+    }
+  } catch(err) { /* silencioso */ }
 }
 
 // ─── CHECKS / PILLS ──────────────────────────────────────────────────────────

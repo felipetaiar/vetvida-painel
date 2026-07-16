@@ -2906,6 +2906,75 @@ function fecharModalContato() {
   document.getElementById('modal-contato').classList.remove('open');
 }
 
+let CONTATOS_VISITA_TEMP = []; // contatos adicionados na visita atual
+let CONTATOS_CRM_CACHE_RAPIDO = [];
+
+async function abrirSeletorContatoVisita() {
+  document.getElementById('sc-busca').value = '';
+  document.getElementById('modal-seletor-contato').classList.add('open');
+  try {
+    const estabAtual = (document.getElementById('input-estab').value || '').trim();
+    const { data } = await sb.from('contatos_crm').select('*').order('nome');
+    CONTATOS_CRM_CACHE_RAPIDO = data || [];
+    // Priorizar contatos do mesmo estabelecimento
+    if (estabAtual) {
+      CONTATOS_CRM_CACHE_RAPIDO.sort((a, b) => {
+        const aMatch = (a.estabelecimento||'').toLowerCase().includes(estabAtual.toLowerCase());
+        const bMatch = (b.estabelecimento||'').toLowerCase().includes(estabAtual.toLowerCase());
+        return (bMatch ? 1 : 0) - (aMatch ? 1 : 0);
+      });
+    }
+  } catch(e) { CONTATOS_CRM_CACHE_RAPIDO = []; }
+  filtrarSeletorContato();
+}
+
+function fecharSeletorContato() {
+  document.getElementById('modal-seletor-contato').classList.remove('open');
+}
+
+function filtrarSeletorContato() {
+  const q = document.getElementById('sc-busca').value.toLowerCase();
+  const jaAdicionados = new Set(CONTATOS_VISITA_TEMP.map(c => c.id));
+  const lista = CONTATOS_CRM_CACHE_RAPIDO.filter(c =>
+    !jaAdicionados.has(c.id) && (!q || c.nome.toLowerCase().includes(q) || (c.estabelecimento||'').toLowerCase().includes(q))
+  );
+  const el = document.getElementById('sc-lista');
+  if (!lista.length) {
+    el.innerHTML = '<p style="text-align:center;color:#9ca3af;font-size:12px;padding:10px 0;">Nenhum contato encontrado. Cadastre um novo abaixo.</p>';
+    return;
+  }
+  el.innerHTML = lista.map(c => `
+    <div onclick='adicionarContatoNaVisita(${JSON.stringify(c).replace(/'/g, "&apos;")})' style="padding:10px 8px;border-bottom:1px solid #f3f4f6;cursor:pointer;">
+      <div style="font-weight:600;font-size:13px;">${c.nome}</div>
+      <div style="font-size:11px;color:#9ca3af;">${c.estabelecimento||''}${c.especialidade?' · '+c.especialidade:''}</div>
+    </div>`).join('');
+}
+
+function abrirModalContatoDaVisita() {
+  fecharSeletorContato();
+  CONTATO_ORIGEM_VISITA = true;
+  abrirModalContato();
+  // Pré-preencher estabelecimento com o da visita atual
+  const estabAtual = (document.getElementById('input-estab').value || '').trim();
+  if (estabAtual) document.getElementById('ct-estab').value = estabAtual;
+}
+
+function renderListaContatosVisita() {
+  const el = document.getElementById('lista-contatos-visita');
+  document.getElementById('visita-contato').value = CONTATOS_VISITA_TEMP.map(c => c.nome).join(', ');
+  if (!CONTATOS_VISITA_TEMP.length) { el.innerHTML = ''; return; }
+  el.innerHTML = CONTATOS_VISITA_TEMP.map((c, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
+      <div style="font-size:12px;"><strong>${c.nome}</strong>${c.especialidade?' · '+c.especialidade:''}</div>
+      <button onclick="removerContatoVisita(${i})" style="background:none;border:none;color:#CC0000;font-size:16px;cursor:pointer;">✕</button>
+    </div>`).join('');
+}
+
+function removerContatoVisita(i) {
+  CONTATOS_VISITA_TEMP.splice(i, 1);
+  renderListaContatosVisita();
+}
+
 let CONTATO_ORIGEM_VISITA = false; // true quando o modal foi aberto a partir da visita
 
 async function salvarContato() {

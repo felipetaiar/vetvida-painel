@@ -3129,11 +3129,11 @@ async function salvarContato() {
   const payload = {
     nome,
     funcao,
-    estabelecimento: estab,
-    outras_clinicas: CT_OUTRAS_CLINICAS.join(', '),
+    estabelecimento_nome: estab,
+    outros_estabelecimentos: CT_OUTRAS_CLINICAS.join(', '),
     especialidade: especialidadesSel.join(', '),
     telefone: document.getElementById('ct-telefone').value.trim(),
-    aniversario: document.getElementById('ct-aniversario').value || null,
+    data_aniversario: document.getElementById('ct-aniversario').value || null,
     hobbies: document.getElementById('ct-hobbies').value.trim(),
     observacoes: document.getElementById('ct-obs').value.trim(),
   };

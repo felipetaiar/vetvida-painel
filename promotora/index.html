@@ -1653,6 +1653,7 @@ async function salvarVisita() {
   document.getElementById('visita-obs').value = '';
   document.getElementById('alerta-amostra-pendente').style.display = 'none';
   AMOSTRAS_VISITA_TEMP = []; renderListaAmostrasVisita();
+  CONTATOS_VISITA_TEMP = []; renderListaContatosVisita();
   document.getElementById('visita-retorno').value = '';
   document.getElementById('alerta-lead').style.display = 'none';
   document.querySelectorAll('.check-pill').forEach(p => { p.classList.remove('checked'); p.querySelector('input').checked = false; });

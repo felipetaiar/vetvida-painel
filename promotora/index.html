@@ -696,38 +696,7 @@ body {
 </head>
 <body>
 <script>
-// ── SSO AUTO-LOGIN PROMOTORA ────────────────────────────────
-(function() {
-  var params = new URLSearchParams(window.location.search);
-  var auth   = params.get('vv_auth');
-  var perfil = params.get('vv_perfil');
-  var tk     = params.get('vv_tk');
-  if (auth !== 'ok' || !perfil || !tk) return;
-  try {
-    var decoded = atob(tk);
-    var parts   = decoded.split(':');
-    var user    = parts[0];
-    var pass    = parts.slice(1).join(':');
-    window.addEventListener('load', function() {
-      if (!window.USUARIOS) return;
-      var match = USUARIOS[user];
-      if (!match || match.senha !== pass) return;
-      sessionStorage.setItem('vv_auth', 'ok');
-      sessionStorage.setItem('vv_perfil', match.perfil);
-      sessionStorage.setItem('vv_user', user);
-      window.history.replaceState({}, '', window.location.pathname);
-      // Trigger entrar programaticamente
-      if (typeof entrar === 'function') {
-        // Simular login direto
-        PERFIL = match.perfil;
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        if (typeof init === 'function') init();
-        if (typeof carregarDados === 'function') carregarDados();
-      }
-    });
-  } catch(e) { console.warn('SSO prom:', e); }
-})();
+
 </script>
 
 
@@ -1392,21 +1361,7 @@ function verificarSSO() {
   return true;
 }
 
-function fazerLogin() {
-  const user = (document.getElementById('login-user').value || '').toLowerCase().trim();
-  const pass = document.getElementById('login-pass').value;
-  const erro = document.getElementById('login-error');
 
-  const match = USUARIOS[user];
-  if(!match || match.senha !== pass) {
-    erro.style.display = 'block';
-    document.getElementById('login-pass').value = '';
-    return;
-  }
-
-  erro.style.display = 'none';
-  entrar(match.perfil);
-}
 
 emailjs.init(EMAILJS_KEY);
 let sb = null;

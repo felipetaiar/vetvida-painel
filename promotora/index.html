@@ -783,6 +783,56 @@ body {
     </div>
   </header>
 
+  <!-- ── SCREEN: DASHBOARD ── -->
+  <div id="screen-dashboard" class="screen active">
+    <div class="card">
+      <div class="card-title">📊 Resumo do mês</div>
+      <div id="dash-metricas" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+        <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;">
+          <div id="dash-visitas" style="font-size:24px;font-weight:800;color:#CC0000;">0</div>
+          <div style="font-size:11px;color:#6b7280;">Visitas no mês</div>
+        </div>
+        <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;">
+          <div id="dash-leads" style="font-size:24px;font-weight:800;color:#CC0000;">0</div>
+          <div style="font-size:11px;color:#6b7280;">Leads gerados</div>
+        </div>
+        <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;">
+          <div id="dash-amostras" style="font-size:24px;font-weight:800;color:#CC0000;">0</div>
+          <div style="font-size:11px;color:#6b7280;">Amostras entregues</div>
+        </div>
+        <div style="background:#fdf2f2;border-radius:10px;padding:12px;text-align:center;">
+          <div id="dash-pendentes" style="font-size:24px;font-weight:800;color:#CC0000;">0</div>
+          <div style="font-size:11px;color:#6b7280;">Retornos pendentes</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🎂 Aniversariantes do mês</div>
+      <div id="dash-aniversarios"><div class="empty-state">Carregando...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📍 Últimas visitas</div>
+      <div id="dash-ultimas-visitas"><div class="empty-state">Carregando...</div></div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: CONTATOS (CRM) ── -->
+  <div id="screen-contatos" class="screen">
+    <div class="card">
+      <div class="card-title">👤 Contatos <button onclick="abrirModalContato()" style="float:right;background:#CC0000;color:white;border:none;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Novo</button></div>
+      <input type="text" class="form-input" id="busca-contato" placeholder="🔍 Buscar por nome ou estabelecimento..." oninput="filtrarContatos()" style="margin-top:8px;">
+    </div>
+    <div id="lista-contatos"><div class="empty-state">Carregando...</div></div>
+  </div>
+
+  <!-- ── SCREEN: AMOSTRAS ── -->
+  <div id="screen-amostras" class="screen">
+    <div class="card">
+      <div class="card-title">📦 Entrega de Amostras <button onclick="abrirModalAmostra()" style="float:right;background:#CC0000;color:white;border:none;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Registrar</button></div>
+    </div>
+    <div id="lista-amostras"><div class="empty-state">Carregando...</div></div>
+  </div>
+
   <!-- ── SCREEN: NOVA VISITA ── -->
   <div id="screen-visita" class="screen">
     <div class="card">

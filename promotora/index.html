@@ -727,16 +727,8 @@ body {
         </div>
       </div>
 
-      <!-- Cidade -->
-      <div class="form-group">
-        <label class="form-label required">Região / Cidade</label>
-        <select class="form-select" id="visita-cidade">
-          <option value="">Selecione...</option>
-          <option>Zona Leste – SP</option>
-          <option>Zona Norte – SP</option>
-          <option>Guarulhos</option>
-        </select>
-      </div>
+      <!-- Cidade: campo oculto, área já vem da associação vendedor/área -->
+      <input type="hidden" id="visita-cidade" value="">
 
       <!-- Tipo -->
       <div class="form-group">
@@ -1565,7 +1557,7 @@ async function salvarVisita() {
   const objetivo= document.getElementById('visita-objetivo').value;
   const resultado=document.getElementById('visita-resultado').value;
 
-  if(!estab || !cidade || !tipo || !objetivo || !resultado) {
+  if(!estab || !tipo || !objetivo || !resultado) {
     mostrarToast('⚠ Preencha os campos obrigatórios'); return;
   }
 

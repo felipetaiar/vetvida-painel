@@ -1601,6 +1601,14 @@ function verificarLead() {
 }
 
 // ─── SALVAR VISITA ────────────────────────────────────────────────────────────
+
+function buscarAreaPorEstabelecimento(nomeEstab) {
+  if (!nomeEstab) return null;
+  const baseVV = (typeof BASE_CLIENTES !== 'undefined') ? BASE_CLIENTES : [];
+  const encontrado = baseVV.find(e => e.nome.toLowerCase().trim() === nomeEstab.toLowerCase().trim());
+  return encontrado ? encontrado.area : null;
+}
+
 async function salvarVisita() {
   const estab   = document.getElementById('input-estab').value.trim();
   const cidade  = document.getElementById('visita-cidade').value;
@@ -1619,13 +1627,17 @@ async function salvarVisita() {
   const contato = document.getElementById('visita-contato').value;
   const tem_lead = resultado === 'Interesse confirmado – acionar rep';
 
+  const areaVenda = buscarAreaPorEstabelecimento(estab);
+
   const novaVisita = {
     created_at: new Date().toISOString(),
     estabelecimento: estab,
     estabelecimento_id: document.getElementById('estab-id').value || null,
     cidade, tipo, contato, objetivo, resultado, obs,
     fornecedores, especialidades, tem_lead,
-    data_retorno: retorno || null
+    data_retorno: retorno || null,
+    vendedor: PERFIL === 'nicolle' ? 'Nicolle' : (sessionStorage.getItem('vv_user')||''),
+    area: areaVenda
   };
 
   try {

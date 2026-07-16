@@ -1383,7 +1383,10 @@ const USUARIOS = {
 function verificarSSO() {
   const auth   = sessionStorage.getItem('vv_auth');
   const perfil = sessionStorage.getItem('vv_perfil');
-  if (auth !== 'ok' || !perfil) return false;
+  if (auth !== 'ok' || !perfil) {
+    window.location.href = '/';
+    return false;
+  }
   const perfilProm = (perfil === 'gestor') ? 'gestor' : 'nicolle';
   entrar(perfilProm);
   return true;
@@ -1411,7 +1414,6 @@ let sb = null;
 function entrar(perfil) {
   PERFIL = perfil;
 
-  document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('header-usuario').textContent = perfil === 'nicolle' ? 'Nicolle · Promotora' : 'Felipe · Gestor';
 

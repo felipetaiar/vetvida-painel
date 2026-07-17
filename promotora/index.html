@@ -824,8 +824,8 @@ body {
         <textarea class="form-textarea" id="visita-obs" placeholder="Detalhes, próximos passos..."></textarea>
       </div>
 
-      <!-- Data de retorno -->
-      <div class="form-group">
+      <!-- Data de retorno: só aparece se resultado = Ausente – reagendar -->
+      <div class="form-group" id="grupo-visita-retorno" style="display:none;">
         <label class="form-label">Data de retorno</label>
         <input type="date" class="form-input" id="visita-retorno">
       </div>
@@ -1614,6 +1614,10 @@ function verificarLead() {
   const resultados = getSelecionados('check-resultado');
   const isLead = resultados.includes('Interesse confirmado – acionar rep');
   document.getElementById('alerta-lead').style.display = isLead ? 'block' : 'none';
+
+  const precisaRetorno = resultados.includes('Ausente – reagendar');
+  document.getElementById('grupo-visita-retorno').style.display = precisaRetorno ? 'block' : 'none';
+  if (!precisaRetorno) document.getElementById('visita-retorno').value = '';
 }
 
 // ─── SALVAR VISITA ────────────────────────────────────────────────────────────

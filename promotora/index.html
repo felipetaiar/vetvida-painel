@@ -1595,11 +1595,14 @@ function buscarAreaPorEstabelecimento(nomeEstab) {
 async function salvarVisita() {
   const estab   = document.getElementById('input-estab').value.trim();
   const cidade  = document.getElementById('visita-cidade').value;
-  const tipo    = document.getElementById('visita-tipo').value;
-  const objetivo= document.getElementById('visita-objetivo').value;
-  const resultado=document.getElementById('visita-resultado').value;
+  const tipos     = getSelecionados('check-tipo');
+  const objetivos = getSelecionados('check-objetivo');
+  const resultados= getSelecionados('check-resultado');
+  const tipo = tipos.join(', ');
+  const objetivo = objetivos.join(', ');
+  const resultado = resultados.join(', ');
 
-  if(!estab || !tipo || !objetivo || !resultado) {
+  if(!estab || !tipos.length || !objetivos.length || !resultados.length) {
     mostrarToast('⚠ Preencha os campos obrigatórios'); return;
   }
 

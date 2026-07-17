@@ -734,14 +734,7 @@ body {
       <!-- Tipo -->
       <div class="form-group">
         <label class="form-label required">Tipo de estabelecimento</label>
-        <select class="form-select" id="visita-tipo">
-          <option value="">Selecione...</option>
-          <option>Clínica veterinária</option>
-          <option>Pet shop</option>
-          <option>Agropecuária</option>
-          <option>Groomer</option>
-          <option>Hospital veterinário</option>
-        </select>
+        <div class="check-group" id="check-tipo"><!-- gerado via JS --></div>
       </div>
 
       <!-- Especialidades (apenas para clínica) -->
@@ -763,14 +756,7 @@ body {
       <!-- Objetivo -->
       <div class="form-group">
         <label class="form-label required">Objetivo da visita</label>
-        <select class="form-select" id="visita-objetivo">
-          <option value="">Selecione...</option>
-          <option>Apresentação de produtos</option>
-          <option>Treinamento de balconista</option>
-          <option>Acompanhamento de pedido</option>
-          <option>Reativação de cliente</option>
-          <option>Prospecção</option>
-        </select>
+        <div class="check-group" id="check-objetivo"><!-- gerado via JS --></div>
       </div>
 
       <!-- Fornecedores -->
@@ -784,15 +770,7 @@ body {
       <!-- Resultado -->
       <div class="form-group">
         <label class="form-label required">Resultado da visita</label>
-        <select class="form-select" id="visita-resultado" onchange="verificarLead()">
-          <option value="">Selecione...</option>
-          <option>Visita realizada – sem interesse</option>
-          <option>Visita realizada – interesse parcial</option>
-          <option>Interesse confirmado – acionar rep</option>
-          <option>Treinamento realizado</option>
-          <option>Cliente já atendido pelo rep</option>
-          <option>Ausente – reagendar</option>
-        </select>
+        <div class="check-group" id="check-resultado"><!-- gerado via JS --></div>
       </div>
 
       <!-- Alerta lead -->

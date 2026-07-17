@@ -1517,7 +1517,6 @@ function selecionarEstabVV(e) {
   preencherTipoEEspecialidadesAnteriores(e.nome);
   if (!VISITAS.find(v => (v.estabelecimento||'').toLowerCase().trim() === e.nome.toLowerCase().trim()) && e.segmento) {
     marcarPills('check-tipo', [mapearSegmento(e.segmento)]);
-    verificarEspecialidades();
   }
   verificarEspecialidades();
 }

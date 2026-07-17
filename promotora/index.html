@@ -3305,9 +3305,7 @@ async function persistirAmostrasDaVisita(estabelecimentoNome, visitaId) {
     visita_id: visitaId || null,
     status: 'pendente'
   }));
-  alert('DEBUG registros a inserir: ' + JSON.stringify(registros));
-  const { error, data: dataIns } = await sb.from('amostras').insert(registros).select();
-  alert('DEBUG resultado insert: ' + JSON.stringify(dataIns) + ' | erro: ' + JSON.stringify(error));
+  const { error } = await sb.from('amostras').insert(registros).select();
   if (error) {
     console.error('Erro ao salvar amostras da visita:', error);
     mostrarToast('⚠ Erro ao salvar amostras: ' + error.message);

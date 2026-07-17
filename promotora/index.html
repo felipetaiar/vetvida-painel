@@ -1686,10 +1686,8 @@ async function salvarVisita() {
   document.getElementById('input-estab').value = '';
   document.getElementById('estab-id').value = '';
   document.getElementById('visita-cidade').value = '';
-  document.getElementById('visita-tipo').value = '';
   document.getElementById('visita-contato').value = '';
-  document.getElementById('visita-objetivo').value = '';
-  document.getElementById('visita-resultado').value = '';
+  document.querySelectorAll('#check-tipo input, #check-objetivo input, #check-resultado input').forEach(i => { i.checked = false; i.closest('.check-pill').classList.remove('checked'); });
   document.getElementById('visita-obs').value = '';
   document.getElementById('alerta-amostra-pendente').style.display = 'none';
   AMOSTRAS_VISITA_TEMP = []; renderListaAmostrasVisita();

@@ -1553,10 +1553,35 @@ function selecionarEstab(e) {
   document.getElementById('input-estab').value = e.nome;
   document.getElementById('estab-id').value = e.id;
   if(e.cidade) document.getElementById('visita-cidade').value = e.cidade;
-  if(e.tipo) document.getElementById('visita-tipo').value = e.tipo;
   if(e.contato) document.getElementById('visita-contato').value = e.contato;
-  verificarEspecialidades();
   verificarAmostraPendente(e.nome);
+  preencherTipoEEspecialidadesAnteriores(e.nome);
+}
+
+function marcarPills(containerId, valores) {
+  if (!valores || !valores.length) return;
+  document.querySelectorAll('#' + containerId + ' input').forEach(inp => {
+    if (valores.includes(inp.value)) {
+      inp.checked = true;
+      inp.closest('.check-pill').classList.add('checked');
+    }
+  });
+}
+
+function preencherTipoEEspecialidadesAnteriores(nomeEstab) {
+  // Limpar seleção atual de tipo e especialidades antes de checar histórico
+  document.querySelectorAll('#check-tipo input, #check-especialidades input').forEach(inp => {
+    inp.checked = false; inp.closest('.check-pill').classList.remove('checked');
+  });
+
+  const visitaAnterior = VISITAS.find(v => (v.estabelecimento||'').toLowerCase().trim() === nomeEstab.toLowerCase().trim());
+  if (visitaAnterior) {
+    const tiposAnteriores = (visitaAnterior.tipo || '').split(',').map(s => s.trim()).filter(Boolean);
+    marcarPills('check-tipo', tiposAnteriores);
+    const espAnteriores = (visitaAnterior.especialidades || []);
+    marcarPills('check-especialidades', Array.isArray(espAnteriores) ? espAnteriores : []);
+  }
+  verificarEspecialidades();
 }
 
 async function verificarAmostraPendente(nomeEstab) {

@@ -1544,37 +1544,40 @@ async function verificarAmostraPendente(nomeEstab) {
 }
 
 // ─── CHECKS / PILLS ──────────────────────────────────────────────────────────
-function montarChecksPills() {
-  // Fornecedores
-  const cforn = document.getElementById('check-fornecedores');
-  cforn.innerHTML = '';
-  FORNECEDORES.forEach(f => {
+function montarPillGroup(containerId, opcoes, onToggle) {
+  const cont = document.getElementById(containerId);
+  cont.innerHTML = '';
+  opcoes.forEach(op => {
     const label = document.createElement('label');
     label.className = 'check-pill';
-    label.innerHTML = `<input type="checkbox" value="${f}"> ${f}`;
-    label.querySelector('input').onchange = e => label.classList.toggle('checked', e.target.checked);
-    cforn.appendChild(label);
+    label.innerHTML = `<input type="checkbox" value="${op}"> ${op}`;
+    label.querySelector('input').onchange = e => {
+      label.classList.toggle('checked', e.target.checked);
+      if (onToggle) onToggle();
+    };
+    cont.appendChild(label);
   });
+}
 
-  // Especialidades
-  const cesp = document.getElementById('check-especialidades');
-  cesp.innerHTML = '';
-  ESPECIALIDADES.forEach(esp => {
-    const label = document.createElement('label');
-    label.className = 'check-pill';
-    label.innerHTML = `<input type="checkbox" value="${esp}"> ${esp}`;
-    label.querySelector('input').onchange = e => label.classList.toggle('checked', e.target.checked);
-    cesp.appendChild(label);
-  });
+function getSelecionados(containerId) {
+  return [...document.querySelectorAll('#' + containerId + ' input:checked')].map(i => i.value);
+}
+
+function montarChecksPills() {
+  montarPillGroup('check-fornecedores', FORNECEDORES);
+  montarPillGroup('check-especialidades', ESPECIALIDADES);
+  montarPillGroup('check-tipo', TIPOS_ESTABELECIMENTO, verificarEspecialidades);
+  montarPillGroup('check-objetivo', OBJETIVOS_VISITA);
+  montarPillGroup('check-resultado', RESULTADOS_VISITA, verificarLead);
 }
 
 function verificarEspecialidades() {
-  const tipo = document.getElementById('visita-tipo').value;
+  const tipos = getSelecionados('check-tipo');
   document.getElementById('grupo-especialidades').style.display =
-    tipo === 'Clínica veterinária' ? 'block' : 'none';
+    tipos.includes('Clínica veterinária') || tipos.includes('Hospital veterinário') || tipos.includes('Hospital 24h') ? 'block' : 'none';
 }
 
-document.getElementById('visita-tipo').addEventListener('change', verificarEspecialidades);
+function _placeholder_removido_listener(ialidades);
 
 function verificarLead() {
   const resultado = document.getElementById('visita-resultado').value;

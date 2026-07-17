@@ -1,3 +1,4 @@
+<!-- build: 1784245995.319711 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1641,8 +1642,10 @@ async function salvarVisita() {
   };
 
   try {
-    const { data, error } = await sb.from('visitas').insert([novaVisita]).select().single();
+    const { data: dataArr, error } = await sb.from('visitas').insert([novaVisita]).select();
     if(error) throw error;
+    const data = (dataArr && dataArr[0]) ? dataArr[0] : null;
+    if (!data) { mostrarToast('⚠ Visita salva mas retorno vazio do banco'); }
     VISITAS.unshift(data);
     if(!document.getElementById('estab-id').value && estab) {
       const { data: novoEstab } = await sb.from('estabelecimentos')
@@ -3302,7 +3305,7 @@ async function persistirAmostrasDaVisita(estabelecimentoNome, visitaId) {
     visita_id: visitaId || null,
     status: 'pendente'
   }));
-  const { error } = await sb.from('amostras').insert(registros);
+  const { error } = await sb.from('amostras').insert(registros).select();
   if (error) {
     console.error('Erro ao salvar amostras da visita:', error);
     mostrarToast('⚠ Erro ao salvar amostras: ' + error.message);

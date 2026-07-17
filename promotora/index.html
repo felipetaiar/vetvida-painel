@@ -1507,12 +1507,17 @@ function selecionarEstabVV(e) {
   document.getElementById('estab-id').value = 'vv-' + e.cod;
   // Preencher campos automaticamente
   if(e.cidade) document.getElementById('visita-cidade').value = e.cidade === 'SÃO PAULO' ? mapearAreaParaCidade(e.area) : e.cidade;
-  if(e.segmento) document.getElementById('visita-tipo').value = mapearSegmento(e.segmento);
   // Mostrar vendedor e área
   if(e.vendedor || e.area) {
     document.getElementById('visita-vendedor').value = e.vendedor || '';
     document.getElementById('visita-area').value = e.area || '';
     document.getElementById('grupo-vendedor').style.display = 'block';
+  }
+  verificarAmostraPendente(e.nome);
+  preencherTipoEEspecialidadesAnteriores(e.nome);
+  if (!VISITAS.find(v => (v.estabelecimento||'').toLowerCase().trim() === e.nome.toLowerCase().trim()) && e.segmento) {
+    marcarPills('check-tipo', [mapearSegmento(e.segmento)]);
+    verificarEspecialidades();
   }
   verificarEspecialidades();
 }

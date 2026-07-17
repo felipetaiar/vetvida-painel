@@ -1577,11 +1577,9 @@ function verificarEspecialidades() {
     tipos.includes('Clínica veterinária') || tipos.includes('Hospital veterinário') || tipos.includes('Hospital 24h') ? 'block' : 'none';
 }
 
-function _placeholder_removido_listener(ialidades);
-
 function verificarLead() {
-  const resultado = document.getElementById('visita-resultado').value;
-  const isLead = resultado === 'Interesse confirmado – acionar rep';
+  const resultados = getSelecionados('check-resultado');
+  const isLead = resultados.includes('Interesse confirmado – acionar rep');
   document.getElementById('alerta-lead').style.display = isLead ? 'block' : 'none';
 }
 

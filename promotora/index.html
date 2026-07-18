@@ -3344,6 +3344,7 @@ function confirmarAmostraVisita() {
   if (!produto) { mostrarToast('Informe o produto'); return; }
   AMOSTRAS_VISITA_TEMP.push({
     produto,
+    lab: document.getElementById('amv-produto-lab').value || '',
     quantidade: parseInt(document.getElementById('amv-qtde').value) || 1,
     destinatario: document.getElementById('amv-destinatario').value.trim()
   });
@@ -3370,6 +3371,7 @@ async function persistirAmostrasDaVisita(estabelecimentoNome, visitaId) {
   const areaVenda = buscarAreaPorEstabelecimento(estabelecimentoNome);
   const registros = AMOSTRAS_VISITA_TEMP.map(a => ({
     produto: a.produto,
+    lab: a.lab || '',
     quantidade: a.quantidade,
     estabelecimento_nome: estabelecimentoNome,
     contato_nome: a.destinatario || null,

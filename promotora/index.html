@@ -1053,7 +1053,11 @@ body {
 
     <div class="form-group">
       <label class="form-label required">Produto</label>
-      <input type="text" class="form-input" id="amv-produto" placeholder="Nome do produto amostrado">
+      <input type="hidden" id="amv-produto-lab">
+      <div class="dropdown-wrap">
+        <input type="text" class="form-input" id="amv-produto" placeholder="Buscar produto no catálogo..." autocomplete="off" oninput="filtrarProdutoAmostra()" onfocus="filtrarProdutoAmostra()" onblur="setTimeout(()=>document.getElementById('dropdown-amv-produto').classList.remove('open'),150)">
+        <div class="dropdown-list" id="dropdown-amv-produto"></div>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Quantidade</label>

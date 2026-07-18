@@ -3288,6 +3288,24 @@ let AMOSTRAS_VISITA_TEMP = []; // amostras adicionadas na visita atual (antes de
 let AMOSTRAS_CACHE = [];
 let AMOSTRAS_FILTRO_ATUAL = 'todos';
 
+async 
+// ═══════════════ BUSCA DE PRODUTO NO CATALOGO OFICIAL (amostras) ═══════════════
+function filtrarProdutoAmostra() {
+  const q = document.getElementById('amv-produto').value.toLowerCase().trim();
+  const base = typeof PRODUTOS_VV !== 'undefined' ? PRODUTOS_VV : [];
+  const lista = q ? base.filter(p => p.nome.toLowerCase().includes(q) || p.lab.toLowerCase().includes(q)).slice(0, 30) : base.slice(0, 15);
+  const el = document.getElementById('dropdown-amv-produto');
+  el.innerHTML = lista.map(p => `<div class="dropdown-item"><strong>${p.nome}</strong> <span style="color:var(--gray-400);font-size:11px;">· ${p.lab}</span></div>`).join('');
+  el.classList.add('open');
+  [...el.children].forEach((item, i) => {
+    item.onmousedown = () => {
+      document.getElementById('amv-produto').value = lista[i].nome;
+      document.getElementById('amv-produto-lab').value = lista[i].lab;
+      el.classList.remove('open');
+    };
+  });
+}
+
 async function abrirModalAmostraVisita() {
   document.getElementById('amv-produto').value = '';
   document.getElementById('amv-qtde').value = '1';

@@ -1669,54 +1669,7 @@ function buscarRepPorEstabelecimento(nomeEstab) {
   return encontrado ? encontrado.vendedor : null;
 }
 
-// Insere o lead na tabela leads (Supabase de positivação) com rep já vinculado pela área
-async function criarLeadParaRep(novaVisita, visitaIdSalva) {
-  const SB_LEADS_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
-  const SB_LEADS_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
 
-  const rep = buscarRepPorEstabelecimento(novaVisita.estabelecimento);
-  const area = buscarAreaPorEstabelecimento(novaVisita.estabelecimento);
-
-  const payload = {
-    estabelecimento: novaVisita.estabelecimento,
-    cidade: novaVisita.cidade,
-    tipo: novaVisita.tipo,
-    contato: novaVisita.contato || '',
-    obs: novaVisita.obs || '',
-    fornecedores: (novaVisita.fornecedores || []).join(', '),
-    data_retorno: novaVisita.data_retorno || null,
-    rep_area: area,
-    rep_responsavel: rep,
-    status_lead: 'aberto',
-    visita_id: visitaIdSalva || null
-  };
-
-  alert('DEBUG criarLeadParaRep chamada. estab=' + novaVisita.estabelecimento + ' rep=' + rep + ' area=' + area);
-  try {
-    const resp = await fetch(SB_LEADS_URL + '/rest/v1/leads', {
-      method: 'POST',
-      headers: {
-        apikey: SB_LEADS_KEY,
-        Authorization: 'Bearer ' + SB_LEADS_KEY,
-        'Content-Type': 'application/json',
-        Prefer: 'return=minimal'
-      },
-      body: JSON.stringify(payload)
-    });
-    alert('DEBUG resposta insert lead: status=' + resp.status + ' ok=' + resp.ok);
-    if (!resp.ok) {
-      const errText = await resp.text();
-      alert('DEBUG erro insert lead: ' + errText);
-      console.error('Erro ao criar lead para rep:', errText);
-      if (!rep) {
-        mostrarToast('⚠ Lead criado, mas sem rep identificado para a área — avise o gestor');
-      }
-    }
-  } catch(e) {
-    alert('DEBUG excecao ao criar lead: ' + e.message);
-    console.error('Exceção ao criar lead:', e);
-  }
-}
 
 async function salvarVisita() {
   const estab   = document.getElementById('input-estab').value.trim();

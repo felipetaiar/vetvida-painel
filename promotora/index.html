@@ -1779,12 +1779,27 @@ async function salvarVisita() {
 
   // Criar lead no Supabase da positivação, ja vinculado ao rep pela area de venda
   if(tem_lead) {
-    await criarLeadParaRep({
-      estabelecimento: estab, cidade, tipo, contato,
-      obs: obs||'', fornecedores: fornecedores,
-      data_retorno: retorno||null
-    }, data ? data.id : null);
+    try {
+      const repResp = buscarRepPorEstabelecimento(estab);
+      const repArea = buscarAreaPorEstabelecimento(estab);
+      await fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/leads', {
+        method: 'POST',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4',
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          estabelecimento: estab, cidade, tipo, contato,
+          obs: obs||'', fornecedores: fornecedores.join(', '),
+          data_retorno: retorno||null, status_lead: 'aberto',
+          rep_area: repArea, rep_responsavel: repResp
+        })
+      });
+    } catch(e) { console.warn('Lead pipeline:', e); }
   }
+
 
   if(tem_lead) {
     try {

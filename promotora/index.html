@@ -2,6 +2,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#CC0000">
+
 <script>
 // Restaurar sessão do localStorage se sessionStorage estiver vazio
 (function() {
@@ -651,6 +654,14 @@ body {
       <div id="dash-streak" style="display:none;margin-top:8px;background:#fff7ed;border-radius:8px;padding:8px 10px;font-size:12px;color:#c2410c;font-weight:600;">🔥 <span id="dash-streak-num">0</span> dias seguidos com visitas!</div>
     </div>
 
+    <div class="card" onclick="navegarPara('ranking'); renderRanking();" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">🎯 Ranking de Potencial</div>
+        <div style="font-size:12px;color:#6b7280;">Veja quais clientes priorizar</div>
+      </div>
+      <span style="color:#CC0000;font-size:18px;">›</span>
+    </div>
+
     <div class="card">
       <div class="card-title">📊 Meu mês</div>
       <div style="margin-top:10px;">
@@ -727,6 +738,16 @@ body {
       </div>
     </div>
     <div id="lista-amostras"><div class="empty-state">Carregando...</div></div>
+  </div>
+
+  <!-- ── SCREEN: RANKING DE POTENCIAL ── -->
+  <div id="screen-ranking" class="screen">
+    <div class="card">
+      <div class="card-title">🎯 Ranking de Potencial <button onclick="navegarPara('dashboard')" style="float:right;background:none;border:none;color:#CC0000;font-size:12px;font-weight:600;cursor:pointer;">← Voltar</button></div>
+      <p style="font-size:12px;color:#6b7280;margin-top:4px;">Combina faturamento histórico com sinais de potencial ainda não explorado.</p>
+      <input type="text" class="form-input" id="busca-ranking" placeholder="🔍 Buscar cliente..." oninput="filtrarRanking()" style="margin-top:10px;">
+    </div>
+    <div id="lista-ranking"><div class="empty-state">Carregando...</div></div>
   </div>
 
   <!-- ── SCREEN: NOVA VISITA ── -->
@@ -2812,6 +2833,64 @@ function formatarDataSimples(str) {
 window.addEventListener('load', function() { verificarSSO(); });
 
 
+
+// ═══════════════ RANKING DE POTENCIAL ═══════════════
+let RANKING_CACHE = [];
+
+function calcularScoreRanking(c) {
+  var fat = c.fat || 0;
+  var fatNorm = Math.min(1, fat / 20000); // normaliza ate 20k = score maximo de faturamento
+  var scoreFat = fatNorm * 70; // peso maior: faturamento
+
+  // Sinal de potencial nao explorado: bom segmento, baixo faturamento
+  var segmentosBons = ['CLINICA VETERINARIA', 'HOSPITAL', 'HOSPITAL 24H', 'CLINICA VETERINARIA E PET SHOP'];
+  var segAlto = segmentosBons.some(function(s){ return (c.segmento||'').toUpperCase().indexOf(s) >= 0; });
+  var potencialOculto = segAlto && fat < 3000;
+  var scorePotencial = potencialOculto ? 30 : 0;
+
+  return { score: scoreFat + scorePotencial, potencialOculto: potencialOculto };
+}
+
+function renderRanking() {
+  var base = typeof FATURAMENTO_RESUMO !== 'undefined' ? FATURAMENTO_RESUMO : [];
+  if (!base.length) {
+    document.getElementById('lista-ranking').innerHTML = '<div class="empty-state">Dados de ranking ainda não disponíveis. Rode o gerar_painel.py mais recente.</div>';
+    return;
+  }
+  RANKING_CACHE = base.map(function(c) {
+    var r = calcularScoreRanking(c);
+    return Object.assign({}, c, r);
+  }).sort(function(a, b) { return b.score - a.score; });
+  exibirRanking(RANKING_CACHE);
+}
+
+function filtrarRanking() {
+  var q = document.getElementById('busca-ranking').value.toLowerCase();
+  var lista = RANKING_CACHE.filter(function(c) {
+    return !q || c.nome.toLowerCase().includes(q) || (c.municipio||'').toLowerCase().includes(q);
+  });
+  exibirRanking(lista);
+}
+
+function exibirRanking(lista) {
+  var el = document.getElementById('lista-ranking');
+  if (!lista.length) { el.innerHTML = '<div class="empty-state">Nenhum cliente encontrado.</div>'; return; }
+  el.innerHTML = lista.slice(0, 100).map(function(c, i) {
+    var produtos = (c.top_produtos || []).join(', ');
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-weight:700;font-size:14px;">${i+1}. ${c.nome}</div>
+          <div style="font-size:12px;color:#6b7280;">${c.municipio||''} · ${c.segmento||''}</div>
+        </div>
+        ${c.potencialOculto ? '<span style="font-size:10px;background:#fff7ed;color:#c2410c;padding:3px 8px;border-radius:10px;font-weight:700;white-space:nowrap;">⭐ Potencial</span>' : ''}
+      </div>
+      <div style="margin-top:6px;font-size:13px;font-weight:700;color:#CC0000;">R$ ${(c.fat||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+      ${produtos ? `<div style="font-size:11px;color:#9ca3af;margin-top:4px;">Já comprou: ${produtos}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
 // ═══════════════ DASHBOARD (HOME) ═══════════════
 async function renderDashboard() {
   const hoje = new Date();
@@ -3575,5 +3654,13 @@ var PRODUTOS_VV = [{"cod": 1111, "nome": "ASTOR BANHO EM CASA CONDICIONADOR 300 
     <div id="foto-amostra-legenda" style="color:white;text-align:center;margin-top:12px;font-size:13px;"></div>
   </div>
 </div>
+<script src="faturamento_resumo.js" defer></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW falhou:', e); });
+  });
+}
+</script>
 </body>
 </html>

@@ -1041,6 +1041,12 @@ async function verPromotor(nomeCli){
 carregarMesAnt();
 init();
 restManuais();
+
+// Se veio de outra tela pedindo para abrir os leads da promotora
+if (sessionStorage.getItem('abrir_promo_ao_carregar')) {
+  sessionStorage.removeItem('abrir_promo_ao_carregar');
+  setTimeout(function(){ abrirTelaPromo(); }, 600);
+}
 </script>
 <!-- Modal: add cliente -->
 <div class="mfvv" id="m-ac">

@@ -213,7 +213,7 @@ async function renderHome() {
   var visitas = await rv.json();
 
   // Amostras pendentes
-  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status=eq.pendente', {headers:HP});
+  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status_feedback=is.null', {headers:HP});
   var amostras = await ra.json();
 
   // Leads abertos
@@ -339,7 +339,7 @@ async function renderPromotora() {
   var amostras = await ra.json();
 
   var leads = (visitas||[]).filter(function(v){ return v.tem_lead; }).length;
-  var amPend = (amostras||[]).filter(function(a){ return a.status==='pendente'; }).length;
+  var amPend = (amostras||[]).filter(function(a){ return !a.status_feedback; }).length;
 
   document.getElementById('kpis-prom').innerHTML =
     kpiCard('pink', (visitas||[]).length, 'Visitas no mês', null) +
@@ -357,7 +357,7 @@ async function renderPromotora() {
   }).join('') || '<div class="empty">Nenhuma visita no mês</div>';
 
   // Amostras sem feedback
-  var pendentes = (amostras||[]).filter(function(a){ return a.status==='pendente'; });
+  var pendentes = (amostras||[]).filter(function(a){ return !a.status_feedback; });
   document.getElementById('prom-amostras').innerHTML = pendentes.map(function(a){
     var dias = Math.floor((hoje-new Date(a.created_at))/86400000);
     var urgente = dias >= 45;
@@ -410,7 +410,7 @@ async function renderAlertas() {
   var hoje = new Date();
   var alertas = [];
 
-  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status=eq.pendente', {headers:HP});
+  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status_feedback=is.null', {headers:HP});
   var amostras = await ra.json();
   (amostras||[]).forEach(function(a){
     var dias = Math.floor((hoje-new Date(a.created_at))/86400000);

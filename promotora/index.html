@@ -549,16 +549,17 @@ body {
 .roteiro-semanas-scroll {
   display: flex; gap: 8px;
   overflow-x: auto; scroll-snap-type: x mandatory;
-  margin: 0 -16px; padding: 0 16px 8px;
+  margin: 0; padding: 0 0 8px;
   -webkit-overflow-scrolling: touch;
 }
 .roteiro-semanas-scroll::-webkit-scrollbar { display: none; }
 
 .roteiro-semana-card {
-  min-width: calc(100vw - 32px); max-width: calc(100vw - 32px);
+  min-width: 100%; max-width: 100%;
   scroll-snap-align: start; flex-shrink: 0;
   background: white; border-radius: var(--radius);
-  box-shadow: var(--shadow); overflow: hidden;
+  box-shadow: var(--shadow); overflow: visible;
+  box-sizing: border-box;
 }
 
 .roteiro-semana-header {
@@ -598,7 +599,8 @@ body {
   font-size: 9px; font-weight: 600;
   margin-bottom: 2px; line-height: 1.3;
   cursor: pointer; transition: background 0.15s;
-  word-break: break-word; overflow: hidden;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: block; max-width: 100%;
 }
 .roteiro-cal-item:hover { background: #fecaca; }
 .roteiro-cal-item .item-sub {

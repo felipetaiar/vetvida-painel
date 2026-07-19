@@ -221,6 +221,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   <img src="logo.jpg" alt="Vet Vida" onerror="this.style.display='none'">
   <div class="hdiv"></div>
   <div class="hi"><h1>Reativacao via WhatsApp</h1><p id="sub">Carregando...</p></div>
+  <button onclick="abrirBuscaGlobal()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:50%;width:32px;height:32px;font-size:15px;cursor:pointer;flex-shrink:0;">🔍</button>
   <div class="hr"><a href="estoque.html" style="background:#1F4E79;color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:bold;text-decoration:none">📦 Estoque</a><a href="roteiro.html" style="background:#375623;color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:bold;text-decoration:none">🗓 Roteiro</a><button class="btn-prom-h" onclick="abrirTelaPromo()">🌸</button> <button style="background:#CC0000;color:white;padding:4px 9px;border-radius:14px;font-size:11px;font-weight:700;border:none;cursor:pointer;" onclick="abrirAC()">+ Cliente</button> <span class="hrep" id="badge">...</span><button class="bs" onclick="sair()">Sair</button></div>
 </div>
 <div class="stats">
@@ -862,6 +863,72 @@ function restManuais(){
   TG=CL.length;
 }
 
+
+// ═══════════════ BUSCA GLOBAL (modal fullscreen) ═══════════════
+function abrirBuscaGlobal(){
+  document.getElementById('modal-busca-global').style.display='flex';
+  document.getElementById('busca-global').value='';
+  document.getElementById('busca-global-lista').innerHTML='<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Digite o nome do cliente...</div>';
+  setTimeout(function(){ document.getElementById('busca-global').focus(); }, 100);
+}
+function fecharBuscaGlobal(){
+  document.getElementById('modal-busca-global').style.display='none';
+}
+function filtrarBuscaGlobal(){
+  var q=(document.getElementById('busca-global').value||'').toLowerCase().trim();
+  var lista=document.getElementById('busca-global-lista');
+  if(!q){ lista.innerHTML='<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Digite o nome do cliente...</div>'; return; }
+  var base=(TODOS_DADOS[REP]||[]).concat(BASE_INATIVOS[REP]||[]);
+  var vistos={};
+  var resultados=base.filter(function(c){
+    if(vistos[c.cod]) return false;
+    var match=c.nome.toLowerCase().indexOf(q)>=0;
+    if(match) vistos[c.cod]=true;
+    return match;
+  }).slice(0,20);
+  if(!resultados.length){
+    lista.innerHTML='<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Nenhum cliente encontrado.</div>';
+    return;
+  }
+  lista.innerHTML=resultados.map(function(c){
+    return '<div style="padding:12px;border-bottom:1px solid #f3f4f6;">'+
+      '<div style="font-weight:700;font-size:14px;color:#1f2937;">'+c.nome+'</div>'+
+      '<div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">'+(c.municipio||'')+'</div>'+
+      '<div style="display:flex;gap:8px;">'+
+        '<button onclick="abrirClienteDaBusca('+c.cod+')" style="flex:1;text-align:center;background:#fdf2f2;color:#CC0000;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:700;">Reativação</button>'+
+        '<button onclick="irParaEstoqueBusca('+c.cod+',\''+encodeURIComponent(c.nome)+'\',\''+encodeURIComponent(c.municipio||'')+'\')" style="flex:1;text-align:center;background:#eff6ff;color:#1F4E79;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:700;">Estoque</button>'+
+        '<button onclick="irParaRoteiroBusca('+c.cod+',\''+encodeURIComponent(c.nome)+'\',\''+encodeURIComponent(c.municipio||'')+'\')" style="flex:1;text-align:center;background:#f0fdf4;color:#166534;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:700;">Roteiro</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+
+function irParaEstoqueBusca(cod,nomeEnc,munEnc){
+  sessionStorage.setItem('estoque_cod',cod);
+  sessionStorage.setItem('estoque_nome',decodeURIComponent(nomeEnc));
+  sessionStorage.setItem('estoque_mun',decodeURIComponent(munEnc));
+  window.location.href='estoque.html';
+}
+function irParaRoteiroBusca(cod,nomeEnc,munEnc){
+  sessionStorage.setItem('roteiro_cod',cod);
+  sessionStorage.setItem('roteiro_nome',decodeURIComponent(nomeEnc));
+  sessionStorage.setItem('roteiro_mun',decodeURIComponent(munEnc));
+  window.location.href='roteiro.html';
+}
+
+function abrirClienteDaBusca(cod){
+  fecharBuscaGlobal();
+  var el=document.getElementById('cd-'+cod);
+  if(el){
+    el.scrollIntoView({behavior:'smooth',block:'center'});
+    el.style.transition='background 0.3s';
+    el.style.background='#fff7ed';
+    setTimeout(function(){el.style.background='';},1500);
+    tog(cod);
+  }
+}
+
 // ── PROMOTORA ────────────────────────────────────────────────
 async function _carregarPromo(){
   if(_VP_OK) return;
@@ -983,5 +1050,17 @@ document.getElementById('btn-f-ac').addEventListener('click',function(){document
 document.getElementById('btn-f-pr').addEventListener('click',function(){document.getElementById('m-pr').classList.remove('on');});
 document.getElementById('btn-f-prc').addEventListener('click',function(){document.getElementById('m-prc').classList.remove('on');});
 </script>
+
+
+<!-- Modal busca global -->
+<div id="modal-busca-global" style="display:none;position:fixed;inset:0;background:white;z-index:600;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid #e5e7eb;background:#CC0000;">
+    <input type="text" id="busca-global" placeholder="Buscar cliente..." autocomplete="off"
+      oninput="filtrarBuscaGlobal()"
+      style="flex:1;border:none;border-radius:20px;padding:10px 14px;font-size:15px;outline:none;">
+    <button onclick="fecharBuscaGlobal()" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;">✕</button>
+  </div>
+  <div id="busca-global-lista" style="flex:1;overflow-y:auto;padding:8px;"></div>
+</div>
 
 </body></html>

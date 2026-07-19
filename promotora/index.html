@@ -3526,6 +3526,15 @@ function exibirAmostrasFiltradas() {
   }).join('');
 }
 
+function abrirFotoAmostra(url, legenda) {
+  document.getElementById('foto-amostra-expandida').src = url;
+  document.getElementById('foto-amostra-legenda').textContent = legenda || '';
+  document.getElementById('modal-foto-amostra').classList.add('open');
+}
+function fecharFotoAmostra() {
+  document.getElementById('modal-foto-amostra').classList.remove('open');
+}
+
 function abrirModalFeedback(id) {
   AMOSTRA_FEEDBACK_ID = id;
   const a = AMOSTRAS_CACHE.find(x => x.id === id);

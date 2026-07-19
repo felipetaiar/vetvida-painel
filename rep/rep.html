@@ -52,7 +52,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 .hdiv { display: none; }
 .hi { min-width: 0; flex: 1; overflow: hidden; }
 .hi h1 { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hi p { font-size: 10px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hi p { font-size: 10px; color: var(--muted); margin-top: 1px; white-space: normal; line-height: 1.3; }
 .hr { flex-shrink: 0; display: flex; gap: 6px; align-items: center; }
 .hrep { background: var(--red-soft); border: 1px solid rgba(204,0,0,0.3); color: var(--red); padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .bs { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted2); padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
@@ -224,7 +224,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 <div class="hdr">
   <button onclick="abrirMenuLateral()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">☰</button>
   <img src="logo.jpg" alt="Vet Vida" onerror="this.style.display='none'">
-  <div class="hi"><h1>Hub do Representante</h1><p id="sub">Carregando...</p></div>
+  <div class="hi"><h1>Vet Hub</h1><p id="sub">Carregando...</p></div>
   <div class="hr"><span class="hrep" id="badge">...</span><button class="bs" onclick="sair()">Sair</button></div>
 </div>
 

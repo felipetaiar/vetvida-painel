@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><script>
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#CC0000">
+<script>
 (function() {
   if (!sessionStorage.getItem('vv_auth') && localStorage.getItem('vv_auth') === 'ok') {
     sessionStorage.setItem('vv_auth',   localStorage.getItem('vv_auth'));
@@ -1063,4 +1066,11 @@ document.getElementById('btn-f-prc').addEventListener('click',function(){documen
   <div id="busca-global-lista" style="flex:1;overflow-y:auto;padding:8px;"></div>
 </div>
 
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW falhou:', e); });
+  });
+}
+</script>
 </body></html>

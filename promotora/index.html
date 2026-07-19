@@ -3306,6 +3306,46 @@ function adicionarContatoNaVisita(contato) {
   renderListaContatosVisita();
 }
 
+
+// ═══════════════ FOTO DA AMOSTRA ═══════════════
+let AMV_FOTO_FILE = null;
+
+function previewFotoAmostra() {
+  const input = document.getElementById('amv-foto');
+  const file = input.files[0];
+  if (!file) return;
+  AMV_FOTO_FILE = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('amv-foto-preview').src = e.target.result;
+    document.getElementById('amv-foto-preview-wrap').style.display = 'block';
+    document.getElementById('amv-foto-btn').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerFotoAmostra() {
+  AMV_FOTO_FILE = null;
+  document.getElementById('amv-foto').value = '';
+  document.getElementById('amv-foto-preview-wrap').style.display = 'none';
+  document.getElementById('amv-foto-btn').style.display = 'block';
+}
+
+async function uploadFotoAmostra(file) {
+  if (!file) return null;
+  try {
+    const ext = file.name.split('.').pop() || 'jpg';
+    const nomeArquivo = `amostra_${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+    const { error } = await sb.storage.from('amostras-fotos').upload(nomeArquivo, file);
+    if (error) { console.error('Erro upload foto:', error); return null; }
+    const { data: pub } = sb.storage.from('amostras-fotos').getPublicUrl(nomeArquivo);
+    return pub ? pub.publicUrl : null;
+  } catch(e) {
+    console.error('Exceção upload foto:', e);
+    return null;
+  }
+}
+
 // ═══════════════ AMOSTRAS (vinculadas à visita) ═══════════════
 let AMOSTRAS_VISITA_TEMP = []; // amostras adicionadas na visita atual (antes de salvar)
 let AMOSTRAS_CACHE = [];

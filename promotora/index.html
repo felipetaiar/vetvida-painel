@@ -3434,7 +3434,9 @@ function removerAmostraVisita(i) {
 async function persistirAmostrasDaVisita(estabelecimentoNome, visitaId) {
   if (!AMOSTRAS_VISITA_TEMP.length) return;
   const areaVenda = buscarAreaPorEstabelecimento(estabelecimentoNome);
-  const registros = AMOSTRAS_VISITA_TEMP.map(a => ({
+  // Upload das fotos em paralelo (quando houver)
+  const fotoUrls = await Promise.all(AMOSTRAS_VISITA_TEMP.map(a => a.fotoFile ? uploadFotoAmostra(a.fotoFile) : Promise.resolve(null)));
+  const registros = AMOSTRAS_VISITA_TEMP.map((a, i) => ({
     produto: a.produto,
     lab: a.lab || '',
     quantidade: a.quantidade,
@@ -3443,7 +3445,8 @@ async function persistirAmostrasDaVisita(estabelecimentoNome, visitaId) {
     vendedor: PERFIL === 'nicolle' ? 'Nicolle' : (sessionStorage.getItem('vv_user')||''),
     area: areaVenda,
     visita_id: visitaId || null,
-    status: 'pendente'
+    status: 'pendente',
+    foto_url: fotoUrls[i] || null
   }));
   const { error } = await sb.from('amostras').insert(registros).select();
   if (error) {

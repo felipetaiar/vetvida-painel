@@ -3409,8 +3409,10 @@ function confirmarAmostraVisita() {
     produto,
     lab: document.getElementById('amv-produto-lab').value || '',
     quantidade: parseInt(document.getElementById('amv-qtde').value) || 1,
-    destinatario: document.getElementById('amv-destinatario').value.trim()
+    destinatario: document.getElementById('amv-destinatario').value.trim(),
+    fotoFile: AMV_FOTO_FILE
   });
+  removerFotoAmostra();
   renderListaAmostrasVisita();
   fecharModalAmostraVisita();
 }

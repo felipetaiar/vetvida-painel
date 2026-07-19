@@ -1691,6 +1691,7 @@ async function criarLeadParaRep(novaVisita, visitaIdSalva) {
     visita_id: visitaIdSalva || null
   };
 
+  alert('DEBUG criarLeadParaRep chamada. estab=' + novaVisita.estabelecimento + ' rep=' + rep + ' area=' + area);
   try {
     const resp = await fetch(SB_LEADS_URL + '/rest/v1/leads', {
       method: 'POST',
@@ -1702,14 +1703,17 @@ async function criarLeadParaRep(novaVisita, visitaIdSalva) {
       },
       body: JSON.stringify(payload)
     });
+    alert('DEBUG resposta insert lead: status=' + resp.status + ' ok=' + resp.ok);
     if (!resp.ok) {
       const errText = await resp.text();
+      alert('DEBUG erro insert lead: ' + errText);
       console.error('Erro ao criar lead para rep:', errText);
       if (!rep) {
         mostrarToast('⚠ Lead criado, mas sem rep identificado para a área — avise o gestor');
       }
     }
   } catch(e) {
+    alert('DEBUG excecao ao criar lead: ' + e.message);
     console.error('Exceção ao criar lead:', e);
   }
 }

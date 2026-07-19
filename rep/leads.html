@@ -241,13 +241,8 @@ async function carregarLeads() {
   try {
     let url = `${SUPABASE_URL}/rest/v1/leads?select=*&order=created_at.desc`;
     if(PERFIL === 'rep') {
-      // Filtrar leads da área do rep
-      const areas = Object.entries(AREA_REP)
-        .filter(([,reps]) => reps.includes(REP))
-        .map(([area]) => area);
-      if(areas.length) {
-        url += '&cidade=in.(' + areas.map(a => `"${a}"`).join(',') + ')';
-      }
+      // Filtrar leads atribuidos diretamente a este rep
+      url += '&rep_responsavel=eq.' + encodeURIComponent(REP);
     }
     const r = await fetch(url, { headers: SB_HEADERS });
     LEADS = await r.json();

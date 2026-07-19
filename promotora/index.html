@@ -3518,7 +3518,6 @@ function exibirAmostrasFiltradas() {
 
 let AMOSTRA_FEEDBACK_ID = null;
 function abrirModalFeedback(id) {
-  alert('DEBUG abrirModalFeedback chamado com id=' + id);
   AMOSTRA_FEEDBACK_ID = id;
   const a = AMOSTRAS_CACHE.find(x => x.id === id);
   alert('DEBUG amostra encontrada? ' + (a ? 'SIM: '+a.produto : 'NAO'));

@@ -3511,7 +3511,7 @@ function exibirAmostrasFiltradas() {
         <span>Qtd: ${a.quantidade || 1}</span>
         <span>${new Date(a.created_at).toLocaleDateString('pt-BR')} · ${dias}d</span>
       </div>
-      ${semFeedback ? `<button class="btn-feedback-amostra" data-id="${a.id}" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;color:#374151;cursor:pointer;">💬 Registrar feedback</button>` : (a.obs_feedback ? `<div style="font-size:11px;color:#6b7280;margin-top:6px;">${a.obs_feedback}</div>` : '')}
+      ${semFeedback ? `<button onclick="alert('TESTE BASICO CLIQUE FUNCIONA')" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;color:#374151;cursor:pointer;">💬 Registrar feedback</button>` : (a.obs_feedback ? `<div style="font-size:11px;color:#6b7280;margin-top:6px;">${a.obs_feedback}</div>` : '')}
     </div>`;
   }).join('');
 }

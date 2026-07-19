@@ -1281,6 +1281,7 @@ const REGIOES = ['Zona Leste – SP','Zona Norte – SP','Guarulhos'];
 
 // ─── ESTADO ──────────────────────────────────────────────────────────────────
 let PERFIL = null; // 'nicolle' | 'gestor'
+let AMOSTRA_FEEDBACK_ID = null;
 let VISITAS = []; // cache local
 let ESTABELECIMENTOS = [];
 let ROTEIRO_ATUAL = null;
@@ -3524,7 +3525,6 @@ document.addEventListener('click', function(e) {
   }
 });
 
-let AMOSTRA_FEEDBACK_ID = null;
 function abrirModalFeedback(id) {
   AMOSTRA_FEEDBACK_ID = id;
   const a = AMOSTRAS_CACHE.find(x => x.id === id);

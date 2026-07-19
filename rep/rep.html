@@ -458,7 +458,7 @@ function init(){
   if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
   REP=pf; CL=(TODOS_DADOS[REP]||[]).slice(); TG=CL.length;
   document.getElementById('badge').textContent=REP;
-  var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').textContent='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+' - Area: '+(AREAS_LABEL_DATA[REP]||'');
+  var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').innerHTML='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+'<br>Area: '+(AREAS_LABEL_DATA[REP]||'');
   document.getElementById('ct').textContent=TG;
   document.getElementById('ca').textContent=CL.filter(function(c){return c.tipo==='alta';}).length;
   document.getElementById('cr').textContent=CL.filter(function(c){return c.tipo==='reativacao';}).length;

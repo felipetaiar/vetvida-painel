@@ -219,18 +219,6 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 .msvv-t    { font-size:15px;font-weight:700;margin-bottom:10px;color:#1f2937; }
 .msvv-inp  { width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:13px;margin-bottom:10px;outline:none; }
 .msvv-f    { width:100%;margin-top:10px;padding:10px;background:#f3f4f6;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer; }
-
-/* ── RESPONSIVO MOBILE ── */
-@media (max-width: 480px) {
-  .hdr { padding: 6px 8px; gap: 6px; }
-  .hdr img { height: 26px; padding: 2px 6px; }
-  .hi { display: none; }
-  .hr a, .hr button { padding: 5px 9px !important; font-size: 10px !important; }
-  .hr a span, .hr .btn-text { display: none; }
-  .hrep { padding: 4px 9px !important; font-size: 10px !important; }
-  .bs { padding: 4px 9px !important; font-size: 10px !important; }
-  #busca-global-wrap, #busca-global { display: none; }
-}
 </style></head><body>
 
 <div class="hdr">
@@ -896,6 +884,16 @@ function restManuais(){
   TG=CL.length;
 }
 
+
+
+function abrirMenuLateral(){
+  document.getElementById('menu-lateral').style.left='0';
+  document.getElementById('menu-overlay').style.display='block';
+}
+function fecharMenuLateral(){
+  document.getElementById('menu-lateral').style.left='-280px';
+  document.getElementById('menu-overlay').style.display='none';
+}
 
 // ═══════════════ BUSCA GLOBAL (modal fullscreen) ═══════════════
 function abrirBuscaGlobal(){

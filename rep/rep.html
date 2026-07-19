@@ -389,17 +389,26 @@ tr:hover td{background:#f8fafc!important;}
 </style>
 <script src="dados.js"></script>
 <script>
-// Carregar contagem de leads abertos
-fetch('/api/sheets?action=leads_count&rep=' + new URLSearchParams(location.search).get('rep'))
-  .then(r=>r.json()).then(d=>{
-    if(d && d.total > 0) {
+// Carregar contagem de leads abertos (Supabase direto, substitui API antiga /api/sheets)
+(function(){
+  var _repAtual = sessionStorage.getItem('vv_perfil') || '';
+  if(!_repAtual || _repAtual === 'gestor') return;
+  fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/leads?select=id&status_lead=eq.aberto&rep_responsavel=eq.'+encodeURIComponent(_repAtual), {
+    headers: {
+      apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4',
+      Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4'
+    }
+  }).then(r=>r.json()).then(function(d){
+    var total = Array.isArray(d) ? d.length : 0;
+    if(total > 0) {
       var btn = document.createElement('a');
       btn.className = 'leads-btn';
-      btn.href = 'leads.html?rep=' + new URLSearchParams(location.search).get('rep');
-      btn.innerHTML = '🎯 Leads da promotora <span class="leads-badge">' + d.total + ' aberto' + (d.total>1?'s':'') + '</span>';
+      btn.href = 'leads.html?rep=' + encodeURIComponent(_repAtual);
+      btn.innerHTML = '🎯 Leads da promotora <span class="leads-badge">' + total + ' aberto' + (total>1?'s':'') + '</span>';
       document.body.insertBefore(btn, document.body.children[1]);
     }
-  }).catch(()=>{});
+  }).catch(function(e){ console.warn('leads count:', e); });
+})();
 var REP='', CL=[], FA='todos', LAB_FILTRO='todos', CO=new Set(), TG=0, STATUS_SALVO={};
 var ROTEIROS_REP={};
 var _pCod=0, _pNome='', _selSt='';

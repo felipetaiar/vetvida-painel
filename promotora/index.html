@@ -3337,10 +3337,12 @@ async function uploadFotoAmostra(file) {
     const ext = file.name.split('.').pop() || 'jpg';
     const nomeArquivo = `amostra_${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
     const { error } = await sb.storage.from('amostras-fotos').upload(nomeArquivo, file);
-    if (error) { console.error('Erro upload foto:', error); return null; }
+    if (error) { alert('DEBUG erro upload foto: ' + JSON.stringify(error)); console.error('Erro upload foto:', error); return null; }
     const { data: pub } = sb.storage.from('amostras-fotos').getPublicUrl(nomeArquivo);
+    alert('DEBUG upload OK. URL: ' + (pub ? pub.publicUrl : 'SEM URL'));
     return pub ? pub.publicUrl : null;
   } catch(e) {
+    alert('DEBUG excecao upload: ' + e.message);
     console.error('Exceção upload foto:', e);
     return null;
   }

@@ -2,6 +2,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#CC0000">
+
 <script>
 // Restaurar sessão do localStorage se sessionStorage estiver vazio
 (function() {
@@ -3652,5 +3655,12 @@ var PRODUTOS_VV = [{"cod": 1111, "nome": "ASTOR BANHO EM CASA CONDICIONADOR 300 
   </div>
 </div>
 <script src="faturamento_resumo.js" defer></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW falhou:', e); });
+  });
+}
+</script>
 </body>
 </html>

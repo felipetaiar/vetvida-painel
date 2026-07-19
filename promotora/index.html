@@ -2555,7 +2555,11 @@ async function abrirDetalheVisita(id) {
     if (!elAm) return;
     if (!amostrasDaVisita.length) { elAm.innerHTML = ''; return; }
     elAm.innerHTML = `<div><strong>📦 Amostras entregues:</strong></div>` +
-      amostrasDaVisita.map(a => `<div style="margin-left:8px;font-size:12px;color:#374151;">• ${a.produto} (${a.quantidade}un)${a.contato_nome?' — '+a.contato_nome:''}</div>`).join('');
+      amostrasDaVisita.map(a => `
+        <div style="display:flex;align-items:center;gap:8px;margin-left:8px;margin-top:4px;">
+          ${a.foto_url ? `<img src="${a.foto_url}" onclick="abrirFotoAmostra('${a.foto_url}','${(a.produto||'').replace(/'/g,"\\'")}')" style="width:32px;height:32px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;">` : ''}
+          <span style="font-size:12px;color:#374151;">${a.produto} (${a.quantidade}un)${a.contato_nome?' — '+a.contato_nome:''}</span>
+        </div>`).join('');
   } catch(e) {
     const elAm = document.getElementById('detalhe-visita-amostras');
     if (elAm) elAm.innerHTML = '';

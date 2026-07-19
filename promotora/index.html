@@ -1067,6 +1067,15 @@ body {
       <label class="form-label">Destinatário</label>
       <select class="form-select" id="amv-destinatario"></select>
     </div>
+    <div class="form-group">
+      <label class="form-label">Foto da entrega (opcional)</label>
+      <input type="file" accept="image/*" capture="environment" id="amv-foto" onchange="previewFotoAmostra()" style="display:none;">
+      <div id="amv-foto-preview-wrap" style="display:none;position:relative;margin-bottom:8px;">
+        <img id="amv-foto-preview" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;">
+        <button type="button" onclick="removerFotoAmostra()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;">✕</button>
+      </div>
+      <button type="button" onclick="document.getElementById('amv-foto').click()" id="amv-foto-btn" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">📷 Tirar/anexar foto</button>
+    </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;">
       <button class="btn-secondary" onclick="fecharModalAmostraVisita()" style="flex:1;">Cancelar</button>

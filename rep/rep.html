@@ -221,6 +221,12 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   <img src="logo.jpg" alt="Vet Vida" onerror="this.style.display='none'">
   <div class="hdiv"></div>
   <div class="hi"><h1>Reativacao via WhatsApp</h1><p id="sub">Carregando...</p></div>
+  <div style="position:relative;flex:1;max-width:280px;margin:0 10px;" id="busca-global-wrap">
+    <input type="text" id="busca-global" placeholder="🔍 Buscar cliente..." autocomplete="off"
+      oninput="filtrarBuscaGlobal()" onfocus="filtrarBuscaGlobal()" onblur="setTimeout(()=>document.getElementById('busca-global-lista').style.display='none',150)"
+      style="width:100%;border:1.5px solid #e5e7eb;border-radius:20px;padding:7px 12px;font-size:12px;outline:none;">
+    <div id="busca-global-lista" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #e5e7eb;border-radius:10px;margin-top:4px;max-height:320px;overflow-y:auto;z-index:400;box-shadow:0 4px 16px rgba(0,0,0,0.15);"></div>
+  </div>
   <div class="hr"><a href="estoque.html" style="background:#1F4E79;color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:bold;text-decoration:none">📦 Estoque</a><a href="roteiro.html" style="background:#375623;color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:bold;text-decoration:none">🗓 Roteiro</a><button class="btn-prom-h" onclick="abrirTelaPromo()">🌸</button> <button style="background:#CC0000;color:white;padding:4px 9px;border-radius:14px;font-size:11px;font-weight:700;border:none;cursor:pointer;" onclick="abrirAC()">+ Cliente</button> <span class="hrep" id="badge">...</span><button class="bs" onclick="sair()">Sair</button></div>
 </div>
 <div class="stats">

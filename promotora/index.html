@@ -3521,6 +3521,7 @@ function abrirModalFeedback(id) {
   alert('DEBUG abrirModalFeedback chamado com id=' + id);
   AMOSTRA_FEEDBACK_ID = id;
   const a = AMOSTRAS_CACHE.find(x => x.id === id);
+  alert('DEBUG amostra encontrada? ' + (a ? 'SIM: '+a.produto : 'NAO'));
   document.getElementById('fb-amostra-info').textContent = a ? `${a.produto} — ${a.estabelecimento_nome||''}` : '';
   document.getElementById('fb-status').value = 'aprovado';
   document.getElementById('fb-obs').value = '';

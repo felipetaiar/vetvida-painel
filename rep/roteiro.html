@@ -405,6 +405,19 @@ function init(){
   }
 
   carregarDados();
+
+  // Se veio da busca global com cliente pre-selecionado, abrir modal apos carregar
+  var codB=sessionStorage.getItem('roteiro_cod');
+  var nomeB=sessionStorage.getItem('roteiro_nome');
+  var munB=sessionStorage.getItem('roteiro_mun');
+  if(codB&&nomeB){
+    sessionStorage.removeItem('roteiro_cod');
+    sessionStorage.removeItem('roteiro_nome');
+    sessionStorage.removeItem('roteiro_mun');
+    setTimeout(function(){
+      abrirModal(parseInt(codB), decodeURIComponent(nomeB), decodeURIComponent(munB||''));
+    }, 800);
+  }
 }
 
 function setSemana(n, skip){

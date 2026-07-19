@@ -510,7 +510,7 @@ function atualizarBarraLimite(){
   if(IS_GESTOR) return;
   var maxAlt=Math.max(1,Math.floor(TOTAL_CART*0.1));
   var pct=TOTAL_CART>0?Math.round(ALTERACOES_MES/TOTAL_CART*100):0;
-  if(document.getElementById('limite-bar')) document.getElementById('limite-bar').style.display='none';
+  document.getElementById('limite-bar').style.display='flex';
   document.getElementById('limite-pct').textContent=ALTERACOES_MES+'/'+maxAlt+' alterações';
   var fill=document.getElementById('limite-fill');
   fill.style.width=Math.min(100,Math.round(ALTERACOES_MES/maxAlt*100))+'%';
@@ -764,10 +764,20 @@ function salvarRoteiro(){
 
   // Verificar limite de 10% — só aplica após ter roteiro aprovado (primeiro cadastro é livre)
   var roteiroExist=ROTEIROS[CLI_MODAL.rep]&&ROTEIROS[CLI_MODAL.rep][CLI_MODAL.cod];
+  var temAprovado=Object.values(ROTEIROS[REP]||{}).some(function(r){return r.status==='aprovado';});
+  if(temAprovado && roteiroExist){
+    // Só conta como alteração se o roteiro já foi aprovado antes
+    var maxAlt=Math.max(1,Math.floor(TOTAL_CART*0.1));
+    if(ALTERACOES_MES>=maxAlt&&TOTAL_CART>0){
+      toast('⚠ Limite de 10% de alterações atingido este mês!',4000);
+      return;
+    }
+  }
+
   var payload={
     rep:CLI_MODAL.rep, cod_cli:CLI_MODAL.cod, nome_cli:CLI_MODAL.nome,
     dia_semana:dia, semanas_mes:semanas,
-    frequencia:freq, status:'aprovado'
+    frequencia:freq, status:'pendente'
   };
 
   var url=SUPABASE_URL+'/rest/v1/roteiros?apikey='+SUPABASE_KEY;

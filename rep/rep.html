@@ -864,11 +864,20 @@ function restManuais(){
 }
 
 
-// ═══════════════ BUSCA GLOBAL (header) ═══════════════
+// ═══════════════ BUSCA GLOBAL (modal fullscreen) ═══════════════
+function abrirBuscaGlobal(){
+  document.getElementById('modal-busca-global').style.display='flex';
+  document.getElementById('busca-global').value='';
+  document.getElementById('busca-global-lista').innerHTML='<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Digite o nome do cliente...</div>';
+  setTimeout(function(){ document.getElementById('busca-global').focus(); }, 100);
+}
+function fecharBuscaGlobal(){
+  document.getElementById('modal-busca-global').style.display='none';
+}
 function filtrarBuscaGlobal(){
   var q=(document.getElementById('busca-global').value||'').toLowerCase().trim();
   var lista=document.getElementById('busca-global-lista');
-  if(!q){ lista.style.display='none'; return; }
+  if(!q){ lista.innerHTML='<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Digite o nome do cliente...</div>'; return; }
   var base=(TODOS_DADOS[REP]||[]).concat(BASE_INATIVOS[REP]||[]);
   var vistos={};
   var resultados=base.filter(function(c){
@@ -876,25 +885,22 @@ function filtrarBuscaGlobal(){
     var match=c.nome.toLowerCase().indexOf(q)>=0;
     if(match) vistos[c.cod]=true;
     return match;
-  }).slice(0,15);
+  }).slice(0,20);
   if(!resultados.length){
-    lista.innerHTML='<div style="padding:14px;text-align:center;color:#9ca3af;font-size:12px;">Nenhum cliente encontrado.</div>';
-    lista.style.display='block';
+    lista.innerHTML='<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">Nenhum cliente encontrado.</div>';
     return;
   }
   lista.innerHTML=resultados.map(function(c){
-    var codEnc=encodeURIComponent(c.cod);
-    return '<div style="padding:10px 12px;border-bottom:1px solid #f3f4f6;">'+
-      '<div style="font-weight:600;font-size:13px;color:#1f2937;">'+c.nome+'</div>'+
-      '<div style="font-size:11px;color:#9ca3af;margin-bottom:6px;">'+(c.municipio||'')+'</div>'+
-      '<div style="display:flex;gap:6px;">'+
-        '<a href="rep.html#cliente='+codEnc+'" onmousedown="event.preventDefault();abrirClienteDaBusca('+c.cod+')" style="flex:1;text-align:center;background:#fdf2f2;color:#CC0000;padding:4px;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;">Reativação</a>'+
-        '<a href="estoque.html" onmousedown="event.preventDefault();irParaEstoqueBusca('+c.cod+',\''+encodeURIComponent(c.nome)+'\',\''+encodeURIComponent(c.municipio||'')+'\')" style="flex:1;text-align:center;background:#eff6ff;color:#1F4E79;padding:4px;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;">Estoque</a>'+
-        '<a href="roteiro.html" onmousedown="event.preventDefault();irParaRoteiroBusca('+c.cod+',\''+encodeURIComponent(c.nome)+'\',\''+encodeURIComponent(c.municipio||'')+'\')" style="flex:1;text-align:center;background:#f0fdf4;color:#166534;padding:4px;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;">Roteiro</a>'+
+    return '<div style="padding:12px;border-bottom:1px solid #f3f4f6;">'+
+      '<div style="font-weight:700;font-size:14px;color:#1f2937;">'+c.nome+'</div>'+
+      '<div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">'+(c.municipio||'')+'</div>'+
+      '<div style="display:flex;gap:8px;">'+
+        '<button onclick="abrirClienteDaBusca('+c.cod+')" style="flex:1;text-align:center;background:#fdf2f2;color:#CC0000;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:700;">Reativação</button>'+
+        '<button onclick="irParaEstoqueBusca('+c.cod+',\''+encodeURIComponent(c.nome)+'\',\''+encodeURIComponent(c.municipio||'')+'\')" style="flex:1;text-align:center;background:#eff6ff;color:#1F4E79;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:700;">Estoque</button>'+
+        '<button onclick="irParaRoteiroBusca('+c.cod+',\''+encodeURIComponent(c.nome)+'\',\''+encodeURIComponent(c.municipio||'')+'\')" style="flex:1;text-align:center;background:#f0fdf4;color:#166534;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:700;">Roteiro</button>'+
       '</div>'+
     '</div>';
   }).join('');
-  lista.style.display='block';
 }
 
 

@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#CC0000">
+
 <script>
 // Restaurar sessão do localStorage se sessionStorage estiver vazio
 (function() {
@@ -213,7 +216,7 @@ async function renderHome() {
   var visitas = await rv.json();
 
   // Amostras pendentes
-  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status_feedback=is.null', {headers:HP});
+  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status=eq.pendente', {headers:HP});
   var amostras = await ra.json();
 
   // Leads abertos
@@ -292,8 +295,8 @@ async function renderReps() {
     porRep[c.rep].add(c.cod_cliente);
   });
 
-  var reps = ['PAULA','MAURO','SUANE','NAYARA','VANESSA','DIEGO'];
-  var areas = {PAULA:'Guarulhos 1',MAURO:'Zona Leste 1',SUANE:'Zona Leste 2',NAYARA:'Zona Leste 3',VANESSA:'Zona Norte 2',DIEGO:'Zona Norte 3'};
+  var reps = ['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
+  var areas = {PAULA:'Guarulhos 1',MAURO:'Zona Leste 1',SUANE:'Zona Leste 2',VANESSA:'Zona Norte 2',LUIZ:'Zona Leste 3',PAULO:'Zona Norte 3',NAYARA:'Alto Tietê 1'};
 
   document.getElementById('reps-perf').innerHTML = reps.map(function(rep){
     var conts = (porRep[rep]||new Set()).size;
@@ -339,7 +342,7 @@ async function renderPromotora() {
   var amostras = await ra.json();
 
   var leads = (visitas||[]).filter(function(v){ return v.tem_lead; }).length;
-  var amPend = (amostras||[]).filter(function(a){ return !a.status_feedback; }).length;
+  var amPend = (amostras||[]).filter(function(a){ return a.status==='pendente'; }).length;
 
   document.getElementById('kpis-prom').innerHTML =
     kpiCard('pink', (visitas||[]).length, 'Visitas no mês', null) +
@@ -357,7 +360,7 @@ async function renderPromotora() {
   }).join('') || '<div class="empty">Nenhuma visita no mês</div>';
 
   // Amostras sem feedback
-  var pendentes = (amostras||[]).filter(function(a){ return !a.status_feedback; });
+  var pendentes = (amostras||[]).filter(function(a){ return a.status==='pendente'; });
   document.getElementById('prom-amostras').innerHTML = pendentes.map(function(a){
     var dias = Math.floor((hoje-new Date(a.created_at))/86400000);
     var urgente = dias >= 45;
@@ -381,7 +384,7 @@ async function renderBI() {
   var rl = await fetch(SB_POS_URL+'/rest/v1/leads?select=rep_responsavel,status_lead', {headers:HQ});
   var leads = await rl.json();
 
-  var reps = ['PAULA','MAURO','SUANE','NAYARA','VANESSA','DIEGO'];
+  var reps = ['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
   var porRep = {};
   (contatos||[]).forEach(function(c){ if(!porRep[c.rep]) porRep[c.rep]=new Set(); porRep[c.rep].add(c.cod_cliente); });
   var leadsPorRep = {};
@@ -410,7 +413,7 @@ async function renderAlertas() {
   var hoje = new Date();
   var alertas = [];
 
-  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status_feedback=is.null', {headers:HP});
+  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status=eq.pendente', {headers:HP});
   var amostras = await ra.json();
   (amostras||[]).forEach(function(a){
     var dias = Math.floor((hoje-new Date(a.created_at))/86400000);
@@ -429,7 +432,7 @@ async function renderAlertas() {
   var rc = await fetch(SB_POS_URL+'/rest/v1/contatos?select=rep&data_hora=gte.'+new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-3).toISOString(), {headers:HQ});
   var conts = await rc.json();
   var repsAtivos = new Set((conts||[]).map(function(c){return c.rep;}));
-  ['PAULA','MAURO','SUANE','NAYARA','VANESSA','DIEGO'].forEach(function(rep){
+  ['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'].forEach(function(rep){
     if(!repsAtivos.has(rep)) alertas.push({tipo:'amarelo',icon:'👤',titulo:rep+' sem contatos nos últimos 3 dias',sub:'Verificar atividade'});
   });
 
@@ -452,6 +455,13 @@ window.addEventListener('load', function() {
   }
   renderHome();
 });
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW falhou:', e); });
+  });
+}
 </script>
 </body>
 </html>

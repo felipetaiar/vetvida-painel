@@ -1,0 +1,21 @@
+{
+  "name": "VetVida - Painel do Representante",
+  "short_name": "VetVida Rep",
+  "start_url": "/rep/rep.html",
+  "scope": "/rep/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#CC0000",
+  "icons": [
+    {
+      "src": "/rep/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/rep/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

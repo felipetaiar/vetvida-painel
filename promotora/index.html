@@ -3291,7 +3291,6 @@ let AMOSTRAS_FILTRO_ATUAL = 'todos';
 async 
 // ═══════════════ BUSCA DE PRODUTO NO CATALOGO OFICIAL (amostras) ═══════════════
 function filtrarProdutoAmostra() {
-  alert('DEBUG chamou filtrarProdutoAmostra. PRODUTOS_VV existe? ' + (typeof PRODUTOS_VV !== 'undefined') + ' tamanho: ' + (typeof PRODUTOS_VV !== 'undefined' ? PRODUTOS_VV.length : 'N/A'));
   const q = document.getElementById('amv-produto').value.toLowerCase().trim();
   const base = typeof PRODUTOS_VV !== 'undefined' ? PRODUTOS_VV : [];
   const lista = q ? base.filter(p => p.nome.toLowerCase().includes(q) || p.lab.toLowerCase().includes(q)).slice(0, 30) : base.slice(0, 15);

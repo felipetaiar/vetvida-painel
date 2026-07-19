@@ -729,6 +729,16 @@ body {
     <div id="lista-amostras"><div class="empty-state">Carregando...</div></div>
   </div>
 
+  <!-- ── SCREEN: RANKING DE POTENCIAL ── -->
+  <div id="screen-ranking" class="screen">
+    <div class="card">
+      <div class="card-title">🎯 Ranking de Potencial <button onclick="navegarPara('dashboard')" style="float:right;background:none;border:none;color:#CC0000;font-size:12px;font-weight:600;cursor:pointer;">← Voltar</button></div>
+      <p style="font-size:12px;color:#6b7280;margin-top:4px;">Combina faturamento histórico com sinais de potencial ainda não explorado.</p>
+      <input type="text" class="form-input" id="busca-ranking" placeholder="🔍 Buscar cliente..." oninput="filtrarRanking()" style="margin-top:10px;">
+    </div>
+    <div id="lista-ranking"><div class="empty-state">Carregando...</div></div>
+  </div>
+
   <!-- ── SCREEN: NOVA VISITA ── -->
   <div id="screen-visita" class="screen">
     <div class="card">

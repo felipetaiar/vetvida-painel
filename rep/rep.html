@@ -918,8 +918,7 @@ function irParaRoteiroBusca(cod,nomeEnc,munEnc){
 }
 
 function abrirClienteDaBusca(cod){
-  document.getElementById('busca-global-lista').style.display='none';
-  document.getElementById('busca-global').value='';
+  fecharBuscaGlobal();
   var el=document.getElementById('cd-'+cod);
   if(el){
     el.scrollIntoView({behavior:'smooth',block:'center'});

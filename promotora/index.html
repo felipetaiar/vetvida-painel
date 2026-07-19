@@ -1748,10 +1748,11 @@ async function salvarVisita() {
     area: areaVenda
   };
 
+  let data = null;
   try {
     const { data: dataArr, error } = await sb.from('visitas').insert([novaVisita]).select();
     if(error) throw error;
-    const data = (dataArr && dataArr[0]) ? dataArr[0] : null;
+    data = (dataArr && dataArr[0]) ? dataArr[0] : null;
     if (!data) { mostrarToast('⚠ Visita salva mas retorno vazio do banco'); }
     VISITAS.unshift(data);
     if(!document.getElementById('estab-id').value && estab) {

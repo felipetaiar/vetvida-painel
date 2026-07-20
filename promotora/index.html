@@ -1742,8 +1742,7 @@ async function salvarVisita() {
     cidade, tipo, contato, objetivo, resultado, obs,
     fornecedores, especialidades, tem_lead,
     data_retorno: retorno || null,
-    vendedor: PERFIL === 'nicolle' ? 'Nicolle' : (sessionStorage.getItem('vv_user')||''),
-    area: areaVenda
+    promotora_id: 'Nicolle'
   };
 
   let data = null;
@@ -3549,7 +3548,7 @@ async function persistirAmostrasDaVisita(estabelecimentoNome, visitaId) {
     quantidade: a.quantidade,
     estabelecimento_nome: estabelecimentoNome,
     contato_nome: a.destinatario || null,
-    vendedor: PERFIL === 'nicolle' ? 'Nicolle' : (sessionStorage.getItem('vv_user')||''),
+    promotora_id: 'Nicolle',
     area: areaVenda,
     visita_id: visitaId || null,
     status: 'pendente',

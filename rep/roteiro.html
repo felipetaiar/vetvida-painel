@@ -388,7 +388,7 @@ var MAPA_REP={'PAULO':'ZONA NORTE 3','VANESSA':'ZONA NORTE 2','PAULA':'GUARULHOS
               'MAURO':'ZONA LESTE 1','SUANE':'ZONA LESTE 2','LUIZ':'ZONA LESTE 3','NAYARA':'ALTO TIETE 1'};
 var REPS_ORDEM=['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
 
-function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/?logout=1';}
+function sair(){sessionStorage.clear();localStorage.setItem('vv_saiu','1');window.location.href='/?logout=1';}
 function toast(msg,dur){
   var t=document.getElementById('tst');t.textContent=msg;t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},dur||2500);

@@ -13,5 +13,11 @@
       "source": "/bi",
       "destination": "/bi/index.html"
     }
-  ]
+  ],
+  "github": {
+    "deployBranches": [
+      "main",
+      "staging"
+    ]
+  }
 }

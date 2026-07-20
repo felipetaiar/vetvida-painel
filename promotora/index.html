@@ -687,6 +687,14 @@ body {
           <div id="dash-amostras-sem-feedback" style="font-size:22px;font-weight:800;color:#CC0000;">0</div>
           <div style="font-size:11px;color:#6b7280;">Amostras sem feedback</div>
         </div>
+        <div style="background:#f0fdf4;border-radius:10px;padding:12px;text-align:center;">
+          <div id="dash-estabs-mes" style="font-size:22px;font-weight:800;color:#15803d;">0</div>
+          <div style="font-size:11px;color:#6b7280;">Estabelecimentos visitados</div>
+        </div>
+        <div style="background:#f0fdf4;border-radius:10px;padding:12px;text-align:center;">
+          <div id="dash-vets-mes" style="font-size:22px;font-weight:800;color:#15803d;">0</div>
+          <div style="font-size:11px;color:#6b7280;">Veterinários contatados</div>
+        </div>
       </div>
     </div>
 
@@ -2955,6 +2963,19 @@ async function renderDashboard() {
     document.getElementById('dash-amostras-mes').textContent = amMes.length;
     const amSemFeedback = amostras.filter(a => !a.feedback && !a.status_feedback);
     document.getElementById('dash-amostras-sem-feedback').textContent = amSemFeedback.length;
+
+    // ── Contadores: estabelecimentos únicos e vets únicos no mês ──
+    const estabsUnicosMes = new Set(vMes.map(v => (v.estabelecimento||'').trim().toLowerCase()).filter(Boolean));
+    const vetsUnicosMes = new Set(
+      vMes.flatMap(v => {
+        // contatos pode ser array ou string
+        if(Array.isArray(v.contatos)) return v.contatos.map(c => (c.nome||c||'').trim().toLowerCase()).filter(Boolean);
+        if(v.contato) return [(v.contato||'').trim().toLowerCase()].filter(Boolean);
+        return [];
+      })
+    );
+    document.getElementById('dash-estabs-mes').textContent = estabsUnicosMes.size;
+    document.getElementById('dash-vets-mes').textContent = vetsUnicosMes.size;
 
     // ── Esta semana ──
     const vSemana = vMes.filter(v => new Date(v.created_at) >= inicioSemana);

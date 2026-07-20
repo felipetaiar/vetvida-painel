@@ -560,7 +560,7 @@ function rnd(){
     if(rot){
       var diasL={'segunda':'Seg','terca':'Ter','quarta':'Qua','quinta':'Qui','sexta':'Sex'};
       var diaR=diasL[rot.dia_semana]||rot.dia_semana||'';
-      var semsR=rot.semanas_mes?JSON.parse(rot.semanas_mes||'[]'):[];
+      var semsR=Array.isArray(rot.semanas_mes)?rot.semanas_mes:(rot.semanas_mes?JSON.parse(rot.semanas_mes):[]);
       var semStr=semsR.map(function(s){return s+'ª';}).join('/');
       if(diaR) rotTag='<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:rgba(55,86,35,.3);color:#7db860;font-weight:700;border:1px solid rgba(55,86,35,.4)">🗓 '+diaR+(semStr?' · '+semStr:'')+'</span>';
     }

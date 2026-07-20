@@ -147,12 +147,17 @@ window.addEventListener('load', function() {
   var params = new URLSearchParams(window.location.search);
   if (params.get('logout') === '1') {
     sessionStorage.clear();
-    localStorage.removeItem('vv_auth');
-    localStorage.removeItem('vv_perfil');
-    localStorage.removeItem('vv_user');
-    localStorage.removeItem('vv_lembrar');
+    // Manter vv_auth/user/lembrar para preencher o formulário
+    // Apenas sinalizar que o usuário fez logout (inibe auto-login)
+    localStorage.setItem('vv_saiu', '1');
     window.history.replaceState({}, '', '/');
-    document.getElementById('login-user').focus();
+    // Preencher formulário com dados salvos
+    var savedUser = localStorage.getItem('vv_user');
+    if (savedUser && localStorage.getItem('vv_lembrar')) {
+      document.getElementById('login-user').value = savedUser;
+      document.getElementById('lembrar').checked = true;
+    }
+    document.getElementById('login-pass').focus();
     return;
   }
 
@@ -162,7 +167,13 @@ window.addEventListener('load', function() {
   var lsUser   = localStorage.getItem('vv_user');
   var lsLembrar = localStorage.getItem('vv_lembrar');
 
-  if (lsAuth === 'ok' && lsPerfil) {
+  // Só faz auto-login se não acabou de sair
+  var acabouDeSair = localStorage.getItem('vv_saiu') === '1';
+  if (acabouDeSair) {
+    localStorage.removeItem('vv_saiu');
+  }
+
+  if (lsAuth === 'ok' && lsPerfil && !acabouDeSair) {
     // Restaurar sessão e redirecionar direto
     sessionStorage.setItem('vv_auth', lsAuth);
     sessionStorage.setItem('vv_perfil', lsPerfil);

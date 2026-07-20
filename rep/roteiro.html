@@ -70,8 +70,9 @@ body{font-family: 'Plus Jakarta Sans', system-ui, sans-serif;background:var(--bg
 .badge-alerta.off{background:var(--surface2);color:var(--text2);border-color:var(--border2)}
 
 /* GRADE SEMANAL */
-.grade{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:24px}
-.dia-col{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;min-height:200px}
+.grade{display:flex;gap:8px;margin-bottom:24px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.grade::-webkit-scrollbar{display:none}
+.dia-col{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;min-height:200px;min-width:160px;flex-shrink:0}
 .dia-hdr{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .dia-nome{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
 .dia-nome.hoje{color:var(--red)}

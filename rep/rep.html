@@ -453,7 +453,7 @@ var STATUS_CORES={
   'Cliente inativo':{bg:'#D9D9D9',txt:'#333'}
 };
 
-function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/?logout=1';}
+function sair(){sessionStorage.clear();localStorage.setItem('vv_saiu','1');window.location.href='/?logout=1';}
 function fmtFat(v){var n=parseFloat(v)||0;return 'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 function init(){

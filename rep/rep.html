@@ -81,6 +81,8 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 .bf.ft.ativo { border-color: var(--red); background: var(--red-soft); color: var(--red); }
 .bf.fa.ativo { border-color: var(--gold); background: var(--gold-soft); color: var(--gold); }
 .bf.fr.ativo { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+.bf.fp { }
+.bf.fp.ativo { border-color: #15803d; background: #dcfce7; color: #15803d; }
 .lab-flt { display: flex; gap: 5px; flex-wrap: wrap; width: 100%; padding-top: 8px; border-top: 1px solid var(--border); margin-top: 4px; align-items: center; }
 .lab-flt label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; align-self: center; white-space: nowrap; }
 .lab-btn { padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border2); font-size: 11px; font-weight: 600; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; cursor: pointer; background: var(--surface2); color: var(--muted2); transition: all 0.15s; }
@@ -258,6 +260,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
     <button class="bf ft ativo" onclick="sF('todos',this)">Todos</button>
     <button class="bf fa" onclick="sF('alta',this)">Prioridade Alta</button>
     <button class="bf fr" onclick="sF('reativacao',this)">Reativacao</button>
+    <button class="bf fp" onclick="sF('positivado',this)">Positivados</button>
   </div>
   <div class="ord">
     <label>Ordenar</label>
@@ -516,12 +519,15 @@ function rnd(){
     var matchFiltro=(FA==='todos'||c.tipo===FA);
     var prods_str=(c.prods||[]).map(function(p){return p.nome;}).join(' ').toLowerCase();
     var matchBusca=(!b||c.nome.toLowerCase().indexOf(b)>=0||(c.municipio||'').toLowerCase().indexOf(b)>=0||(c.segmento||'').toLowerCase().indexOf(b)>=0||prods_str.indexOf(b)>=0);
-    // Filtro de lab: mostrar clientes que NAO compraram o lab selecionado em 2026
-    // (campo labs = lista de labs que ja compraram em 2026)
+    // Filtro de lab: derivar labs dos produtos via PRODUTOS_VV
     var matchLab=true;
     if(LAB_FILTRO!=='todos'){
-      var labsComprou=c.labs||[];
-      matchLab=labsComprou.indexOf(LAB_FILTRO)===-1;
+      var prodNomes=(c.prods||[]).map(function(p){return (p.nome||'').toUpperCase();});
+      var matchLab=prodNomes.some(function(pn){
+        var pv=PRODUTOS_VV.find(function(x){return x.nome.toUpperCase()===pn;});
+        if(!pv) return false;
+        return (pv.lab||'').toUpperCase().indexOf(LAB_FILTRO.toUpperCase())>=0;
+      });
     }
     return matchFiltro && matchBusca && matchLab;
   });

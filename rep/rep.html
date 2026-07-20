@@ -412,7 +412,6 @@ tr:hover td{background:#f8fafc!important;}
 .filtro-label{color:#64748b!important;}
 
 </style>
-<script src="produtos_vv.js"></script>
 <script src="dados.js"></script>
 <script>
 // Carregar contagem de leads abertos (Supabase direto, substitui API antiga /api/sheets)
@@ -520,15 +519,11 @@ function rnd(){
     var matchFiltro=(FA==='todos'||c.tipo===FA);
     var prods_str=(c.prods||[]).map(function(p){return p.nome;}).join(' ').toLowerCase();
     var matchBusca=(!b||c.nome.toLowerCase().indexOf(b)>=0||(c.municipio||'').toLowerCase().indexOf(b)>=0||(c.segmento||'').toLowerCase().indexOf(b)>=0||prods_str.indexOf(b)>=0);
-    // Filtro de lab: derivar labs dos produtos via PRODUTOS_VV
+    // Filtro de lab: usa campo labs pre-calculado no dados.js
     var matchLab=true;
     if(LAB_FILTRO!=='todos'){
-      var prodNomes=(c.prods||[]).map(function(p){return (p.nome||'').toUpperCase();});
-      var matchLab=prodNomes.some(function(pn){
-        var pv=PRODUTOS_VV.find(function(x){return x.nome.toUpperCase()===pn;});
-        if(!pv) return false;
-        return (pv.lab||'').toUpperCase().indexOf(LAB_FILTRO.toUpperCase())>=0;
-      });
+      var labsCliente=c.labs||[];
+      matchLab=labsCliente.indexOf(LAB_FILTRO)>=0;
     }
     return matchFiltro && matchBusca && matchLab;
   });

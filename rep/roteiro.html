@@ -255,6 +255,7 @@ tr:hover td{background:#f8fafc!important;}
     <a href="estoque.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;background:transparent;margin-bottom:4px;">📦 Estoque</a>
     <a href="roteiro.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#CC0000;text-decoration:none;font-weight:700;font-size:14px;background:#fdf2f2;margin-bottom:4px;">🗓 Roteiro</a>
     <button onclick="fecharMenuLateral();sessionStorage.setItem('abrir_promo_ao_carregar','1');window.location.href='rep.html';" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🌸 Leads da promotora</button>
+    <button onclick="fecharMenuLateral();abrirRadar();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">📡 Radar Comercial</button>
     <button onclick="fecharMenuLateral();if(typeof abrirBuscaGlobal==='function')abrirBuscaGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🔍 Buscar cliente</button>
     <div style="height:1px;background:#e5e7eb;margin:10px 0;"></div>
     <button onclick="fecharMenuLateral();window.location.href='rep.html#addcliente';" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:white;background:#CC0000;border:none;font-weight:700;font-size:14px;cursor:pointer;">+ Adicionar cliente</button>
@@ -388,7 +389,7 @@ var MAPA_REP={'PAULO':'ZONA NORTE 3','VANESSA':'ZONA NORTE 2','PAULA':'GUARULHOS
               'MAURO':'ZONA LESTE 1','SUANE':'ZONA LESTE 2','LUIZ':'ZONA LESTE 3','NAYARA':'ALTO TIETE 1'};
 var REPS_ORDEM=['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
 
-function sair(){sessionStorage.clear();localStorage.setItem('vv_saiu','1');window.location.href='/?logout=1';}
+function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/?logout=1';}
 function toast(msg,dur){
   var t=document.getElementById('tst');t.textContent=msg;t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},dur||2500);

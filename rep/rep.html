@@ -14,7 +14,7 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>VetVida — Reativação Comercial</title>
+<title>VetVida — Hub Comercial</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
@@ -59,13 +59,18 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 .bs:hover { border-color: var(--red); color: var(--red); }
 
 /* STATS */
-.stats { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-.st { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; text-align: center; min-width: 90px; position: relative; overflow: hidden; }
+.stats { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; gap: 10px; align-items: stretch; flex-wrap: nowrap; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+.st { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; text-align: center; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 100px; }
+@media (max-width: 640px) {
+  .stats { padding: 10px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .st { min-width: unset; padding: 10px 8px; }
+  .stats-full { grid-column: span 3; }
+}
 .st::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--red); }
 .st.d { border-color: rgba(204,0,0,0.25); background: var(--surface3); }
-.sn { font-size: 22px; font-weight: 700; color: var(--red); line-height: 1; font-variant-numeric: tabular-nums; }
+.sn { font-size: 20px; font-weight: 700; color: var(--red); line-height: 1; font-variant-numeric: tabular-nums; }
 .sl { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
-.pbw { flex: 1; min-width: 200px; }
+.pbw { flex: 1; min-width: 200px; display: flex; flex-direction: column; justify-content: center; }
 .pbl { color: var(--muted2); font-size: 12px; margin-bottom: 6px; }
 .pb { background: var(--surface3); border-radius: 8px; height: 8px; overflow: hidden; }
 .pbf { background: linear-gradient(90deg, var(--red), #ff4040); height: 100%; border-radius: 8px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); width: 0%; box-shadow: 0 0 6px var(--red-glow); }
@@ -100,15 +105,17 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 .card:hover { border-color: var(--border2); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 .card.con { opacity: 0.35; }
 .ch { padding: 14px 16px 12px; border-left: 3px solid transparent; cursor: pointer; transition: background 0.15s; }
-.ch.alta { border-color: var(--gold); background: rgba(138,122,0,0.04); }
-.ch.reativacao { border-color: var(--red); background: rgba(204,0,0,0.04); }
+.ch.ativo_recente { border-color: var(--gold); background: rgba(138,122,0,0.04); }
+.ch.inativo { border-color: #7c3aed; background: rgba(124,58,237,0.04); }
+.ch.risco { border-color: var(--red); background: rgba(204,0,0,0.04); }
 .ch:hover { background: rgba(255,255,255,0.02); }
 .ct { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
 .nm { font-weight: 700; font-size: 15px; line-height: 1.3; color: var(--text); }
 .card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
 .bg { font-size: 10px; padding: 3px 10px; border-radius: 12px; font-weight: 700; white-space: nowrap; border: 1px solid transparent; }
-.bg.alta { background: var(--gold-soft); color: var(--gold); border-color: rgba(138,122,0,0.2); }
-.bg.reativacao { background: var(--red-soft); color: var(--red); border-color: rgba(204,0,0,0.2); }
+.bg.ativo_recente { background: var(--gold-soft); color: var(--gold); border-color: rgba(138,122,0,0.2); }
+.bg.risco { background: var(--red-soft); color: var(--red); border-color: rgba(204,0,0,0.2); }
+.bg.inativo { background: #f5f3ff; color: #7c3aed; border-color: rgba(124,58,237,0.3); }
 .fat-badge { font-size: 13px; font-weight: 700; color: var(--red); font-variant-numeric: tabular-nums; }
 .lab-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .lab-tag { font-size: 9px; padding: 2px 6px; border-radius: 8px; background: rgba(100,140,200,0.12); color: #8ab4f8; font-weight: 700; }
@@ -317,18 +324,34 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   </div>
 </div>
 <div class="stats">
-  <div class="st d"><div class="sn" id="ct">-</div><div class="sl">Para contatar</div></div>
-  <div class="st"><div class="sn" id="ca">-</div><div class="sl">Prioridade alta</div></div>
-  <div class="st"><div class="sn" id="cr">-</div><div class="sl">Reativacao</div></div>
-  <div class="st"><div class="sn" id="cc">0</div><div class="sl">Contatados</div></div>
-  <div class="pbw"><div class="pbl" id="pl">-</div><div class="pb"><div class="pbf" id="pf"></div></div></div>
+  <div class="st d"><div class="sn" id="ct">-</div><div class="sl">Para positivar</div></div>
+  <div class="st"><div class="sn" id="ca">-</div><div class="sl">Ativos recentes</div></div>
+  <div class="st"><div class="sn" id="cr">-</div><div class="sl">Risco inativação</div></div>
+  <div class="st"><div class="sn" id="ci">-</div><div class="sl">Inativos</div></div>
+  <div class="st"><div class="sn" id="cc">0</div><div class="sl">Positivados</div></div>
+  <div class="st" style="display:flex;flex-direction:column;justify-content:center;gap:6px;padding:8px;align-items:stretch;">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:18px;font-weight:700;color:#16a34a;min-width:24px;text-align:left;" id="stat-novos">0</span>
+      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;">🆕 Novos</span>
+    </div>
+    <div style="height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:18px;font-weight:700;color:#0284c7;min-width:24px;text-align:left;" id="stat-reat">0</span>
+      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;">🔄 Reativados</span>
+    </div>
+  </div>
+  <div class="pbw stats-full">
+    <div class="pbl" id="pl">-</div>
+    <div class="pb"><div class="pbf" id="pf"></div></div>
+  </div>
 </div>
 <div class="ctrl">
   <input class="bsc" type="text" id="busca" placeholder="Buscar nome, cidade, segmento ou produto..." oninput="fil()">
   <div class="flt">
     <button class="bf ft ativo" onclick="sF('todos',this)">Todos</button>
-    <button class="bf fa" onclick="sF('alta',this)">Prioridade Alta</button>
-    <button class="bf fr" onclick="sF('reativacao',this)">Reativacao</button>
+    <button class="bf fa" onclick="sF('ativo_recente',this)">Ativos Recentes</button>
+    <button class="bf fr" onclick="sF('risco',this)">Risco de Inativação</button>
+    <button class="bf fi" onclick="sF('inativo',this)">Inativos</button>
     <button class="bf fp" onclick="sF('positivado',this)">Positivados</button>
   </div>
   <div class="ord">
@@ -346,7 +369,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   </div>
 </div>
 <div class="cont" id="lista"><p style="text-align:center;padding:60px;color:#aaa">Carregando...</p></div>
-<div class="ftr">Vet Vida — Painel de Reativacao Comercial</div>
+<div class="ftr">Vet Vida — Hub Comercial</div>
 <div class="tst" id="tst">Mensagem copiada!</div>
 
 <!-- MODAL HISTORICO -->
@@ -601,15 +624,16 @@ function rnd(){
   var _lP=lista.filter(function(c){return c.tipo==='positivado';}),_lN=lista.filter(function(c){return c.tipo!=='positivado'&&!CO_MES.has(c.cod);}),_lC=lista.filter(function(c){return c.tipo!=='positivado'&&CO_MES.has(c.cod);});
   lista=_lN.concat(_lC).concat(_lP);
 
-  var h='',sa=false,sr=false,_sC=false,_sP=false;
+  var h='',sa=false,sr=false,si=false,_sC=false,_sP=false;
   var ord=document.getElementById('ord').value;
   lista.forEach(function(c){
     var _ip=c.tipo==='positivado',_ic2=CO_MES.has(c.cod)&&!_ip;
     if(_ip&&!_sP){h+='<div class="sec" style="color:#15803d;margin-top:14px;">✅ Positivados este mês</div>';_sP=true;_sC=true;sa=true;sr=true;}
     if(_ic2&&!_sC){h+='<div class="sec" style="color:#888;margin-top:12px;">✓ Já contatados este mês</div>';_sC=true;sa=true;sr=true;}
     if(!_ic2&&!_ip&&ord==='urgencia'){
-      if(c.tipo==='alta'&&!sa&&FA!=='reativacao'){h+='<div class="sec" style="color:#8a7a00">Prioridade Alta</div>';sa=true;}
-      if(c.tipo==='reativacao'&&!sr&&FA!=='alta'){h+='<div class="sec" style="color:#CC0000">Reativacao</div>';sr=true;}
+      if(c.tipo==='ativo_recente'&&!sa&&FA!=='risco'&&FA!=='inativo'){h+='<div class="sec" style="color:#8a7a00">Ativos Recentes — compraram nos últimos 3 meses</div>';sa=true;}
+      if(c.tipo==='risco'&&!sr&&FA!=='ativo_recente'&&FA!=='inativo'){h+='<div class="sec" style="color:#CC0000">Risco de Inativação — 4 a 6 meses sem compra</div>';sr=true;}
+      if(c.tipo==='inativo'&&!si&&FA!=='ativo_recente'&&FA!=='risco'){h+='<div class="sec" style="color:#7c3aed">Inativos — 7 ou mais meses sem compra</div>';si=true;}
     }
     var ic=CO.has(c.cod);
     var stSalvo=STATUS_SALVO[c.cod]||{status:'',obs:''};
@@ -671,7 +695,11 @@ function rnd(){
     h+='<div class="card'+(ic?' con':'')+'" id="cd-'+c.cod+'">';
     h+='<div class="ch '+c.tipo+'" onclick="tog('+c.cod+')">';
     h+='<div class="ct"><span class="nm">'+c.nome+'</span>';
-    h+='<div class="card-right"><span class="bg '+c.tipo+'">'+(c.tipo==='alta'?'PRIORIDADE ALTA':'REATIVACAO')+'</span>';
+    h+='<div class="card-right"><span class="bg '+c.tipo+'">'+(
+      c.tipo==='ativo_recente'?'ATIVO RECENTE':
+      c.tipo==='risco'?'RISCO INATIVAÇÃO':
+      c.tipo==='inativo'?'INATIVO':
+      c.tipo==='positivado'?'POSITIVADO':'')+'</span>';
     h+='<span class="fat-badge">'+fmtFat(c.fat)+'</span></div></div>';
     h+=labTagsHtml;
     if(rotTag) h+=rotTag;
@@ -853,7 +881,25 @@ function renderHist(hist){
 
 function fecharHist(){document.getElementById('modal-cli').classList.remove('open');}
 
-function pg(){var _p2=CL.filter(function(c){return c.tipo==='positivado';}).length,c2=CO_MES.size,p=TG>0?Math.round((c2+_p2)/TG*100):0;document.getElementById('cc').textContent=c2+_p2;document.getElementById('pl').textContent=(c2+_p2)+' de '+TG+' trabalhados este mês ('+p+'%)';document.getElementById('pf').style.width=p+'%';}
+function pg(){
+  var positivados=CL.filter(function(c){return c.tipo==='positivado';});
+  var _p2=positivados.length;
+  var _ar=CL.filter(function(c){return c.tipo==='ativo_recente';}).length;
+  var _ri=CL.filter(function(c){return c.tipo==='risco';}).length;
+  var _in=CL.filter(function(c){return c.tipo==='inativo';}).length;
+  var novos=positivados.filter(function(c){return c.primeira_compra;}).length;
+  var reat=positivados.filter(function(c){return !c.primeira_compra && c.ult_meses>=7;}).length;
+  var p=TG>0?Math.round(_p2/TG*100):0;
+  document.getElementById('ct').textContent=_ar+_ri+_in;
+  document.getElementById('ca').textContent=_ar;
+  document.getElementById('cr').textContent=_ri;
+  document.getElementById('ci').textContent=_in;
+  document.getElementById('cc').textContent=_p2;
+  document.getElementById('stat-novos').textContent=novos;
+  document.getElementById('stat-reat').textContent=reat;
+  document.getElementById('pl').textContent=_p2+' de '+TG+' positivados este mês ('+p+'%)';
+  document.getElementById('pf').style.width=p+'%';
+}
 
 function irEstoque(cod, nomeEnc, munEnc){
   // Salvar cliente selecionado no sessionStorage para o estoque.html recuperar

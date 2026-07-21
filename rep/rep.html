@@ -59,8 +59,12 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 .bs:hover { border-color: var(--red); color: var(--red); }
 
 /* STATS */
-.stats { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-.st { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; text-align: center; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.stats { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; gap: 10px; align-items: stretch; flex-wrap: nowrap; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+.st { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; text-align: center; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 100px; }
+@media (max-width: 640px) {
+  .stats { padding: 10px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .st { min-width: unset; padding: 10px 8px; }
+}
 .st::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--red); }
 .st.d { border-color: rgba(204,0,0,0.25); background: var(--surface3); }
 .sn { font-size: 20px; font-weight: 700; color: var(--red); line-height: 1; font-variant-numeric: tabular-nums; }

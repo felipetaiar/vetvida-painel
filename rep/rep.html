@@ -64,6 +64,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 @media (max-width: 640px) {
   .stats { padding: 10px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .st { min-width: unset; padding: 10px 8px; }
+  .stats-full { grid-column: span 3; }
 }
 .st::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--red); }
 .st.d { border-color: rgba(204,0,0,0.25); background: var(--surface3); }
@@ -339,8 +340,8 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
       <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;">🔄 Reativados</span>
     </div>
   </div>
-  <div style="grid-column:span 3;padding:2px 0;">
-    <div class="pbl" id="pl" style="font-size:11px;color:#94a3b8;margin-bottom:4px;">-</div>
+  <div class="pbw stats-full">
+    <div class="pbl" id="pl">-</div>
     <div class="pb"><div class="pbf" id="pf"></div></div>
   </div>
 </div>

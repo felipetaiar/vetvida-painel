@@ -60,7 +60,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 
 /* STATS */
 .stats { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-.st { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; text-align: center; position: relative; overflow: hidden; }
+.st { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; text-align: center; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .st::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--red); }
 .st.d { border-color: rgba(204,0,0,0.25); background: var(--surface3); }
 .sn { font-size: 20px; font-weight: 700; color: var(--red); line-height: 1; font-variant-numeric: tabular-nums; }
@@ -324,15 +324,15 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   <div class="st"><div class="sn" id="cr">-</div><div class="sl">Risco inativação</div></div>
   <div class="st"><div class="sn" id="ci">-</div><div class="sl">Inativos</div></div>
   <div class="st"><div class="sn" id="cc">0</div><div class="sl">Positivados</div></div>
-  <div class="st" style="display:flex;flex-direction:column;justify-content:center;gap:6px;padding:8px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
-      <span style="font-size:18px;font-weight:700;color:#16a34a;" id="stat-novos">0</span>
-      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;text-align:right;">🆕 Novos</span>
+  <div class="st" style="display:flex;flex-direction:column;justify-content:center;gap:6px;padding:8px;align-items:stretch;">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:18px;font-weight:700;color:#16a34a;min-width:24px;text-align:left;" id="stat-novos">0</span>
+      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;">🆕 Novos</span>
     </div>
     <div style="height:1px;background:var(--border);"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
-      <span style="font-size:18px;font-weight:700;color:#0284c7;" id="stat-reat">0</span>
-      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;text-align:right;">🔄 Reativados</span>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:18px;font-weight:700;color:#0284c7;min-width:24px;text-align:left;" id="stat-reat">0</span>
+      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;">🔄 Reativados</span>
     </div>
   </div>
   <div style="grid-column:span 3;padding:2px 0;">

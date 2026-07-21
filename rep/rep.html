@@ -324,9 +324,13 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   <div class="st"><div class="sn" id="cr">-</div><div class="sl">Risco inativação</div></div>
   <div class="st"><div class="sn" id="ci">-</div><div class="sl">Inativos</div></div>
   <div class="st"><div class="sn" id="cc">0</div><div class="sl">Positivados</div></div>
-  <div class="st" style="flex-direction:column;align-items:flex-start;gap:2px;">
-    <div style="font-size:11px;color:#16a34a;font-weight:700;" id="stat-novos">🆕 0 novos</div>
-    <div style="font-size:11px;color:#0284c7;font-weight:700;" id="stat-reat">🔄 0 reativados</div>
+  <div class="st">
+    <div class="sn" id="stat-novos" style="font-size:18px;color:#16a34a;">0</div>
+    <div class="sl">🆕 Novos</div>
+  </div>
+  <div class="st">
+    <div class="sn" id="stat-reat" style="font-size:18px;color:#0284c7;">0</div>
+    <div class="sl">🔄 Reativados</div>
   </div>
   <div class="pbw"><div class="pbl" id="pl">-</div><div class="pb"><div class="pbf" id="pf"></div></div></div>
 </div>
@@ -880,8 +884,8 @@ function pg(){
   document.getElementById('cr').textContent=_ri;
   document.getElementById('ci').textContent=_in;
   document.getElementById('cc').textContent=_p2;
-  document.getElementById('stat-novos').textContent='🆕 '+novos+' novo'+(novos!==1?'s':'');
-  document.getElementById('stat-reat').textContent='🔄 '+reat+' reativado'+(reat!==1?'s':'');
+  document.getElementById('stat-novos').textContent=novos;
+  document.getElementById('stat-reat').textContent=reat;
   document.getElementById('pl').textContent=_p2+' de '+TG+' positivados este mês ('+p+'%)';
   document.getElementById('pf').style.width=p+'%';
 }

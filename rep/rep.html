@@ -59,9 +59,8 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 .bs:hover { border-color: var(--red); color: var(--red); }
 
 /* STATS */
-.stats { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-.stats::-webkit-scrollbar { display: none; }
-.st { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; text-align: center; min-width: 80px; flex-shrink: 0; position: relative; overflow: hidden; }
+.stats { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+.st { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; text-align: center; position: relative; overflow: hidden; }
 .st::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--red); }
 .st.d { border-color: rgba(204,0,0,0.25); background: var(--surface3); }
 .sn { font-size: 20px; font-weight: 700; color: var(--red); line-height: 1; font-variant-numeric: tabular-nums; }
@@ -325,16 +324,22 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   <div class="st"><div class="sn" id="cr">-</div><div class="sl">Risco inativação</div></div>
   <div class="st"><div class="sn" id="ci">-</div><div class="sl">Inativos</div></div>
   <div class="st"><div class="sn" id="cc">0</div><div class="sl">Positivados</div></div>
-  <div class="st">
-    <div class="sn" id="stat-novos" style="font-size:18px;color:#16a34a;">0</div>
-    <div class="sl">🆕 Novos</div>
+  <div class="st" style="display:flex;flex-direction:column;justify-content:center;gap:6px;padding:8px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+      <span style="font-size:18px;font-weight:700;color:#16a34a;" id="stat-novos">0</span>
+      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;text-align:right;">🆕 Novos</span>
+    </div>
+    <div style="height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+      <span style="font-size:18px;font-weight:700;color:#0284c7;" id="stat-reat">0</span>
+      <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;text-align:right;">🔄 Reativados</span>
+    </div>
   </div>
-  <div class="st">
-    <div class="sn" id="stat-reat" style="font-size:18px;color:#0284c7;">0</div>
-    <div class="sl">🔄 Reativados</div>
+  <div style="grid-column:span 3;padding:2px 0;">
+    <div class="pbl" id="pl" style="font-size:11px;color:#94a3b8;margin-bottom:4px;">-</div>
+    <div class="pb"><div class="pbf" id="pf"></div></div>
   </div>
 </div>
-<div style="padding:6px 16px 8px;background:var(--surface);border-bottom:1px solid var(--border);"><div class="pbl" id="pl" style="font-size:11px;color:#94a3b8;margin-bottom:4px;">-</div><div class="pb"><div class="pbf" id="pf"></div></div></div>
 <div class="ctrl">
   <input class="bsc" type="text" id="busca" placeholder="Buscar nome, cidade, segmento ou produto..." oninput="fil()">
   <div class="flt">

@@ -504,6 +504,7 @@ tr:hover td{background:#f8fafc!important;}
 .filtro-label{color:#64748b!important;}
 
 </style>
+<script src="base_clientes.js"></script>
 <script src="dados.js"></script>
 <script>
 // Carregar contagem de leads abertos (Supabase direto, substitui API antiga /api/sheets)
@@ -553,11 +554,7 @@ function init(){
   if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
   REP=pf; CL=(TODOS_DADOS[REP]||[]).slice(); TG=CL.length;
   // Enriquecer CL com razao_social, cnpj e endereco do BASE_CLIENTES
-  if(typeof BASE_CLIENTES!=='undefined'){
-    var _bcMap={};
-    BASE_CLIENTES.forEach(function(x){_bcMap[x.cod]=x;});
-    CL.forEach(function(c){var b=_bcMap[c.cod];if(b){c.razao_social=b.razao_social||'';c.cnpj=b.cnpj||'';c.endereco=b.endereco||'';}});
-  }
+  if(typeof BASE_CLIENTES!=='undefined'){var _bcMap={};BASE_CLIENTES.forEach(function(x){_bcMap[x.cod]=x;});CL.forEach(function(c){var b=_bcMap[c.cod];if(b){c.razao_social=b.razao_social||'';c.cnpj=b.cnpj||'';c.endereco=b.endereco||'';}});}
   document.getElementById('badge').textContent=REP;
   var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').innerHTML='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+'<br>Area: '+(AREAS_LABEL_DATA[REP]||'');
   document.getElementById('ct').textContent=TG;

@@ -1502,7 +1502,7 @@ function renderDropdown() {
 
   // Buscar na base de clientes VV
   const baseVV = (typeof BASE_CLIENTES !== 'undefined') ? BASE_CLIENTES : [];
-  const filtradosVV = baseVV.filter(e => e.nome.toLowerCase().includes(query)).slice(0, 10);
+  const filtradosVV = baseVV.filter(e => e.nome.toLowerCase().includes(query)||(e.razao_social||'').toLowerCase().includes(query)||(e.cnpj||'').replace(/[.\/-]/g,'').includes(query.replace(/[.\/-]/g,''))||(e.endereco||'').toLowerCase().includes(query)).slice(0, 10);
 
   // Buscar também nos estabelecimentos do Supabase
   const filtradosSB = ESTABELECIMENTOS.filter(e => e.nome.toLowerCase().includes(query) &&
@@ -1963,7 +1963,7 @@ function buscarClienteRoteiro(input, sem, dia, idx) {
   if(!query) { drop.classList.remove('open'); return; }
 
   const base = (typeof BASE_CLIENTES !== 'undefined') ? BASE_CLIENTES : [];
-  const filtrados = base.filter(c => c.nome.toLowerCase().includes(query)).slice(0, 8);
+  const filtrados = base.filter(c => c.nome.toLowerCase().includes(query)||(c.razao_social||'').toLowerCase().includes(query)||(c.cnpj||'').replace(/[.\/-]/g,'').includes(query.replace(/[.\/-]/g,''))||(c.endereco||'').toLowerCase().includes(query)).slice(0, 8);
 
   drop.innerHTML = '';
   filtrados.forEach(c => {
@@ -2771,7 +2771,7 @@ function buscarClienteModal() {
   if(!query) { drop.classList.remove('open'); return; }
 
   const base   = (typeof BASE_CLIENTES !== 'undefined') ? BASE_CLIENTES : [];
-  const filtVV = base.filter(c=>c.nome.toLowerCase().includes(query)).slice(0,8);
+  const filtVV = base.filter(c=>c.nome.toLowerCase().includes(query)||(c.razao_social||'').toLowerCase().includes(query)||(c.cnpj||'').replace(/[.\/-]/g,'').includes(query.replace(/[.\/-]/g,''))||(c.endereco||'').toLowerCase().includes(query)).slice(0,8);
   const filtSB = ESTABELECIMENTOS.filter(e=>e.nome.toLowerCase().includes(query) && !filtVV.find(v=>v.nome===e.nome)).slice(0,4);
 
   drop.innerHTML = '';
@@ -2876,7 +2876,7 @@ function renderRanking() {
 function filtrarRanking() {
   var q = document.getElementById('busca-ranking').value.toLowerCase();
   var lista = RANKING_CACHE.filter(function(c) {
-    return !q || c.nome.toLowerCase().includes(q) || (c.municipio||'').toLowerCase().includes(q);
+    return !q || c.nome.toLowerCase().includes(q) || (c.municipio||'').toLowerCase().includes(q) || (c.razao_social||'').toLowerCase().includes(q) || (c.cnpj||'').replace(/[.\/-]/g,'').includes(q.replace(/[.\/-]/g,'')) || (c.endereco||'').toLowerCase().includes(q);
   });
   exibirRanking(lista);
 }

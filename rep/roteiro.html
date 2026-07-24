@@ -561,8 +561,8 @@ function renderSemRoteiro(){
   if(IS_GESTOR) return;
   var carteira=typeof TODOS_DADOS!=='undefined'?(TODOS_DADOS[REP]||[]).slice():[];
   var meuRoteiro=ROTEIROS[REP]||{};
-  window._SEM_ROTEIRO_TODOS=carteira.filter(function(c){return !meuRoteiro[c.cod];
-  if(typeof BASE_CLIENTES!=='undefined'){var _bcMapR={};BASE_CLIENTES.forEach(function(x){_bcMapR[x.cod]=x;});window._SEM_ROTEIRO_TODOS.forEach(function(c){var b=_bcMapR[c.cod];if(b){c.razao_social=b.razao_social||'';c.cnpj=b.cnpj||'';c.endereco=b.endereco||'';}});}});
+  window._SEM_ROTEIRO_TODOS=carteira.filter(function(c){return !meuRoteiro[c.cod];});
+  if(typeof BASE_CLIENTES!=='undefined'){var _bcMapR={};BASE_CLIENTES.forEach(function(x){_bcMapR[x.cod]=x;});window._SEM_ROTEIRO_TODOS.forEach(function(c){var b=_bcMapR[c.cod];if(b){c.razao_social=b.razao_social||'';c.cnpj=b.cnpj||'';c.endereco=b.endereco||'';}});}
   var sec=document.getElementById('sem-roteiro-section');
   if(!window._SEM_ROTEIRO_TODOS.length){sec.style.display='none';return;}
   sec.style.display='block';

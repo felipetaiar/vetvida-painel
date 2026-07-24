@@ -392,6 +392,7 @@ function fecharMenuLateral(){
 
 <div class="tst" id="tst">✓ Contagem salva!</div>
 
+<script src="base_clientes.js"></script>
 <script src="dados.js"></script>
 <script>
 var SUPABASE_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
@@ -439,10 +440,12 @@ function buscarCliente(){
   var b=document.getElementById('busca').value.toLowerCase().trim();
   if(!b){document.getElementById('cli-lista').style.display='none';return;}
   var CL=TODOS_DADOS[REP]||[];
+  // Enriquecer com razao_social/cnpj do BASE_CLIENTES
+  if(typeof BASE_CLIENTES!=='undefined'){var _bcMapEst={};BASE_CLIENTES.forEach(function(x){_bcMapEst[x.cod]=x;});CL.forEach(function(c){var bx=_bcMapEst[c.cod];if(bx){c.razao_social=bx.razao_social||'';c.cnpj=bx.cnpj||'';c.endereco=bx.endereco||'';}});}
   // Buscar também clientes que já compraram (todos na carteira)
   var todos=CL;
   var res=todos.filter(function(c){
-    return c.nome.toLowerCase().indexOf(b)>=0||c.municipio.toLowerCase().indexOf(b)>=0;
+    return c.nome.toLowerCase().indexOf(b)>=0||(c.municipio||'').toLowerCase().indexOf(b)>=0||(c.razao_social||'').toLowerCase().indexOf(b)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(b.replace(/[.\/-]/g,''))>=0||(c.endereco||'').toLowerCase().indexOf(b)>=0;
   }).slice(0,10);
 
   if(!res.length){

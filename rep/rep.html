@@ -1455,38 +1455,68 @@ function calcSelecionarProduto(id){
   document.getElementById('calc-info-txt').textContent=info;
   document.getElementById('calc-info').style.display='block';
   document.getElementById('calc-custo').value=p.custo.toFixed(2);
-  if(!document.getElementById('calc-markup').value)
-    document.getElementById('calc-markup').value='40';
-  calcRecalcular('markup');
+  if(!document.getElementById('calc-pct-margem').value)
+    document.getElementById('calc-pct-margem').value='40';
+  if(!document.getElementById('calc-pct-markup').value)
+    document.getElementById('calc-pct-markup').value='40';
+  calcRecalcular('pct');
 }
 function calcRecalcular(origem){
   var custo=parseFloat(document.getElementById('calc-custo').value)||0;
-  var markup=parseFloat(document.getElementById('calc-markup').value)||0;
+  var pctMargem=parseFloat(document.getElementById('calc-pct-margem').value)||0;
+  var pctMarkup=parseFloat(document.getElementById('calc-pct-markup').value)||0;
   var venda=parseFloat(document.getElementById('calc-venda').value)||0;
   if(custo<=0){document.getElementById('calc-resultados').style.display='none';return;}
+
+  var precoMargem=0, precoMarkup=0;
+
   if(origem==='venda'&&venda>0){
-    // Rep digitou o preco de venda -> recalcular markup E margem
-    markup=((venda-custo)/custo)*100;
-    document.getElementById('calc-markup').value=markup.toFixed(1);
+    // Rep digitou preco de venda -> calcular qual margem% e markup% isso representa
+    // Margem: venda = custo*(1+pct/100) -> pct = (venda/custo - 1)*100
+    pctMargem=(venda/custo-1)*100;
+    // Markup: venda = custo/((100-pct)/100) -> pct = 100 - custo/venda*100
+    pctMarkup=100-(custo/venda)*100;
+    document.getElementById('calc-pct-margem').value=pctMargem.toFixed(1);
+    document.getElementById('calc-pct-markup').value=pctMarkup.toFixed(1);
+    precoMargem=venda;
+    precoMarkup=venda;
   } else {
-    // Rep ajustou custo ou markup -> calcular preco de venda
-    venda=custo*(1+markup/100);
-    document.getElementById('calc-venda').value=venda.toFixed(2);
+    // Calcular precos a partir dos percentuais
+    // Margem: custo * (1 + pct/100)
+    precoMargem=pctMargem>0?custo*(1+pctMargem/100):0;
+    // Markup: custo / ((100 - pct) / 100)  — invalido se pct >= 100
+    precoMarkup=(pctMarkup>0&&pctMarkup<100)?custo/((100-pctMarkup)/100):0;
   }
-  // Margem = (venda - custo) / venda  (percentual sobre o preco de venda)
-  var margem=venda>0?((venda-custo)/venda)*100:0;
-  // Markup = (venda - custo) / custo  (percentual sobre o custo)
-  var markupReal=custo>0?((venda-custo)/custo)*100:0;
+
   document.getElementById('calc-resultados').style.display='block';
-  document.getElementById('calc-res-margem').textContent=margem.toFixed(1)+'%';
-  document.getElementById('calc-res-markup').textContent=markupReal.toFixed(1)+'%';
+
+  // Card margem
+  if(precoMargem>0){
+    document.getElementById('calc-res-margem-preco').textContent='R$ '+precoMargem.toFixed(2).replace('.',',');
+    document.getElementById('calc-res-margem-lucro').textContent='Lucro: R$ '+(precoMargem-custo).toFixed(2).replace('.',',');
+  } else {
+    document.getElementById('calc-res-margem-preco').textContent='-';
+    document.getElementById('calc-res-margem-lucro').textContent='';
+  }
+
+  // Card markup
+  if(precoMarkup>0){
+    document.getElementById('calc-res-markup-preco').textContent='R$ '+precoMarkup.toFixed(2).replace('.',',');
+    document.getElementById('calc-res-markup-lucro').textContent='Lucro: R$ '+(precoMarkup-custo).toFixed(2).replace('.',',');
+  } else {
+    document.getElementById('calc-res-markup-preco').textContent='-';
+    document.getElementById('calc-res-markup-lucro').textContent='';
+  }
+
+  // Alerta baseado no menor preco (margem, mais conservador)
+  var precoRef=origem==='venda'?venda:(precoMargem||precoMarkup);
   var alerta=document.getElementById('calc-alerta');
   var res=document.getElementById('calc-resultados');
-  if(venda<=custo){
+  if(precoRef>0&&precoRef<=custo){
     alerta.textContent='Preco abaixo do custo - prejuizo!';
     alerta.style.display='block';
     res.style.background='#fef2f2';res.style.borderColor='#fecaca';
-  } else if(margem<10){
+  } else if(pctMargem>0&&pctMargem<10){
     alerta.textContent='Margem muito baixa (< 10%) - atencao!';
     alerta.style.display='block';
     res.style.background='#fffbeb';res.style.borderColor='#fde68a';
@@ -1496,7 +1526,7 @@ function calcRecalcular(origem){
   }
 }
 function calcLimpar(){
-  ['calc-busca','calc-custo','calc-markup','calc-venda'].forEach(function(id){
+  ['calc-busca','calc-custo','calc-pct-margem','calc-pct-markup','calc-venda'].forEach(function(id){
     document.getElementById(id).value='';
   });
   document.getElementById('calc-sugestoes').style.display='none';
@@ -1574,38 +1604,53 @@ document.addEventListener('click',function(e){
       <div id="calc-info" style="display:none;background:#f9fafb;border-radius:8px;padding:10px 12px;font-size:12px;color:#6b7280;line-height:1.6;">
         <span id="calc-info-txt"></span>
       </div>
+      <!-- Custo -->
+      <div>
+        <label style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Custo (R$)</label>
+        <input id="calc-custo" type="number" step="0.01" min="0" placeholder="0,00"
+          oninput="calcRecalcular('custo')"
+          style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:15px;font-weight:600;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#CC0000'" onblur="this.style.borderColor='#e5e7eb'">
+      </div>
+      <!-- Percentuais -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
-          <label style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Custo (R$)</label>
-          <input id="calc-custo" type="number" step="0.01" min="0" placeholder="0,00"
-            oninput="calcRecalcular('custo')"
-            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:15px;font-weight:600;outline:none;box-sizing:border-box;"
-            onfocus="this.style.borderColor='#CC0000'" onblur="this.style.borderColor='#e5e7eb'">
+          <label style="font-size:12px;font-weight:600;color:#16a34a;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Margem (%)</label>
+          <input id="calc-pct-margem" type="number" step="0.1" min="0" max="999" placeholder="40"
+            oninput="calcRecalcular('pct')"
+            style="width:100%;padding:10px 12px;border:1.5px solid #bbf7d0;border-radius:8px;font-size:15px;font-weight:600;outline:none;box-sizing:border-box;color:#16a34a;"
+            onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#bbf7d0'">
+          <div style="font-size:10px;color:#9ca3af;margin-top:3px;">custo &times; (1 + %)</div>
         </div>
         <div>
-          <label style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Markup (%)</label>
-          <input id="calc-markup" type="number" step="0.1" min="0" placeholder="40"
-            oninput="calcRecalcular('markup')"
-            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:15px;font-weight:600;outline:none;box-sizing:border-box;"
-            onfocus="this.style.borderColor='#CC0000'" onblur="this.style.borderColor='#e5e7eb'">
+          <label style="font-size:12px;font-weight:600;color:#2563eb;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Markup (%)</label>
+          <input id="calc-pct-markup" type="number" step="0.1" min="0" max="99.9" placeholder="40"
+            oninput="calcRecalcular('pct')"
+            style="width:100%;padding:10px 12px;border:1.5px solid #bfdbfe;border-radius:8px;font-size:15px;font-weight:600;outline:none;box-sizing:border-box;color:#2563eb;"
+            onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#bfdbfe'">
+          <div style="font-size:10px;color:#9ca3af;margin-top:3px;">custo &divide; ((100 &minus; %) &divide; 100)</div>
         </div>
       </div>
+      <!-- Preco de venda -->
       <div>
-        <label style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Preco de venda (R$) <span style="font-weight:400;color:#9ca3af;">editavel</span></label>
+        <label style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Preco de venda negociado (R$) <span style="font-weight:400;color:#9ca3af;">— recalcula margem e markup</span></label>
         <input id="calc-venda" type="number" step="0.01" min="0" placeholder="0,00"
           oninput="calcRecalcular('venda')"
           style="width:100%;padding:12px 14px;border:2px solid #CC0000;border-radius:8px;font-size:18px;font-weight:700;color:#CC0000;outline:none;box-sizing:border-box;"
           onfocus="this.style.borderColor='#990000'" onblur="this.style.borderColor='#CC0000'">
       </div>
+      <!-- Resultados -->
       <div id="calc-resultados" style="display:none;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:14px 16px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div style="text-align:center;">
-            <div id="calc-res-margem" style="font-size:24px;font-weight:800;color:#16a34a;"></div>
-            <div style="font-size:11px;color:#6b7280;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;">Margem s/ venda</div>
+          <div style="text-align:center;background:white;border-radius:8px;padding:10px;">
+            <div style="font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Margem</div>
+            <div id="calc-res-margem-preco" style="font-size:20px;font-weight:800;color:#111;"></div>
+            <div id="calc-res-margem-lucro" style="font-size:11px;color:#6b7280;margin-top:3px;"></div>
           </div>
-          <div style="text-align:center;">
-            <div id="calc-res-markup" style="font-size:24px;font-weight:800;color:#2563eb;"></div>
-            <div style="font-size:11px;color:#6b7280;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;">Markup s/ custo</div>
+          <div style="text-align:center;background:white;border-radius:8px;padding:10px;">
+            <div style="font-size:11px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Markup</div>
+            <div id="calc-res-markup-preco" style="font-size:20px;font-weight:800;color:#111;"></div>
+            <div id="calc-res-markup-lucro" style="font-size:11px;color:#6b7280;margin-top:3px;"></div>
           </div>
         </div>
         <div id="calc-alerta" style="display:none;margin-top:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 10px;font-size:12px;color:#dc2626;text-align:center;font-weight:600;"></div>

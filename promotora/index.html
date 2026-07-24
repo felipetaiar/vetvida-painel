@@ -2967,10 +2967,9 @@ async function renderDashboard() {
     const estabsUnicosMes = new Set(vMes.map(v => (v.estabelecimento||'').trim().toLowerCase()).filter(Boolean));
     const vetsUnicosMes = new Set(
       vMes.flatMap(v => {
-        // contatos pode ser array ou string
-        if(Array.isArray(v.contatos)) return v.contatos.map(c => (c.nome||c||'').trim().toLowerCase()).filter(Boolean);
-        if(v.contato) return [(v.contato||'').trim().toLowerCase()].filter(Boolean);
-        return [];
+        // contato é string com nomes separados por vírgula: "DR. X, DRA. Y, ..."
+        const str = v.contato || '';
+        return str.split(',').map(n => n.trim().toLowerCase()).filter(Boolean);
       })
     );
     document.getElementById('dash-estabs-mes').textContent = estabsUnicosMes.size;

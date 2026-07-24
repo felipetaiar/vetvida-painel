@@ -504,6 +504,7 @@ tr:hover td{background:#f8fafc!important;}
 .filtro-label{color:#64748b!important;}
 
 </style>
+<script src="base_clientes.js"></script>
 <script src="dados.js"></script>
 <script>
 // Carregar contagem de leads abertos (Supabase direto, substitui API antiga /api/sheets)
@@ -552,6 +553,8 @@ function init(){
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
   if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
   REP=pf; CL=(TODOS_DADOS[REP]||[]).slice(); TG=CL.length;
+  // Enriquecer CL com razao_social, cnpj e endereco do BASE_CLIENTES
+  if(typeof BASE_CLIENTES!=='undefined'){var _bcMap={};BASE_CLIENTES.forEach(function(x){_bcMap[x.cod]=x;});CL.forEach(function(c){var b=_bcMap[c.cod];if(b){c.razao_social=b.razao_social||'';c.cnpj=b.cnpj||'';c.endereco=b.endereco||'';}});}
   document.getElementById('badge').textContent=REP;
   var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').innerHTML='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+'<br>Area: '+(AREAS_LABEL_DATA[REP]||'');
   document.getElementById('ct').textContent=TG;
@@ -610,7 +613,7 @@ function rnd(){
   var lista=CL.filter(function(c){
     var matchFiltro=(FA==='todos'||c.tipo===FA);
     var prods_str=(c.prods||[]).map(function(p){return p.nome;}).join(' ').toLowerCase();
-    var matchBusca=(!b||c.nome.toLowerCase().indexOf(b)>=0||(c.municipio||'').toLowerCase().indexOf(b)>=0||(c.segmento||'').toLowerCase().indexOf(b)>=0||prods_str.indexOf(b)>=0);
+    var matchBusca=(!b||c.nome.toLowerCase().indexOf(b)>=0||(c.municipio||'').toLowerCase().indexOf(b)>=0||(c.segmento||'').toLowerCase().indexOf(b)>=0||prods_str.indexOf(b)>=0||(c.razao_social||'').toLowerCase().indexOf(b)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(b.replace(/[.\/-]/g,''))>=0||(c.endereco||'').toLowerCase().indexOf(b)>=0);
     // Filtro de lab: usa campo labs pre-calculado no dados.js
     var matchLab=true;
     if(LAB_FILTRO!=='todos'){
@@ -956,7 +959,7 @@ function abrirAC(){
 function filtrarAC(){
   var q=document.getElementById('q-ac').value.toLowerCase();
   renderAC((window._BAC||[]).filter(function(c){
-    return (c.nome||'').toLowerCase().indexOf(q)>=0||(c.municipio||'').toLowerCase().indexOf(q)>=0;
+    return (c.nome||'').toLowerCase().indexOf(q)>=0||(c.municipio||'').toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(q.replace(/[.\/-]/g,''))>=0||(c.endereco||'').toLowerCase().indexOf(q)>=0;
   }).slice(0,40));
 }
 function renderAC(l){
@@ -1030,7 +1033,7 @@ function filtrarBuscaGlobal(){
   var vistos={};
   var resultados=base.filter(function(c){
     if(vistos[c.cod]) return false;
-    var match=c.nome.toLowerCase().indexOf(q)>=0;
+    var match=c.nome.toLowerCase().indexOf(q)>=0||(c.municipio||'').toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(q.replace(/[.\/-]/g,''))>=0||(c.endereco||'').toLowerCase().indexOf(q)>=0;
     if(match) vistos[c.cod]=true;
     return match;
   }).slice(0,20);
@@ -1451,3 +1454,4 @@ const RADAR_MACROS = ["Antipulgas / Carrapatos", "Vermífugos", "Antibióticos",
 </div>
 
 </body></html>
+<!-- deploy trigger -->

@@ -392,6 +392,7 @@ function fecharMenuLateral(){
 
 <div class="tst" id="tst">✓ Contagem salva!</div>
 
+<script src="base_clientes.js"></script>
 <script src="dados.js"></script>
 <script>
 var SUPABASE_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
@@ -442,7 +443,7 @@ function buscarCliente(){
   // Buscar também clientes que já compraram (todos na carteira)
   var todos=CL;
   var res=todos.filter(function(c){
-    return c.nome.toLowerCase().indexOf(b)>=0||c.municipio.toLowerCase().indexOf(b)>=0;
+    return c.nome.toLowerCase().indexOf(b)>=0||(c.municipio||'').toLowerCase().indexOf(b)>=0||(c.razao_social||'').toLowerCase().indexOf(b)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(b.replace(/[.\/-]/g,''))>=0||(c.endereco||'').toLowerCase().indexOf(b)>=0;
   }).slice(0,10);
 
   if(!res.length){

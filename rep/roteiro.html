@@ -371,6 +371,7 @@ function fecharMenuLateral(){
 
 <div class="tst" id="tst"></div>
 
+<script src="base_clientes.js"></script>
 <script src="dados.js"></script>
 <script>
 var SUPABASE_URL='https://wpmvczohuhywwnefwumf.supabase.co';
@@ -560,7 +561,8 @@ function renderSemRoteiro(){
   if(IS_GESTOR) return;
   var carteira=typeof TODOS_DADOS!=='undefined'?(TODOS_DADOS[REP]||[]).slice():[];
   var meuRoteiro=ROTEIROS[REP]||{};
-  window._SEM_ROTEIRO_TODOS=carteira.filter(function(c){return !meuRoteiro[c.cod];});
+  window._SEM_ROTEIRO_TODOS=carteira.filter(function(c){return !meuRoteiro[c.cod];
+  if(typeof BASE_CLIENTES!=='undefined'){var _bcMapR={};BASE_CLIENTES.forEach(function(x){_bcMapR[x.cod]=x;});window._SEM_ROTEIRO_TODOS.forEach(function(c){var b=_bcMapR[c.cod];if(b){c.razao_social=b.razao_social||'';c.cnpj=b.cnpj||'';c.endereco=b.endereco||'';}});}});
   var sec=document.getElementById('sem-roteiro-section');
   if(!window._SEM_ROTEIRO_TODOS.length){sec.style.display='none';return;}
   sec.style.display='block';
@@ -571,7 +573,7 @@ function renderSemRoteiro(){
 function filtrarSemRoteiro(){
   var q=(document.getElementById('sem-roteiro-busca')?document.getElementById('sem-roteiro-busca').value:'').toLowerCase();
   var lista=q?(window._SEM_ROTEIRO_TODOS||[]).filter(function(c){
-    return c.nome.toLowerCase().indexOf(q)>=0||(c.municipio||'').toLowerCase().indexOf(q)>=0;
+    return c.nome.toLowerCase().indexOf(q)>=0||(c.municipio||'').toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(q.replace(/[.\/-]/g,''))>=0||(c.endereco||'').toLowerCase().indexOf(q)>=0;
   }):(window._SEM_ROTEIRO_TODOS||[]);
   var h='';
   lista.forEach(function(c){

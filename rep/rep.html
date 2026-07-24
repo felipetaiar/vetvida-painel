@@ -1465,16 +1465,21 @@ function calcRecalcular(origem){
   var venda=parseFloat(document.getElementById('calc-venda').value)||0;
   if(custo<=0){document.getElementById('calc-resultados').style.display='none';return;}
   if(origem==='venda'&&venda>0){
+    // Rep digitou o preco de venda -> recalcular markup E margem
     markup=((venda-custo)/custo)*100;
     document.getElementById('calc-markup').value=markup.toFixed(1);
   } else {
+    // Rep ajustou custo ou markup -> calcular preco de venda
     venda=custo*(1+markup/100);
     document.getElementById('calc-venda').value=venda.toFixed(2);
   }
+  // Margem = (venda - custo) / venda  (percentual sobre o preco de venda)
   var margem=venda>0?((venda-custo)/venda)*100:0;
+  // Markup = (venda - custo) / custo  (percentual sobre o custo)
+  var markupReal=custo>0?((venda-custo)/custo)*100:0;
   document.getElementById('calc-resultados').style.display='block';
   document.getElementById('calc-res-margem').textContent=margem.toFixed(1)+'%';
-  document.getElementById('calc-res-markup').textContent=markup.toFixed(1)+'%';
+  document.getElementById('calc-res-markup').textContent=markupReal.toFixed(1)+'%';
   var alerta=document.getElementById('calc-alerta');
   var res=document.getElementById('calc-resultados');
   if(venda<=custo){

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>VetVida — Enviar Receita</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f3ff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+.card{background:white;border-radius:16px;padding:28px 24px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,0.1);}
+.logo{text-align:center;margin-bottom:20px;}
+.logo-bar{background:#7c3aed;color:white;border-radius:10px;padding:8px 18px;display:inline-block;font-weight:800;font-size:18px;letter-spacing:1px;}
+.titulo{font-size:16px;font-weight:700;color:#1f2937;margin-bottom:4px;}
+.sub{font-size:12px;color:#6b7280;margin-bottom:20px;}
+.campo{margin-bottom:14px;}
+.campo label{display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.campo input,.campo select{width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;}
+.campo input:focus,.campo select:focus{border-color:#7c3aed;}
+.foto-area{border:2px dashed #ddd6fe;border-radius:10px;padding:20px;text-align:center;cursor:pointer;margin-bottom:14px;background:#faf5ff;}
+.foto-area.tem-foto{border-style:solid;border-color:#7c3aed;padding:8px;}
+.foto-area img{width:100%;border-radius:8px;max-height:200px;object-fit:cover;}
+.foto-area .icone{font-size:32px;margin-bottom:8px;}
+.foto-area .txt{font-size:13px;color:#7c3aed;font-weight:600;}
+.foto-area .sub-txt{font-size:11px;color:#9ca3af;margin-top:2px;}
+.btn{width:100%;padding:13px;background:#7c3aed;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;}
+.btn:disabled{background:#c4b5fd;cursor:not-allowed;}
+.msg-ok{display:none;text-align:center;padding:30px 20px;}
+.msg-ok .check{font-size:56px;margin-bottom:12px;}
+.msg-ok h2{color:#7c3aed;font-size:18px;margin-bottom:6px;}
+.msg-ok p{color:#6b7280;font-size:13px;line-height:1.5;}
+.erro{background:#fef2f2;color:#dc2626;border-radius:8px;padding:10px 12px;font-size:12px;margin-bottom:12px;display:none;}
+.acao-info{background:#f5f3ff;border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:#7c3aed;font-weight:600;display:none;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo"><span class="logo-bar">VetVida</span></div>
+  <div id="form-area">
+    <div class="titulo">Enviar Receita</div>
+    <div class="sub">Campanha de Prescricao</div>
+    <div id="acao-info" class="acao-info"></div>
+    <div id="erro" class="erro"></div>
+    <div class="campo">
+      <label>Seu nome completo *</label>
+      <input id="vet-nome" type="text" placeholder="Dr(a). Nome Sobrenome">
+    </div>
+    <div class="campo">
+      <label>Produto prescrito *</label>
+      <input id="vet-produto" type="text" placeholder="Nome do produto">
+    </div>
+    <div class="campo">
+      <label>Foto da receita *</label>
+      <div class="foto-area" id="foto-area" onclick="document.getElementById('foto-input').click()">
+        <div id="foto-placeholder">
+          <div class="icone">📷</div>
+          <div class="txt">Tirar foto ou escolher arquivo</div>
+          <div class="sub-txt">JPG, PNG ou PDF</div>
+        </div>
+        <img id="foto-preview" style="display:none;">
+      </div>
+      <input id="foto-input" type="file" accept="image/*" capture="environment" style="display:none;" onchange="previewFoto(this)">
+    </div>
+    <button class="btn" id="btn-enviar" onclick="enviarReceita()">Enviar Receita</button>
+  </div>
+  <div class="msg-ok" id="msg-ok">
+    <div class="check">✅</div>
+    <h2>Receita enviada!</h2>
+    <p>Obrigado. Sua receita foi registrada com sucesso na campanha.</p>
+  </div>
+</div>
+<script>
+var SB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+var ACAO_ID=null;
+var FOTO_FILE=null;
+
+function sbFetch(path,opts){
+  return fetch(SB_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
+}
+
+async function init(){
+  var params=new URLSearchParams(window.location.search);
+  ACAO_ID=params.get('acao');
+  if(!ACAO_ID){showErro('Link invalido. Solicite um novo link ao seu representante.');return;}
+  try{
+    var res=await sbFetch('acoes_comerciais?id=eq.'+ACAO_ID+'&select=titulo,cliente_nome,data_fim,status,produto_alvo');
+    if(!Array.isArray(res)||!res.length){showErro('Acao nao encontrada.');return;}
+    var a=res[0];
+    if(a.status!=='ativa'){showErro('Esta acao ja foi encerrada.');return;}
+    var infoEl=document.getElementById('acao-info');
+    infoEl.textContent='Campanha: '+a.titulo+' — '+a.cliente_nome+(a.data_fim?' (ate '+a.data_fim.split('-').reverse().join('/')+')'  :'');
+    infoEl.style.display='block';
+    if(a.produto_alvo) document.getElementById('vet-produto').value=a.produto_alvo;
+  }catch(e){showErro('Erro ao carregar a acao: '+e.message);}
+}
+
+function previewFoto(input){
+  var file=input.files[0];
+  if(!file) return;
+  FOTO_FILE=file;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=document.getElementById('foto-preview');
+    img.src=e.target.result;
+    img.style.display='block';
+    document.getElementById('foto-placeholder').style.display='none';
+    document.getElementById('foto-area').classList.add('tem-foto');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function enviarReceita(){
+  var nome=(document.getElementById('vet-nome').value||'').trim();
+  var produto=(document.getElementById('vet-produto').value||'').trim();
+  if(!nome){showErro('Informe seu nome.');return;}
+  if(!produto){showErro('Informe o produto prescrito.');return;}
+  if(!FOTO_FILE){showErro('Adicione a foto da receita.');return;}
+  var btn=document.getElementById('btn-enviar');
+  btn.disabled=true; btn.textContent='Enviando...';
+  document.getElementById('erro').style.display='none';
+  try{
+    // Upload da foto
+    var ext=FOTO_FILE.name.split('.').pop()||'jpg';
+    var nomeArq='receita_'+ACAO_ID+'_'+Date.now()+'.'+ext;
+    var uploadRes=await fetch(SB_URL+'/storage/v1/object/receitas-acoes/'+nomeArq,{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':FOTO_FILE.type},
+      body:FOTO_FILE
+    });
+    var fotoUrl='';
+    if(uploadRes.ok){
+      fotoUrl=SB_URL+'/storage/v1/object/public/receitas-acoes/'+nomeArq;
+    }
+    // Salvar registro
+    var payload={acao_id:ACAO_ID,vet_nome:nome,produto_prescrito:produto,foto_url:fotoUrl||null};
+    var res=await sbFetch('acoes_receitas',{method:'POST',body:JSON.stringify(payload)});
+    if(Array.isArray(res)&&res[0]&&res[0].id){
+      document.getElementById('form-area').style.display='none';
+      document.getElementById('msg-ok').style.display='block';
+    } else {
+      btn.disabled=false; btn.textContent='Enviar Receita';
+      showErro('Erro ao registrar: '+JSON.stringify(res));
+    }
+  }catch(e){
+    btn.disabled=false; btn.textContent='Enviar Receita';
+    showErro('Erro: '+e.message);
+  }
+}
+
+function showErro(msg){
+  var el=document.getElementById('erro');
+  el.textContent=msg; el.style.display='block';
+}
+
+init();
+</script>
+</body>
+</html>

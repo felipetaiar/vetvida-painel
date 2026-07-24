@@ -1614,78 +1614,100 @@ function renderCardAcao(a){
   var prodH=a.produto_alvo?'<div style="font-size:11px;color:#6b7280;">Produto: '+a.produto_alvo+'</div>':'';
   var encBtn=a.status==='ativa'?'<button onclick="abrirEncerrarAcao(\''+a.id+'\')" style="font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer;">Encerrar</button>':'';
   var updBtn=a.status==='ativa'?'<button onclick="abrirUpdateAcao(\''+a.id+'\')" style="font-size:11px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:6px;padding:4px 10px;cursor:pointer;">+ Update</button>':'';
-  return '<div style="background:white;border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
+    var receitaH='';
+  if(a.tipo==='premio_vet'&&a.status==='ativa'){
+    var linkRec=window.location.origin+'/receita.html?acao='+a.id;
+    var inputId='linkrec-'+a.id;
+    receitaH='<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:8px 10px;margin-top:8px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+      +'<span style="font-size:11px;font-weight:700;color:#7c3aed;">Link de receita</span>'
+      +'<span id="rec-count-'+a.id+'" style="background:#7c3aed;color:white;border-radius:10px;padding:1px 7px;font-size:10px;">...</span>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px;">'
+      +'<input id="'+inputId+'" value="'+linkRec+'" readonly style="flex:1;font-size:10px;padding:5px 8px;border:1px solid #ddd6fe;border-radius:6px;background:white;color:#6b7280;">'
+      +'<button data-link="'+linkRec+'" class="ac-copy-link" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">Copiar</button>'
+      +'</div>'
+      +'<button data-acid="'+a.id+'" class="ac-ver-rec" style="margin-top:6px;font-size:11px;color:#7c3aed;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">Ver receitas enviadas</button>'
+      +'</div>';
+    setTimeout(function(id){
+      sbAcoes('acoes_receitas?select=id&acao_id=eq.'+id).then(function(r){
+        var el=document.getElementById('rec-count-'+id);
+        if(el) el.textContent=Array.isArray(r)?r.length:0;
+      }).catch(function(){});
+    }.bind(null,a.id),0);
+  }
+  var html='<div style="background:white;border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
     +'<div style="font-weight:700;font-size:14px;color:#111;flex:1;">'+a.titulo+'</div>'
     +'<span style="font-size:10px;padding:3px 8px;border-radius:10px;white-space:nowrap;background:'+cor+';">'+a.status.toUpperCase()+'</span>'
     +'</div>'
-    +'<div style="font-size:11px;color:#6b7280;margin:4px 0;">'+( tipos[a.tipo]||a.tipo)+' · '+d1+' a '+d2+' · por '+a.criado_por+'</div>'
-    +prodH+premH+progH
+    +'<div style="font-size:11px;color:#6b7280;margin:4px 0;">'+(tipos[a.tipo]||a.tipo)+' · '+d1+' a '+d2+' · por '+a.criado_por+'</div>'
+    +prodH+premH+progH+receitaH
     +(a.observacao_final?'<div style="font-size:11px;color:#6b7280;margin-top:6px;font-style:italic;">'+a.observacao_final+'</div>':'')
     +'<div style="display:flex;gap:8px;margin-top:10px;">'+updBtn+encBtn+'</div>'
     +'<div id="updates-'+a.id+'" style="margin-top:8px;"></div>'
     +'</div>';
+  return html;
 }
 
 function renderFormNovaAcao(){
   var el=document.getElementById('acoes-content');
-  el.innerHTML=`
-  <div style="display:flex;flex-direction:column;gap:12px;">
-    <div>
-      <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Título da ação *</label>
-      <input id="ac-titulo" type="text" placeholder="Ex: Campanha Prescrição Nexin Jul/26"
-        style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div>
-        <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>
-        <select id="ac-tipo" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">
-          <option value="premio_vet">Prêmio Vet</option>
-          <option value="premio_balconista">Prêmio Balconista</option>
-          <option value="relacionamento">Relacionamento</option>
-          <option value="outro">Outro</option>
-        </select>
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>
-        <input id="ac-produto" type="text" placeholder="Opcional"
-          style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-    </div>
-    <div>
-      <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Prêmio / Incentivo</label>
-      <input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor"
-        style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div>
-        <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (tipo)</label>
-        <select id="ac-meta-tipo" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">
-          <option value="">Sem meta</option>
-          <option value="volume_rs">Volume R$</option>
-          <option value="unidades">Unidades</option>
-          <option value="prescricoes">Prescrições</option>
-          <option value="positivacao">Positivação</option>
-        </select>
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (valor)</label>
-        <input id="ac-meta-valor" type="number" placeholder="Ex: 5000"
-          style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div>
-        <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Início *</label>
-        <input id="ac-inicio" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Fim *</label>
-        <input id="ac-fim" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-    </div>
-    <button onclick="salvarNovaAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">Criar Ação</button>
-  </div>`;
+  var html='<div style="display:flex;flex-direction:column;gap:12px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Titulo da acao *</label>';
+  html+='<input id="ac-titulo" type="text" placeholder="Ex: Campanha Prescricao Nexin Jul/26" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
+  html+='<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
+  html+='<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div></div></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
+  html+='<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (tipo) *</label>';
+  html+='<select id="ac-meta-tipo" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<option value="volume_rs">Volume R$</option><option value="unidades">Unidades</option><option value="prescricoes">Prescricoes</option><option value="positivacao">Positivacao</option></select></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (valor) *</label>';
+  html+='<input id="ac-meta-valor" type="number" placeholder="Ex: 5000" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Inicio *</label>';
+  html+='<input id="ac-inicio" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Fim *</label>';
+  html+='<input id="ac-fim" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  html+='<div id="ac-link-receita-wrap" style="display:none;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px;">';
+  html+='<div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:4px;">Link de envio de receita</div>';
+  html+='<div style="font-size:11px;color:#6b7280;">Gerado automaticamente ao criar a acao. Compartilhe com os vets pelo WhatsApp.</div></div>';
+  html+='<button onclick="salvarNovaAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">Criar Acao</button>';
+  html+='</div>';
+  el.innerHTML=html;
+}
+function acTipoMudou(){
+  var tipo=document.getElementById('ac-tipo').value;
+  var wrap=document.getElementById('ac-link-receita-wrap');
+  if(wrap) wrap.style.display=(tipo==='premio_vet')?'block':'none';
+}
+function acBuscarProduto(q){
+  var box=document.getElementById('ac-produto-sugs');
+  if(!box) return;
+  q=(q||'').trim().toLowerCase();
+  if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
+  var res=PRECOS_VV.filter(function(p){return p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0;}).slice(0,6);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(p){
+    return '<div data-nome="'+p.nome+'" class="ac-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+      +'<div style="font-weight:600;">'+p.nome+'</div>'
+      +'<div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.ac-prod-sug').forEach(function(el){
+    el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
+    el.addEventListener('mouseleave',function(){this.style.background='white';});
+    el.addEventListener('click',function(){
+      document.getElementById('ac-produto').value=this.getAttribute('data-nome');
+      box.style.display='none';
+    });
+  });
+  box.style.display='block';
 }
 
 async function salvarNovaAcao(){
@@ -1693,9 +1715,11 @@ async function salvarNovaAcao(){
   var tipo=document.getElementById('ac-tipo').value;
   var inicio=document.getElementById('ac-inicio').value;
   var fim=document.getElementById('ac-fim').value;
-  if(!titulo||!tipo||!inicio||!fim){alert('Preencha título, tipo e datas.');return;}
-  var metaTipo=document.getElementById('ac-meta-tipo').value||null;
+  var metaTipo=document.getElementById('ac-meta-tipo').value;
   var metaValor=parseFloat(document.getElementById('ac-meta-valor').value)||null;
+  if(!titulo||!tipo||!inicio||!fim){alert('Preencha titulo, tipo e datas.');return;}
+  if(!metaTipo){alert('Selecione o tipo de meta.');return;}
+  if(!metaValor||metaValor<=0){alert('Informe o valor da meta.');return;}
   var payload={
     cliente_cod:_acoesCod, cliente_nome:_acoesNome,
     titulo:titulo, tipo:tipo,
@@ -1704,13 +1728,12 @@ async function salvarNovaAcao(){
     meta_tipo:metaTipo, meta_valor:metaValor,
     data_inicio:inicio, data_fim:fim,
     status:'ativa',
-    criado_por: REP||'rep'
+    criado_por:REP||'rep'
   };
   try{
     var res=await sbAcoes('acoes_comerciais',{method:'POST',body:JSON.stringify(payload)});
     if(res&&res[0]&&res[0].id){
       acoesTab('ativas');
-      // Atualizar badge do botão
       atualizarBadgeAcoes(_acoesCod);
     } else {
       alert('Erro ao salvar: '+(res&&res.message?res.message:JSON.stringify(res)));
@@ -1789,6 +1812,41 @@ function carregarBadgesAcoes(){
   CL.forEach(function(c){atualizarBadgeAcoes(c.cod);});
 }
 // ═══════════════ FIM AÇÕES COMERCIAIS ═══════════════
+
+
+// Delegação de eventos para links de receita nos cards de ação
+document.addEventListener('click',function(e){
+  var copyBtn=e.target.closest('.ac-copy-link');
+  if(copyBtn){
+    var link=copyBtn.getAttribute('data-link');
+    navigator.clipboard.writeText(link).then(function(){mostrarToast('Link copiado!');}).catch(function(){});
+    return;
+  }
+  var verBtn=e.target.closest('.ac-ver-rec');
+  if(verBtn){
+    verReceitas(verBtn.getAttribute('data-acid'));
+    return;
+  }
+});
+async function verReceitas(aId){
+  var el=document.getElementById('updates-'+aId);
+  el.innerHTML='<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Carregando receitas...</div>';
+  try{
+    var res=await sbAcoes('acoes_receitas?acao_id=eq.'+aId+'&order=created_at.desc');
+    if(!Array.isArray(res)||!res.length){el.innerHTML='<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Nenhuma receita enviada ainda.</div>';return;}
+    var html='<div style="margin-top:8px;"><div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:8px;">'+res.length+' receita(s) enviada(s)</div>';
+    res.forEach(function(r){
+      var dt=new Date(r.created_at).toLocaleDateString('pt-BR');
+      html+='<div style="background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:6px;">'
+        +'<div style="font-size:12px;font-weight:700;">'+r.vet_nome+'</div>'
+        +'<div style="font-size:11px;color:#6b7280;">'+r.produto_prescrito+' \xb7 '+dt+'</div>'
+        +(r.foto_url?'<a href="'+r.foto_url+'" target="_blank"><img src="'+r.foto_url+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-top:6px;"></a>':'')
+        +'</div>';
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div style="color:#dc2626;font-size:12px;">Erro: '+e.message+'</div>';}
+}
 
 </script>
 

@@ -1531,6 +1531,7 @@ function navegarPara(screen) {
   if(screen === 'roteiro') renderRoteiro();
   if(screen === 'gestor') renderGestor();
   if(screen === 'dashboard') renderDashboard();
+  if(screen === 'acoes') { var _t=function(){if(typeof promAcoesTab==='function'){promAcoesTab('ativas');}else{setTimeout(_t,100);}};_t(); }
   if(screen === 'contatos') renderContatos();
   if(screen === 'amostras') renderAmostras();
 }

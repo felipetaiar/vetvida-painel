@@ -3721,32 +3721,15 @@ var PRODUTOS_VV = [{"cod": 1111, "nome": "ASTOR BANHO EM CASA CONDICIONADOR 300 
 </div>
 <script src="faturamento_resumo.js" defer></script>
 <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW falhou:', e); });
-  });
-}
-
-// === MENU LATERAL PROMOTORA ===
-function abrirMenuLateral(){
-  document.getElementById('menu-lateral').style.left='0';
-  document.getElementById('menu-overlay').style.display='block';
-  document.body.style.overflow='hidden';
-}
-function fecharMenuLateral(){
-  document.getElementById('menu-lateral').style.left='-280px';
-  document.getElementById('menu-overlay').style.display='none';
-  document.body.style.overflow='';
-}
-// === FIM MENU LATERAL ===
-
 
 // ======= AÇÕES COMERCIAIS PROMOTORA =======
 var SB_PROM_URL='https://wpmvczohuhywwnefwumf.supabase.co';
 var SB_PROM_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
 
 function sbProm(path,opts){
-  return fetch(SB_PROM_URL+'/rest/v1/'+path,Object.assign({headers:{'apikey':SB_PROM_KEY,'Authorization':'Bearer '+SB_PROM_KEY,'Content-Type':'application/json','Prefer':'return=representation'}},opts||{})).then(function(r){return r.json();});
+  return fetch(SB_PROM_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':SB_PROM_KEY,'Authorization':'Bearer '+SB_PROM_KEY,'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
 }
 
 function promAcoesTab(tab){
@@ -3788,21 +3771,23 @@ function promRenderCardAcao(a){
   if(a.meta_valor){
     if(a.resultado_real!=null){
       var pct=Math.min(100,Math.round(a.resultado_real/a.meta_valor*100));
-      progH='<div style="margin:6px 0;"><div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:3px;"><span>'+(metas[a.meta_tipo]||'')+': '+a.resultado_real+'/'+a.meta_valor+'</span><span>'+pct+'%</span></div>'
-        +'<div style="background:#e5e7eb;border-radius:4px;height:5px;"><div style="background:#7c3aed;width:'+pct+'%;height:5px;border-radius:4px;"></div></div></div>';
+      progH='<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:3px"><span>'+(metas[a.meta_tipo]||'')+': '+a.resultado_real+'/'+a.meta_valor+'</span><span>'+pct+'%</span></div>'
+        +'<div style="background:#e5e7eb;border-radius:4px;height:5px"><div style="background:#7c3aed;width:'+pct+'%;height:5px;border-radius:4px"></div></div></div>';
     }else{
-      progH='<div style="font-size:11px;color:#6b7280;margin:4px 0;">Meta: '+a.meta_valor+' '+(metas[a.meta_tipo]||'')+'</div>';
+      progH='<div style="font-size:11px;color:#6b7280;margin:4px 0">Meta: '+a.meta_valor+' '+(metas[a.meta_tipo]||'')+'</div>';
     }
   }
   var recH='';
   if(a.tipo==='premio_vet'&&a.status==='ativa'){
     var lk=window.location.origin+'/receita.html?acao='+a.id;
-    recH='<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:8px;margin-top:8px;">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-size:11px;font-weight:700;color:#7c3aed;">Link de receita</span>'
-      +'<span id="prom-rec-'+a.id+'" style="background:#7c3aed;color:white;border-radius:10px;padding:1px 6px;font-size:10px;">...</span></div>'
-      +'<div style="display:flex;gap:6px;"><input value="'+lk+'" readonly style="flex:1;font-size:10px;padding:5px 8px;border:1px solid #ddd6fe;border-radius:6px;background:white;color:#6b7280;">'
-      +'<button data-link="'+lk+'" class="prom-copy-link" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;">Copiar</button></div>'
-      +'<button data-acid="'+a.id+'" class="prom-ver-rec" style="margin-top:4px;font-size:11px;color:#7c3aed;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">Ver receitas enviadas</button></div>';
+    recH='<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:8px;margin-top:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+      +'<span style="font-size:11px;font-weight:700;color:#7c3aed">Link de receita</span>'
+      +'<span id="prom-rec-'+a.id+'" style="background:#7c3aed;color:white;border-radius:10px;padding:1px 6px;font-size:10px">...</span></div>'
+      +'<div style="display:flex;gap:6px">'
+      +'<input value="'+lk+'" readonly style="flex:1;font-size:10px;padding:5px 8px;border:1px solid #ddd6fe;border-radius:6px;background:white;color:#6b7280">'
+      +'<button data-link="'+lk+'" class="prom-copy-link" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer">Copiar</button></div>'
+      +'<button data-acid="'+a.id+'" class="prom-ver-rec" style="margin-top:4px;font-size:11px;color:#7c3aed;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0">Ver receitas</button></div>';
     setTimeout(function(id){
       sbProm('acoes_receitas?select=id&acao_id=eq.'+id).then(function(r){
         var el2=document.getElementById('prom-rec-'+id);
@@ -3810,26 +3795,27 @@ function promRenderCardAcao(a){
       }).catch(function(){});
     }.bind(null,a.id),0);
   }
-  var updBtn=a.status==='ativa'?'<button data-acid="'+a.id+'" class="prom-upd-btn" style="font-size:11px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:6px;padding:4px 10px;cursor:pointer;">+ Update</button>':'';
-  var encBtn=a.status==='ativa'?'<button data-acid="'+a.id+'" class="prom-enc-btn" style="font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer;">Encerrar</button>':'';
-  return '<div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;background:white;">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
-    +'<div style="flex:1;"><div style="font-weight:700;font-size:14px;color:#111;">'+a.titulo+'</div>'
-    +'<div style="font-size:11px;color:#7c3aed;font-weight:600;margin-top:2px;">'+a.cliente_nome+'</div></div>'
-    +'<span style="font-size:10px;padding:3px 8px;border-radius:10px;white-space:nowrap;'+cor+';">'+a.status.toUpperCase()+'</span></div>'
-    +'<div style="font-size:11px;color:#6b7280;margin:4px 0;">'+(tipos[a.tipo]||a.tipo)+' · '+d1+' a '+d2+' · por '+a.criado_por+'</div>'
-    +(a.produto_alvo?'<div style="font-size:11px;color:#6b7280;">Produto: '+a.produto_alvo+'</div>':'')
-    +(a.premio_descricao?'<div style="font-size:11px;color:#7c3aed;margin-top:2px;">Premio: '+a.premio_descricao+'</div>':'')
+  var updBtn=a.status==='ativa'
+    ?'<button data-acid="'+a.id+'" class="prom-upd-btn" style="font-size:11px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:6px;padding:4px 10px;cursor:pointer">+ Update</button>':'';
+  var encBtn=a.status==='ativa'
+    ?'<button data-acid="'+a.id+'" class="prom-enc-btn" style="font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer">Encerrar</button>':'';
+  return '<div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;background:white">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+    +'<div style="flex:1"><div style="font-weight:700;font-size:14px;color:#111">'+a.titulo+'</div>'
+    +'<div style="font-size:11px;color:#7c3aed;font-weight:600;margin-top:2px">'+a.cliente_nome+'</div></div>'
+    +'<span style="font-size:10px;padding:3px 8px;border-radius:10px;white-space:nowrap;'+cor+'">'+a.status.toUpperCase()+'</span></div>'
+    +'<div style="font-size:11px;color:#6b7280;margin:4px 0">'+(tipos[a.tipo]||a.tipo)+' · '+d1+' a '+d2+' · por '+a.criado_por+'</div>'
+    +(a.produto_alvo?'<div style="font-size:11px;color:#6b7280">Produto: '+a.produto_alvo+'</div>':'')
+    +(a.premio_descricao?'<div style="font-size:11px;color:#7c3aed;margin-top:2px">Premio: '+a.premio_descricao+'</div>':'')
     +progH+recH
-    +(a.observacao_final?'<div style="font-size:11px;color:#6b7280;margin-top:6px;font-style:italic;">'+a.observacao_final+'</div>':'')
-    +'<div style="display:flex;gap:8px;margin-top:10px;">'+updBtn+encBtn+'</div>'
-    +'<div id="prom-updates-'+a.id+'" style="margin-top:6px;"></div></div>';
+    +(a.observacao_final?'<div style="font-size:11px;color:#6b7280;margin-top:6px;font-style:italic">'+a.observacao_final+'</div>':'')
+    +'<div style="display:flex;gap:8px;margin-top:10px">'+updBtn+encBtn+'</div>'
+    +'<div id="prom-updates-'+a.id+'" style="margin-top:6px"></div></div>';
 }
 
-// Delegacao de eventos
 document.addEventListener('click',function(e){
   var cp=e.target.closest('.prom-copy-link');
-  if(cp){navigator.clipboard&&navigator.clipboard.writeText(cp.getAttribute('data-link'));return;}
+  if(cp){try{navigator.clipboard.writeText(cp.getAttribute('data-link'));}catch(ex){}return;}
   var vr=e.target.closest('.prom-ver-rec');
   if(vr){promVerReceitas(vr.getAttribute('data-acid'));return;}
   var upd=e.target.closest('.prom-upd-btn');
@@ -3839,23 +3825,26 @@ document.addEventListener('click',function(e){
   var save=e.target.closest('.prom-upd-save');
   if(save){
     var id=save.getAttribute('data-acid');
-    var txt=(document.getElementById('prom-upd-txt-'+id).value||'').trim();
-    if(!txt)return;
-    save.disabled=true;save.textContent='Salvando...';
+    var txt=(document.getElementById('prom-upd-txt-'+id)||{}).value||'';
+    txt=txt.trim();
+    if(!txt) return;
+    save.disabled=true; save.textContent='Salvando...';
     sbProm('acoes_updates',{method:'POST',body:JSON.stringify({acao_id:id,texto:txt,criado_por:'Nicolle'})})
       .then(function(r){
-        if(r&&r[0]) document.getElementById('prom-updates-'+id).innerHTML='<div style="font-size:11px;color:#16a34a;margin-top:4px;">Registrado.</div>';
-        else{save.disabled=false;save.textContent='Salvar';}
+        var upEl=document.getElementById('prom-updates-'+id);
+        if(upEl) upEl.innerHTML='<div style="font-size:11px;color:#16a34a;margin-top:4px">Registrado.</div>';
       }).catch(function(){save.disabled=false;save.textContent='Salvar';});
     return;
   }
   var conf=e.target.closest('.prom-enc-confirm');
   if(conf){
     var id=conf.getAttribute('data-acid');
-    conf.disabled=true;conf.textContent='Salvando...';
-    var res=parseFloat((document.getElementById('prom-enc-res-'+id)||{}).value)||null;
-    var obs=((document.getElementById('prom-enc-obs-'+id)||{}).value||'').trim()||null;
-    sbProm('acoes_comerciais?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'encerrada',resultado_real:res,observacao_final:obs})})
+    conf.disabled=true; conf.textContent='Salvando...';
+    var resEl=document.getElementById('prom-enc-res-'+id);
+    var obsEl=document.getElementById('prom-enc-obs-'+id);
+    var resVal=resEl?parseFloat(resEl.value)||null:null;
+    var obsVal=obsEl?(obsEl.value||'').trim()||null:null;
+    sbProm('acoes_comerciais?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'encerrada',resultado_real:resVal,observacao_final:obsVal})})
       .then(function(){promAcoesTab('ativas');})
       .catch(function(){conf.disabled=false;conf.textContent='Confirmar';});
   }
@@ -3863,38 +3852,47 @@ document.addEventListener('click',function(e){
 
 async function promVerReceitas(aId){
   var el=document.getElementById('prom-updates-'+aId);
-  el.innerHTML='<div style="color:#9ca3af;font-size:12px;">Carregando...</div>';
+  if(!el) return;
+  el.innerHTML='<div style="color:#9ca3af;font-size:12px">Carregando...</div>';
   try{
     var res=await sbProm('acoes_receitas?acao_id=eq.'+aId+'&order=created_at.desc');
-    if(!Array.isArray(res)||!res.length){el.innerHTML='<div style="color:#9ca3af;font-size:12px;">Nenhuma receita ainda.</div>';return;}
-    var html='<div style="margin-top:6px;"><div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:6px;">'+res.length+' receita(s)</div>';
+    if(!Array.isArray(res)||!res.length){el.innerHTML='<div style="color:#9ca3af;font-size:12px">Nenhuma receita ainda.</div>';return;}
+    var html='<div style="margin-top:6px"><div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:6px">'+res.length+' receita(s)</div>';
     res.forEach(function(r){
       var dt=new Date(r.created_at).toLocaleDateString('pt-BR');
-      html+='<div style="background:#f9fafb;border-radius:8px;padding:8px;margin-bottom:6px;">'
-        +'<div style="font-size:12px;font-weight:700;">'+r.vet_nome+'</div>'
-        +'<div style="font-size:11px;color:#6b7280;">'+r.produto_prescrito+' · '+dt+'</div>'
-        +(r.foto_url?'<a href="'+r.foto_url+'" target="_blank"><img src="'+r.foto_url+'" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-top:4px;"></a>':'')
+      html+='<div style="background:#f9fafb;border-radius:8px;padding:8px;margin-bottom:6px">'
+        +'<div style="font-size:12px;font-weight:700">'+r.vet_nome+'</div>'
+        +'<div style="font-size:11px;color:#6b7280">'+r.produto_prescrito+' · '+dt+'</div>'
+        +(r.foto_url?'<a href="'+r.foto_url+'" target="_blank"><img src="'+r.foto_url+'" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-top:4px"></a>':'')
         +'</div>';
     });
     el.innerHTML=html+'</div>';
-  }catch(e){el.innerHTML='<div style="color:#dc2626;font-size:12px;">Erro: '+e.message+'</div>';}
+  }catch(e){el.innerHTML='<div style="color:#dc2626;font-size:12px">Erro: '+e.message+'</div>';}
 }
 
 function promAbrirUpdate(aId){
-  document.getElementById('prom-updates-'+aId).innerHTML=
-    '<textarea id="prom-upd-txt-'+aId+'" placeholder="Relato de campo..." rows="3" style="width:100%;padding:8px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;margin-top:6px;"></textarea>'
-    +'<button data-acid="'+aId+'" class="prom-upd-save" style="margin-top:4px;background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">Salvar</button>';
+  var el=document.getElementById('prom-updates-'+aId);
+  if(!el) return;
+  el.innerHTML='<textarea id="prom-upd-txt-'+aId+'" placeholder="Relato de campo..." rows="3"'
+    +' style="width:100%;padding:8px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;margin-top:6px"></textarea>'
+    +'<button data-acid="'+aId+'" class="prom-upd-save"'
+    +' style="margin-top:4px;background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer">Salvar</button>';
 }
 
 function promAbrirEncerrar(aId){
-  document.getElementById('prom-updates-'+aId).innerHTML=
-    '<div style="background:#fef2f2;border-radius:8px;padding:10px;margin-top:6px;">'
-    +'<div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:6px;">Encerrar acao</div>'
-    +'<input id="prom-enc-res-'+aId+'" type="number" placeholder="Resultado real" style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;margin-bottom:6px;">'
-    +'<textarea id="prom-enc-obs-'+aId+'" placeholder="Observacao final..." rows="2" style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;margin-bottom:6px;"></textarea>'
-    +'<div style="display:flex;gap:6px;">'
-    +'<button data-acid="'+aId+'" class="prom-enc-confirm" style="flex:1;background:#dc2626;color:white;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;">Confirmar</button>'
-    +'<button onclick="document.getElementById('prom-updates-'+aId+'').innerHTML='';" style="background:#f3f4f6;color:#6b7280;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;">Cancelar</button>'
+  var el=document.getElementById('prom-updates-'+aId);
+  if(!el) return;
+  el.innerHTML='<div style="background:#fef2f2;border-radius:8px;padding:10px;margin-top:6px">'
+    +'<div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:6px">Encerrar acao</div>'
+    +'<input id="prom-enc-res-'+aId+'" type="number" placeholder="Resultado real"'
+    +' style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;margin-bottom:6px">'
+    +'<textarea id="prom-enc-obs-'+aId+'" placeholder="Observacao final..." rows="2"'
+    +' style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;margin-bottom:6px"></textarea>'
+    +'<div style="display:flex;gap:6px">'
+    +'<button data-acid="'+aId+'" class="prom-enc-confirm"'
+    +' style="flex:1;background:#dc2626;color:white;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer">Confirmar</button>'
+    +'<button data-acid="'+aId+'" class="prom-enc-cancel"'
+    +' style="background:#f3f4f6;color:#6b7280;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer">Cancelar</button>'
     +'</div></div>';
 }
 
@@ -3902,13 +3900,17 @@ var _pacCod2=0,_pacNome2='';
 function promRenderFormNovaAcao(){
   var el=document.getElementById('prom-acoes-content');
   if(!el) return;
-  var h='<div style="display:flex;flex-direction:column;gap:12px;">';
-  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Cliente *</label>';
-  h+='<div style="position:relative;"><input id="pac-cli2" type="text" placeholder="Buscar cliente..." autocomplete="off" oninput="promBuscarCliente(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  h+='<div id="pac-cli-sugs2" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,.1);"></div></div></div>';
-  h+='<div id="pac-cli-sel2" style="display:none;background:#f5f3ff;border-radius:8px;padding:8px 12px;font-size:12px;color:#7c3aed;font-weight:600;"></div>';
-  h+='<div id="pac-form-resto2"></div></div>';
-  el.innerHTML=h;
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:12px">'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Cliente *</label>'
+    +'<div style="position:relative">'
+    +'<input id="pac-cli2" type="text" placeholder="Buscar cliente..." autocomplete="off"'
+    +' oninput="promBuscarCliente(this.value)"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box">'
+    +'<div id="pac-cli-sugs2" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>'
+    +'</div></div>'
+    +'<div id="pac-cli-sel2" style="display:none;background:#f5f3ff;border-radius:8px;padding:8px 12px;font-size:12px;color:#7c3aed;font-weight:600"></div>'
+    +'<div id="pac-form-resto2"></div>'
+    +'</div>';
 }
 
 function promBuscarCliente(q){
@@ -3917,12 +3919,15 @@ function promBuscarCliente(q){
   q=(q||'').trim().toLowerCase();
   if(!q){box.style.display='none';return;}
   var base=typeof BASE_CLIENTES!=='undefined'?BASE_CLIENTES:[];
-  var res=base.filter(function(c){return c.nome.toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0;}).slice(0,8);
+  var res=base.filter(function(c){
+    return c.nome.toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0;
+  }).slice(0,8);
   if(!res.length){box.style.display='none';return;}
   box.innerHTML=res.map(function(c){
-    return '<div data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" class="pac-cli-sug2" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:13px;">'
-      +'<div style="font-weight:600;">'+c.nome+'</div>'
-      +'<div style="font-size:11px;color:#9ca3af;">'+(c.cidade||'')+'</div></div>';
+    return '<div data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" class="pac-cli-sug2"'
+      +' style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:13px">'
+      +'<div style="font-weight:600">'+c.nome+'</div>'
+      +'<div style="font-size:11px;color:#9ca3af">'+(c.cidade||c.municipio||'')+'</div></div>';
   }).join('');
   box.querySelectorAll('.pac-cli-sug2').forEach(function(el){
     el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
@@ -3933,55 +3938,80 @@ function promBuscarCliente(q){
       document.getElementById('pac-cli2').value=_pacNome2;
       box.style.display='none';
       var sel=document.getElementById('pac-cli-sel2');
-      sel.textContent='Cliente: '+_pacNome2;sel.style.display='block';
-      document.getElementById('pac-form-resto2').innerHTML=promBuildFormResto();
+      if(sel){sel.textContent='Cliente: '+_pacNome2;sel.style.display='block';}
+      var resto=document.getElementById('pac-form-resto2');
+      if(resto) resto.innerHTML=promBuildFormResto();
     });
   });
   box.style.display='block';
 }
 
+// Cancelar encerramento via delegação
+document.addEventListener('click',function(e){
+  var cancel=e.target.closest('.prom-enc-cancel');
+  if(cancel){
+    var id=cancel.getAttribute('data-acid');
+    var el=document.getElementById('prom-updates-'+id);
+    if(el) el.innerHTML='';
+  }
+});
+
 function promBuildFormResto(){
-  var h='<div style="height:1px;background:#e5e7eb;margin:4px 0;"></div>';
-  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Titulo *</label>';
-  h+='<input id="pac-titulo2" type="text" placeholder="Ex: Campanha Prescricao Jul/26" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
-  h+='<select id="pac-tipo2" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  h+='<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
-  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
-  h+='<input id="pac-prod2" type="text" placeholder="Opcional" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
-  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
-  h+='<input id="pac-premio2" type="text" placeholder="Ex: Fone JBL" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta tipo *</label>';
-  h+='<select id="pac-meta-tipo2" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  h+='<option value="volume_rs">Volume R$</option><option value="unidades">Unidades</option><option value="prescricoes">Prescricoes</option><option value="positivacao">Positivacao</option></select></div>';
-  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta valor *</label>';
-  h+='<input id="pac-meta-val2" type="number" placeholder="Ex: 10" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Inicio *</label>';
-  h+='<input id="pac-inicio2" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
-  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Fim *</label>';
-  h+='<input id="pac-fim2" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
-  h+='<button onclick="promSalvarAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">Criar Acao</button>';
-  return h;
+  return '<div style="height:1px;background:#e5e7eb;margin:4px 0"></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Titulo *</label>'
+    +'<input id="pac-titulo2" type="text" placeholder="Ex: Campanha Prescricao Jul/26"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Tipo *</label>'
+    +'<select id="pac-tipo2" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box">'
+    +'<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option>'
+    +'<option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Produto</label>'
+    +'<input id="pac-prod2" type="text" placeholder="Opcional"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Premio / Incentivo</label>'
+    +'<input id="pac-premio2" type="text" placeholder="Ex: Fone JBL"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Meta tipo *</label>'
+    +'<select id="pac-meta-tipo2" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box">'
+    +'<option value="volume_rs">Volume R$</option><option value="unidades">Unidades</option>'
+    +'<option value="prescricoes">Prescricoes</option><option value="positivacao">Positivacao</option></select></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Meta valor *</label>'
+    +'<input id="pac-meta-val2" type="number" placeholder="Ex: 10"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Inicio *</label>'
+    +'<input id="pac-inicio2" type="date"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Fim *</label>'
+    +'<input id="pac-fim2" type="date"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div></div>'
+    +'<button data-oc="promSalvarAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%">Criar Acao</button>';
 }
 
 async function promSalvarAcao(){
   if(!_pacCod2){alert('Selecione o cliente.');return;}
-  var titulo=(document.getElementById('pac-titulo2').value||'').trim();
-  var tipo=document.getElementById('pac-tipo2').value;
-  var inicio=document.getElementById('pac-inicio2').value;
-  var fim=document.getElementById('pac-fim2').value;
-  var metaTipo=document.getElementById('pac-meta-tipo2').value;
-  var metaVal=parseFloat(document.getElementById('pac-meta-val2').value)||null;
+  var tEl=document.getElementById('pac-titulo2');
+  var titulo=tEl?(tEl.value||'').trim():'';
+  var tipo=(document.getElementById('pac-tipo2')||{}).value||'premio_vet';
+  var inicio=(document.getElementById('pac-inicio2')||{}).value||'';
+  var fim=(document.getElementById('pac-fim2')||{}).value||'';
+  var metaTipo=(document.getElementById('pac-meta-tipo2')||{}).value||'volume_rs';
+  var metaValEl=document.getElementById('pac-meta-val2');
+  var metaVal=metaValEl?parseFloat(metaValEl.value)||null:null;
   if(!titulo||!inicio||!fim){alert('Preencha titulo e datas.');return;}
   if(!metaVal||metaVal<=0){alert('Informe o valor da meta.');return;}
-  var payload={cliente_cod:_pacCod2,cliente_nome:_pacNome2,titulo:titulo,tipo:tipo,
-    produto_alvo:(document.getElementById('pac-prod2').value||'').trim()||null,
-    premio_descricao:(document.getElementById('pac-premio2').value||'').trim()||null,
-    meta_tipo:metaTipo,meta_valor:metaVal,data_inicio:inicio,data_fim:fim,
-    status:'ativa',criado_por:'Nicolle'};
+  var prodEl=document.getElementById('pac-prod2');
+  var premioEl=document.getElementById('pac-premio2');
+  var payload={
+    cliente_cod:_pacCod2,cliente_nome:_pacNome2,titulo:titulo,tipo:tipo,
+    produto_alvo:prodEl?(prodEl.value||'').trim()||null:null,
+    premio_descricao:premioEl?(premioEl.value||'').trim()||null:null,
+    meta_tipo:metaTipo,meta_valor:metaVal,
+    data_inicio:inicio,data_fim:fim,
+    status:'ativa',criado_por:'Nicolle'
+  };
   try{
     var res=await sbProm('acoes_comerciais',{method:'POST',body:JSON.stringify(payload)});
     if(res&&res[0]&&res[0].id) promAcoesTab('ativas');

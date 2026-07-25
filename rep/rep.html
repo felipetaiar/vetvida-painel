@@ -302,7 +302,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   <button onclick="abrirMenuLateral()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">☰</button>
   <img src="logo.jpg" alt="Vet Vida" onerror="this.style.display='none'">
   <div class="hi"><h1>Vet Hub</h1><p id="sub">Carregando...</p></div>
-  <div class="hr"><span class="hrep" id="badge">...</span><button class="bs" onclick="sair()">Sair</button></div>
+  <div class="hr"><span class="hrep" id="badge">...</span></div>
 </div>
 
 <!-- Menu lateral (drawer) -->
@@ -317,11 +317,14 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
     <a href="estoque.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">📦 Estoque</a>
     <a href="roteiro.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">🗓 Roteiro</a>
     <button onclick="fecharMenuLateral();abrirCalculadora();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🧮 Calculadora</button>
+    <button onclick="fecharMenuLateral();abrirAcoesGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🎯 Ações Comerciais</button>
     <button onclick="fecharMenuLateral();abrirTelaPromo();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🌸 Leads da promotora</button>
     <a href="radar.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">📡 Radar Comercial</a>
     <button onclick="fecharMenuLateral();abrirBuscaGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🔍 Buscar cliente</button>
     <div style="height:1px;background:#e5e7eb;margin:10px 0;"></div>
     <button onclick="fecharMenuLateral();abrirAC();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:white;background:#CC0000;border:none;font-weight:700;font-size:14px;cursor:pointer;">+ Adicionar cliente</button>
+    <div style="height:1px;background:#e5e7eb;margin:8px 4px;"></div>
+    <button onclick="sair()" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#6b7280;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🚪 Sair</button>
   </div>
 </div>
 <div class="stats">
@@ -505,10 +508,10 @@ tr:hover td{background:#f8fafc!important;}
 .filtro-label{color:#64748b!important;}
 
 </style>
-<script src="base_clientes.js"></script>
-<script src="radar_db.js" async></script>
-<script src="precos_vv.js"></script>
 <script src="dados.js"></script>
+<script src="base_clientes.js" async></script>
+<script src="radar_db.js" async></script>
+<script src="precos_vv.js" async></script>
 <script>
 // Carregar contagem de leads abertos (Supabase direto, substitui API antiga /api/sheets)
 (function(){
@@ -724,10 +727,18 @@ function rnd(){
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" data-mun="'+encodeURIComponent(c.municipio)+'" onclick="var el=this;irEstoque(parseInt(el.dataset.cod),el.dataset.nome,el.dataset.mun);" style="background:#375623;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer">📦 Contar estoque</button>';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirHist(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer">Ver historico completo</button>';
     h+='</div>';
+    h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirAcoes(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;" id="btn-acoes-'+c.cod+'">🎯 Ações</button>';
     h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'">🌸 Promotora</button>';
     h+='</div></div>';
   });
-  document.getElementById('lista').innerHTML=h;
+  // Renderizar em chunks para evitar Invalid string length no mobile
+  var lista=document.getElementById('lista');
+  lista.innerHTML='';
+  var frag=document.createDocumentFragment();
+  var tmp=document.createElement('div');
+  tmp.innerHTML=h;
+  while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
+  lista.appendChild(frag);
   document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom));});});
   pg();
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
@@ -1542,6 +1553,466 @@ document.addEventListener('click',function(e){
 });
 // === FIM CALCULADORA ===
 
+
+// ═══════════════ AÇÕES COMERCIAIS ═══════════════
+var _acoesCod=0, _acoesNome='', _acoesTab='ativas';
+var SB_ACOES_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_ACOES_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+
+function sbAcoes(path, opts){
+  var url=SB_ACOES_URL+'/rest/v1/'+path;
+  var headers={'apikey':SB_ACOES_KEY,'Authorization':'Bearer '+SB_ACOES_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+  return fetch(url, Object.assign({headers:headers}, opts||{})).then(function(r){return r.json();});
+}
+
+function abrirAcoes(cod, nome){
+  _acoesCod=cod; _acoesNome=nome;
+  document.getElementById('acoes-cliente-nome').textContent=nome;
+  document.getElementById('modal-acoes').style.display='block';
+  document.body.style.overflow='hidden';
+  acoesTab('ativas');
+}
+function fecharAcoes(){
+  document.getElementById('modal-acoes').style.display='none';
+  document.body.style.overflow='';
+}
+function acoesTab(tab){
+  _acoesTab=tab;
+  ['ativas','hist','nova'].forEach(function(t){
+    var btn=document.getElementById('tab-acoes-'+t);
+    if(t===tab){btn.style.color='#7c3aed';btn.style.borderBottomColor='#7c3aed';btn.style.fontWeight='700';}
+    else{btn.style.color='#6b7280';btn.style.borderBottomColor='transparent';btn.style.fontWeight='600';}
+  });
+  if(tab==='nova') renderFormNovaAcao();
+  else carregarAcoes(tab==='ativas');
+}
+
+async function carregarAcoes(apenasAtivas){
+  var el=document.getElementById('acoes-content');
+  el.innerHTML='<div style="text-align:center;padding:40px;color:#9ca3af;">Carregando...</div>';
+  try{
+    var filtro=apenasAtivas?'&status=eq.ativa':'&status=neq.ativa';
+    var qs='acoes_comerciais?select=*&cliente_cod=eq.'+_acoesCod+filtro+'&order=created_at.desc';
+    var acoes=await sbAcoes(qs);
+    if(!Array.isArray(acoes)||!acoes.length){
+      el.innerHTML='<div style="text-align:center;padding:40px;color:#9ca3af;">'+(apenasAtivas?'Nenhuma ação ativa.':'Nenhuma ação no histórico.')+'</div>';
+      return;
+    }
+    el.innerHTML=acoes.map(function(a){return renderCardAcao(a);}).join('');
+  }catch(e){
+    el.innerHTML='<div style="color:#dc2626;padding:16px;">Erro ao carregar ações: '+e.message+'</div>';
+  }
+}
+
+function renderCardAcao(a){
+  var tipos={'premio_vet':'🏆 Prêmio Vet','premio_balconista':'🥇 Prêmio Balconista','relacionamento':'🤝 Relacionamento','outro':'📌 Outro'};
+  var metas={'volume_rs':'Volume R$','unidades':'Unidades','prescricoes':'Prescrições','positivacao':'Positivação'};
+  var statusCor={'ativa':'#dcfce7;color:#16a34a','encerrada':'#f3f4f6;color:#6b7280','cancelada':'#fef2f2;color:#dc2626'};
+  var cor=statusCor[a.status]||'#f3f4f6;color:#6b7280';
+  var progH='';
+  if(a.meta_valor&&a.resultado_real!=null){
+    var pct=Math.min(100,Math.round(a.resultado_real/a.meta_valor*100));
+    progH='<div style="margin:8px 0 4px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:3px;">'
+      +'<span>'+(metas[a.meta_tipo]||a.meta_tipo)+': '+a.resultado_real+' / '+a.meta_valor+'</span><span>'+pct+'%</span></div>'
+      +'<div style="background:#e5e7eb;border-radius:4px;height:6px;"><div style="background:#7c3aed;width:'+pct+'%;height:6px;border-radius:4px;"></div></div></div>';
+  } else if(a.meta_valor){
+    progH='<div style="font-size:11px;color:#6b7280;margin:6px 0;">Meta: '+a.meta_valor+' '+(metas[a.meta_tipo]||'')+'</div>';
+  }
+  var d1=a.data_inicio?a.data_inicio.split('-').reverse().join('/'):'';
+  var d2=a.data_fim?a.data_fim.split('-').reverse().join('/'):'';
+  var premH=a.premio_descricao?'<div style="font-size:11px;color:#7c3aed;margin-top:4px;">🎁 '+a.premio_descricao+'</div>':'';
+  var prodH=a.produto_alvo?'<div style="font-size:11px;color:#6b7280;">Produto: '+a.produto_alvo+'</div>':'';
+  var encBtn=a.status==='ativa'?'<button onclick="abrirEncerrarAcao(\''+a.id+'\')" style="font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer;">Encerrar</button>':'';
+  var updBtn=a.status==='ativa'?'<button onclick="abrirUpdateAcao(\''+a.id+'\')" style="font-size:11px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:6px;padding:4px 10px;cursor:pointer;">+ Update</button>':'';
+    var receitaH='';
+  if(a.tipo==='premio_vet'&&a.status==='ativa'){
+    var linkRec=window.location.origin+'/receita.html?acao='+a.id;
+    var inputId='linkrec-'+a.id;
+    receitaH='<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:8px 10px;margin-top:8px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+      +'<span style="font-size:11px;font-weight:700;color:#7c3aed;">Link de receita</span>'
+      +'<span id="rec-count-'+a.id+'" style="background:#7c3aed;color:white;border-radius:10px;padding:1px 7px;font-size:10px;">...</span>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px;">'
+      +'<input id="'+inputId+'" value="'+linkRec+'" readonly style="flex:1;font-size:10px;padding:5px 8px;border:1px solid #ddd6fe;border-radius:6px;background:white;color:#6b7280;">'
+      +'<button data-link="'+linkRec+'" class="ac-copy-link" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">Copiar</button>'
+      +'</div>'
+      +'<button data-acid="'+a.id+'" class="ac-ver-rec" style="margin-top:6px;font-size:11px;color:#7c3aed;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">Ver receitas enviadas</button>'
+      +'</div>';
+    setTimeout(function(id){
+      sbAcoes('acoes_receitas?select=id&acao_id=eq.'+id).then(function(r){
+        var el=document.getElementById('rec-count-'+id);
+        if(el) el.textContent=Array.isArray(r)?r.length:0;
+      }).catch(function(){});
+    }.bind(null,a.id),0);
+  }
+  var html='<div style="background:white;border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
+    +'<div style="font-weight:700;font-size:14px;color:#111;flex:1;">'+a.titulo+'</div>'
+    +'<span style="font-size:10px;padding:3px 8px;border-radius:10px;white-space:nowrap;background:'+cor+';">'+a.status.toUpperCase()+'</span>'
+    +'</div>'
+    +'<div style="font-size:11px;color:#6b7280;margin:4px 0;">'+(tipos[a.tipo]||a.tipo)+' · '+d1+' a '+d2+' · por '+a.criado_por+'</div>'
+    +prodH+premH+progH+receitaH
+    +(a.observacao_final?'<div style="font-size:11px;color:#6b7280;margin-top:6px;font-style:italic;">'+a.observacao_final+'</div>':'')
+    +'<div style="display:flex;gap:8px;margin-top:10px;">'+updBtn+encBtn+'</div>'
+    +'<div id="updates-'+a.id+'" style="margin-top:8px;"></div>'
+    +'</div>';
+  return html;
+}
+
+function renderFormNovaAcao(){
+  var el=document.getElementById('acoes-content');
+  var html='<div style="display:flex;flex-direction:column;gap:12px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Titulo da acao *</label>';
+  html+='<input id="ac-titulo" type="text" placeholder="Ex: Campanha Prescricao Nexin Jul/26" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
+  html+='<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
+  html+='<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div></div></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
+  html+='<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (tipo) *</label>';
+  html+='<select id="ac-meta-tipo" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<option value="volume_rs">Volume R$</option><option value="unidades">Unidades</option><option value="prescricoes">Prescricoes</option><option value="positivacao">Positivacao</option></select></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (valor) *</label>';
+  html+='<input id="ac-meta-valor" type="number" placeholder="Ex: 5000" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Inicio *</label>';
+  html+='<input id="ac-inicio" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Fim *</label>';
+  html+='<input id="ac-fim" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  html+='<div id="ac-link-receita-wrap" style="display:none;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px;">';
+  html+='<div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:4px;">Link de envio de receita</div>';
+  html+='<div style="font-size:11px;color:#6b7280;">Gerado automaticamente ao criar a acao. Compartilhe com os vets pelo WhatsApp.</div></div>';
+  html+='<button onclick="salvarNovaAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">Criar Acao</button>';
+  html+='</div>';
+  el.innerHTML=html;
+}
+function acTipoMudou(){
+  var tipo=document.getElementById('ac-tipo').value;
+  var wrap=document.getElementById('ac-link-receita-wrap');
+  if(wrap) wrap.style.display=(tipo==='premio_vet')?'block':'none';
+}
+function acBuscarProduto(q){
+  var box=document.getElementById('ac-produto-sugs');
+  if(!box) return;
+  q=(q||'').trim().toLowerCase();
+  if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
+  var res=PRECOS_VV.filter(function(p){return p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0;}).slice(0,6);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(p){
+    return '<div data-nome="'+p.nome+'" class="ac-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+      +'<div style="font-weight:600;">'+p.nome+'</div>'
+      +'<div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.ac-prod-sug').forEach(function(el){
+    el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
+    el.addEventListener('mouseleave',function(){this.style.background='white';});
+    el.addEventListener('click',function(){
+      document.getElementById('ac-produto').value=this.getAttribute('data-nome');
+      box.style.display='none';
+    });
+  });
+  box.style.display='block';
+}
+
+async function salvarNovaAcao(){
+  var titulo=(document.getElementById('ac-titulo').value||'').trim();
+  var tipo=document.getElementById('ac-tipo').value;
+  var inicio=document.getElementById('ac-inicio').value;
+  var fim=document.getElementById('ac-fim').value;
+  var metaTipo=document.getElementById('ac-meta-tipo').value;
+  var metaValor=parseFloat(document.getElementById('ac-meta-valor').value)||null;
+  if(!titulo||!tipo||!inicio||!fim){alert('Preencha titulo, tipo e datas.');return;}
+  if(!metaTipo){alert('Selecione o tipo de meta.');return;}
+  if(!metaValor||metaValor<=0){alert('Informe o valor da meta.');return;}
+  var payload={
+    cliente_cod:_acoesCod, cliente_nome:_acoesNome,
+    titulo:titulo, tipo:tipo,
+    produto_alvo:(document.getElementById('ac-produto').value||'').trim()||null,
+    premio_descricao:(document.getElementById('ac-premio').value||'').trim()||null,
+    meta_tipo:metaTipo, meta_valor:metaValor,
+    data_inicio:inicio, data_fim:fim,
+    status:'ativa',
+    criado_por:REP||'rep'
+  };
+  try{
+    var res=await sbAcoes('acoes_comerciais',{method:'POST',body:JSON.stringify(payload)});
+    if(res&&res[0]&&res[0].id){
+      acoesTab('ativas');
+      atualizarBadgeAcoes(_acoesCod);
+    } else {
+      alert('Erro ao salvar: '+(res&&res.message?res.message:JSON.stringify(res)));
+    }
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+function abrirUpdateAcao(aId){
+  var div=document.getElementById('updates-'+aId);
+  div.innerHTML='<div style="margin-top:6px;">'
+    +'<textarea id="upd-txt-'+aId+'" placeholder="Relato do acompanhamento..." rows="3" '
+    +'style="width:100%;padding:8px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;"></textarea>'
+    +'<button onclick="salvarUpdateAcao(\''+aId+'\',this)" '
+    +'style="margin-top:4px;background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">Salvar update</button>'
+    +'</div>';
+}
+
+async function salvarUpdateAcao(aId, btn){
+  var txt=(document.getElementById('upd-txt-'+aId).value||'').trim();
+  if(!txt){alert('Digite o texto do update.');return;}
+  btn.disabled=true; btn.textContent='Salvando...';
+  try{
+    var payload={acao_id:aId,texto:txt,criado_por:REP||'rep'};
+    var res=await sbAcoes('acoes_updates',{method:'POST',body:JSON.stringify(payload)});
+    if(res&&res[0]&&res[0].id){
+      document.getElementById('updates-'+aId).innerHTML='<div style="font-size:11px;color:#16a34a;margin-top:4px;">✓ Update registrado</div>';
+    }else{btn.disabled=false;btn.textContent='Salvar update';alert('Erro: '+JSON.stringify(res));}
+  }catch(e){btn.disabled=false;btn.textContent='Salvar update';alert('Erro: '+e.message);}
+}
+
+function abrirEncerrarAcao(aId){
+  var div=document.getElementById('updates-'+aId);
+  div.innerHTML='<div style="margin-top:8px;background:#fef2f2;border-radius:8px;padding:10px;">'
+    +'<div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:6px;">Encerrar ação</div>'
+    +'<input id="enc-res-'+aId+'" type="number" placeholder="Resultado real (opcional)" '
+    +'style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;margin-bottom:6px;">'
+    +'<textarea id="enc-obs-'+aId+'" placeholder="Observação final..." rows="2" '
+    +'style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;margin-bottom:6px;"></textarea>'
+    +'<div style="display:flex;gap:6px;">'
+    +'<button onclick="confirmarEncerrar(\''+aId+'\',this)" style="flex:1;background:#dc2626;color:white;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;">Confirmar encerramento</button>'
+    +'<button onclick="document.getElementById(\'updates-'+aId+'\').innerHTML=\'\';" style="background:#f3f4f6;color:#6b7280;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'</div></div>';
+}
+
+async function confirmarEncerrar(aId, btn){
+  btn.disabled=true; btn.textContent='Salvando...';
+  var res=parseFloat(document.getElementById('enc-res-'+aId).value)||null;
+  var obs=(document.getElementById('enc-obs-'+aId).value||'').trim()||null;
+  try{
+    var r=await sbAcoes('acoes_comerciais?id=eq.'+aId,{
+      method:'PATCH',
+      body:JSON.stringify({status:'encerrada',resultado_real:res,observacao_final:obs})
+    });
+    carregarAcoes(true);
+    atualizarBadgeAcoes(_acoesCod);
+  }catch(e){btn.disabled=false;btn.textContent='Confirmar encerramento';alert('Erro: '+e.message);}
+}
+
+async function atualizarBadgeAcoes(cod){
+  try{
+    var qs='acoes_comerciais?select=id&cliente_cod=eq.'+cod+'&status=eq.ativa';
+    var res=await sbAcoes(qs);
+    var btn=document.getElementById('btn-acoes-'+cod);
+    if(btn){
+      var n=Array.isArray(res)?res.length:0;
+      btn.innerHTML=n>0?'🎯 Ações <span style="background:white;color:#7c3aed;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;">'+n+'</span>':'🎯 Ações';
+    }
+  }catch(e){}
+}
+
+// Carregar badges ao abrir o painel
+var _acoesLoaded=false;
+function carregarBadgesAcoes(){
+  if(_acoesLoaded) return;
+  _acoesLoaded=true;
+  CL.forEach(function(c){atualizarBadgeAcoes(c.cod);});
+}
+// ═══════════════ FIM AÇÕES COMERCIAIS ═══════════════
+
+
+// Delegação de eventos para links de receita nos cards de ação
+document.addEventListener('click',function(e){
+  var copyBtn=e.target.closest('.ac-copy-link');
+  if(copyBtn){
+    var link=copyBtn.getAttribute('data-link');
+    navigator.clipboard.writeText(link).then(function(){mostrarToast('Link copiado!');}).catch(function(){});
+    return;
+  }
+  var verBtn=e.target.closest('.ac-ver-rec');
+  if(verBtn){
+    verReceitas(verBtn.getAttribute('data-acid'));
+    return;
+  }
+});
+async function verReceitas(aId){
+  var el=document.getElementById('updates-'+aId);
+  el.innerHTML='<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Carregando receitas...</div>';
+  try{
+    var res=await sbAcoes('acoes_receitas?acao_id=eq.'+aId+'&order=created_at.desc');
+    if(!Array.isArray(res)||!res.length){el.innerHTML='<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Nenhuma receita enviada ainda.</div>';return;}
+    var html='<div style="margin-top:8px;"><div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:8px;">'+res.length+' receita(s) enviada(s)</div>';
+    res.forEach(function(r){
+      var dt=new Date(r.created_at).toLocaleDateString('pt-BR');
+      html+='<div style="background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:6px;">'
+        +'<div style="font-size:12px;font-weight:700;">'+r.vet_nome+'</div>'
+        +'<div style="font-size:11px;color:#6b7280;">'+r.produto_prescrito+' \xb7 '+dt+'</div>'
+        +(r.foto_url?'<a href="'+r.foto_url+'" target="_blank"><img src="'+r.foto_url+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-top:6px;"></a>':'')
+        +'</div>';
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div style="color:#dc2626;font-size:12px;">Erro: '+e.message+'</div>';}
+}
+
+
+// === AÇÕES GLOBAIS (acesso pelo menu) ===
+var _acoesGlobalMode = false;
+
+function abrirAcoesGlobal(){
+  _acoesGlobalMode = true;
+  _acoesCod = 0;
+  _acoesNome = 'Todos os clientes';
+  document.getElementById('acoes-cliente-nome').textContent = 'Todos os clientes';
+  document.getElementById('modal-acoes').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  acoesTabGlobal('ativas');
+}
+
+function acoesTabGlobal(tab){
+  _acoesTab = tab;
+  ['ativas','hist','nova'].forEach(function(t){
+    var btn = document.getElementById('tab-acoes-'+t);
+    if(!btn) return;
+    if(t===tab){btn.style.color='#7c3aed';btn.style.borderBottomColor='#7c3aed';btn.style.fontWeight='700';}
+    else{btn.style.color='#6b7280';btn.style.borderBottomColor='transparent';btn.style.fontWeight='600';}
+  });
+  if(tab==='nova') renderFormNovaAcaoGlobal();
+  else carregarAcoesGlobal(tab==='ativas');
+}
+
+async function carregarAcoesGlobal(apenasAtivas){
+  var el = document.getElementById('acoes-content');
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">Carregando...</div>';
+  try{
+    // Rep vê só ações dos próprios clientes
+    var codigos = CL.map(function(c){return c.cod;});
+    if(!codigos.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#9ca3af;">Sem clientes na carteira.</div>';return;}
+    var filtro = apenasAtivas ? '&status=eq.ativa' : '&status=neq.ativa';
+    // Buscar por cliente_cod in (codigos)
+    var inFilter = 'cliente_cod=in.('+codigos.join(',')+')';
+    var qs = 'acoes_comerciais?select=*&'+inFilter+filtro+'&order=created_at.desc';
+    var acoes = await sbAcoes(qs);
+    if(!Array.isArray(acoes)||!acoes.length){
+      el.innerHTML='<div style="text-align:center;padding:40px;color:#9ca3af;">'+(apenasAtivas?'Nenhuma ação ativa na sua área.':'Nenhuma ação no histórico.')+'</div>';
+      return;
+    }
+    el.innerHTML = acoes.map(function(a){
+      // Adicionar nome do cliente no card quando em modo global
+      var cardHtml = renderCardAcao(a);
+      return cardHtml;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div style="color:#dc2626;padding:16px;">Erro: '+e.message+'</div>';
+  }
+}
+
+function renderFormNovaAcaoGlobal(){
+  // Mesmo form mas com busca de cliente no topo
+  var el = document.getElementById('acoes-content');
+  var html = '<div style="display:flex;flex-direction:column;gap:12px;">';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Cliente *</label>';
+  html += '<div style="position:relative;">';
+  html += '<input id="ac-cli-busca" type="text" placeholder="Buscar cliente..." autocomplete="off" oninput="acBuscarCliente(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<div id="ac-cli-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>';
+  html += '</div></div>';
+  html += '<div id="ac-cli-selecionado" style="display:none;background:#f5f3ff;border-radius:8px;padding:8px 12px;font-size:12px;color:#7c3aed;font-weight:600;"></div>';
+  el.innerHTML = html + '</div>';
+  // Após selecionar cliente, renderizar o resto do form
+}
+
+function acBuscarCliente(q){
+  var box = document.getElementById('ac-cli-sugs');
+  if(!box) return;
+  q = (q||'').trim().toLowerCase();
+  if(!q){box.style.display='none';return;}
+  var base = (typeof BASE_CLIENTES!=='undefined') ? BASE_CLIENTES : CL;
+  var res = base.filter(function(c){
+    return c.nome.toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(q.replace(/[.\/-]/g,''))>=0;
+  }).slice(0,8);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML = res.map(function(c){
+    return '<div data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" class="ac-cli-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:13px;">'
+      +'<div style="font-weight:600;">'+c.nome+'</div>'
+      +'<div style="font-size:11px;color:#9ca3af;">'+(c.cidade||c.municipio||'')+'</div>'
+      +'</div>';
+  }).join('');
+  box.querySelectorAll('.ac-cli-sug').forEach(function(el){
+    el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
+    el.addEventListener('mouseleave',function(){this.style.background='white';});
+    el.addEventListener('click',function(){
+      var cod = parseInt(this.getAttribute('data-cod'));
+      var nome = decodeURIComponent(this.getAttribute('data-nome'));
+      _acoesCod = cod; _acoesNome = nome;
+      document.getElementById('ac-cli-busca').value = nome;
+      box.style.display = 'none';
+      var sel = document.getElementById('ac-cli-selecionado');
+      sel.textContent = '✓ Cliente selecionado: '+nome;
+      sel.style.display = 'block';
+      // Renderizar resto do form abaixo
+      var formResto = document.getElementById('ac-form-resto');
+      if(!formResto){
+        var wrap = document.getElementById('acoes-content').querySelector('div');
+        var extra = document.createElement('div');
+        extra.id = 'ac-form-resto';
+        wrap.appendChild(extra);
+        extra.innerHTML = _buildFormResto();
+      }
+    });
+  });
+  box.style.display = 'block';
+}
+
+function _buildFormResto(){
+  var html = '';
+  html += '<div style="height:1px;background:#e5e7eb;margin:4px 0;"></div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Titulo da acao *</label>';
+  html += '<input id="ac-titulo" type="text" placeholder="Ex: Campanha Prescricao Nexin Jul/26" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
+  html += '<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
+  html += '<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div></div></div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
+  html += '<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (tipo) *</label>';
+  html += '<select id="ac-meta-tipo" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<option value="volume_rs">Volume R$</option><option value="unidades">Unidades</option><option value="prescricoes">Prescricoes</option><option value="positivacao">Positivacao</option></select></div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (valor) *</label>';
+  html += '<input id="ac-meta-valor" type="number" placeholder="Ex: 5000" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Inicio *</label>';
+  html += '<input id="ac-inicio" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Fim *</label>';
+  html += '<input id="ac-fim" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  html += '<div id="ac-link-receita-wrap" style="display:none;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px;">';
+  html += '<div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:4px;">Link de envio de receita</div>';
+  html += '<div style="font-size:11px;color:#6b7280;">Gerado automaticamente ao criar a acao.</div></div>';
+  html += '<button onclick="salvarNovaAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">Criar Acao</button>';
+  return html;
+}
+
+// Sobrescrever acoesTab para detectar modo global
+var _acoesTabOrig = acoesTab;
+acoesTab = function(tab){
+  if(_acoesGlobalMode){ acoesTabGlobal(tab); return; }
+  _acoesTabOrig(tab);
+};
+
+// Reset ao fechar
+var _fecharAcoesOrig = fecharAcoes;
+fecharAcoes = function(){
+  _acoesGlobalMode = false;
+  _fecharAcoesOrig();
+};
+// === FIM AÇÕES GLOBAIS ===
+
 </script>
 
 
@@ -1660,6 +2131,30 @@ document.addEventListener('click',function(e){
   </div>
 </div>
 <!-- FIM CALCULADORA -->
+
+
+<!-- ═══════ MODAL AÇÕES COMERCIAIS ═══════ -->
+<div id="modal-acoes" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.5);" onclick="if(event.target===this)fecharAcoes()">
+<div style="position:absolute;top:0;right:0;bottom:0;width:min(100vw,480px);background:white;display:flex;flex-direction:column;box-shadow:-4px 0 24px rgba(0,0,0,0.2);">
+  <!-- Header -->
+  <div style="background:#7c3aed;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+    <div>
+      <div style="color:white;font-weight:700;font-size:15px;">🎯 Ações Comerciais</div>
+      <div id="acoes-cliente-nome" style="color:rgba(255,255,255,.8);font-size:12px;margin-top:2px;"></div>
+    </div>
+    <button onclick="fecharAcoes()" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;">✕</button>
+  </div>
+  <!-- Tabs -->
+  <div style="display:flex;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
+    <button id="tab-acoes-ativas" onclick="acoesTab('ativas')" style="flex:1;padding:10px;font-size:12px;font-weight:700;color:#7c3aed;border:none;border-bottom:2px solid #7c3aed;background:white;cursor:pointer;">Ativas</button>
+    <button id="tab-acoes-hist" onclick="acoesTab('hist')" style="flex:1;padding:10px;font-size:12px;font-weight:600;color:#6b7280;border:none;border-bottom:2px solid transparent;background:white;cursor:pointer;">Histórico</button>
+    <button id="tab-acoes-nova" onclick="acoesTab('nova')" style="flex:1;padding:10px;font-size:12px;font-weight:600;color:#6b7280;border:none;border-bottom:2px solid transparent;background:white;cursor:pointer;">+ Nova</button>
+  </div>
+  <!-- Conteúdo -->
+  <div id="acoes-content" style="flex:1;overflow-y:auto;padding:16px;"></div>
+</div>
+</div>
+<!-- ═══════ FIM MODAL AÇÕES ═══════ -->
 
 </body></html>
 <!-- deploy trigger -->

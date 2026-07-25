@@ -614,39 +614,31 @@ body {
 
 </style>
 <script>
-// Interceptor universal de clicks — executa data-oc quando função ainda não carregou
+// Interceptor universal de clicks
+function _execOc(oc) {
+  try { Function('"use strict";' + oc)(); } catch(e) { console.error('oc err:', e, oc); }
+}
 document.addEventListener('click', function(e) {
   var el = e.target;
-  // Subir na árvore até encontrar data-oc
   while(el && el !== document) {
     var oc = el.getAttribute('data-oc');
     if(oc) {
-      try {
-        // Tentar executar direto
-        var fn = oc.match(/^(\w+)\s*\(/);
-        if(fn && typeof window[fn[1]] === 'function') {
-          // Função já carregou — executar
-          eval(oc); // eslint-disable-line
-        } else {
-          // Função ainda não carregou — aguardar e tentar novamente
-          var _oc = oc;
-          var attempts = 0;
-          var interval = setInterval(function() {
-            attempts++;
-            var fn2 = _oc.match(/^(\w+)\s*\(/);
-            if(fn2 && typeof window[fn2[1]] === 'function') {
-              clearInterval(interval);
-              eval(_oc); // eslint-disable-line
-            } else if(attempts > 50) {
-              clearInterval(interval);
-              console.warn('Função não encontrada:', _oc);
-            }
-          }, 100);
-        }
-      } catch(err) {
-        console.error('data-oc error:', err, oc);
-      }
       e.stopPropagation();
+      var fnName = (oc.match(/^(\w+)\s*\(/) || [])[1];
+      if(fnName && typeof window[fnName] === 'function') {
+        _execOc(oc);
+      } else {
+        var _oc = oc, _fn = fnName, attempts = 0;
+        var iv = setInterval(function() {
+          if(typeof window[_fn] === 'function') {
+            clearInterval(iv);
+            _execOc(_oc);
+          } else if(++attempts > 100) {
+            clearInterval(iv);
+            console.warn('fn not found:', _fn);
+          }
+        }, 50);
+      }
       break;
     }
     el = el.parentElement;

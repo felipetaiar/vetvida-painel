@@ -729,7 +729,14 @@ function rnd(){
     h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'">🌸 Promotora</button>';
     h+='</div></div>';
   });
-  document.getElementById('lista').innerHTML=h;
+  // Renderizar em chunks para evitar Invalid string length no mobile
+  var lista=document.getElementById('lista');
+  lista.innerHTML='';
+  var frag=document.createDocumentFragment();
+  var tmp=document.createElement('div');
+  tmp.innerHTML=h;
+  while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
+  lista.appendChild(frag);
   document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom));});});
   pg();
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}

@@ -1454,6 +1454,7 @@ const NAV_NICOLLE = [
   { id:'contatos',  icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', label:'Contatos' },
   { id:'amostras',  icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3z"/><path d="M5 7v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7"/><line x1="10" y1="12" x2="14" y2="12"/></svg>', label:'Amostras' },
   { id:'roteiro',   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', label:'Roteiro' },
+  { id:'acoes',     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', label:'Ações' },
 ];
 
 const NAV_GESTOR = [
@@ -1487,6 +1488,7 @@ function navegarPara(screen) {
 
   if(screen === 'historico') renderHistorico();
   if(screen === 'roteiro') renderRoteiro();
+  if(screen === 'acoes') promAcoesTab('ativas');
   if(screen === 'gestor') renderGestor();
   if(screen === 'dashboard') renderDashboard();
   if(screen === 'contatos') renderContatos();
@@ -3683,6 +3685,303 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW falhou:', e); });
   });
 }
+
+// ═══════════ AÇÕES COMERCIAIS — PROMOTORA ═══════════
+var SB_PROM_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_PROM_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+
+function sbProm(path, opts){
+  return fetch(SB_PROM_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':SB_PROM_KEY,'Authorization':'Bearer '+SB_PROM_KEY,'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
+}
+
+function promAcoesTab(tab){
+  ['ativas','hist','nova'].forEach(function(t){
+    var btn=document.getElementById('prom-tab-'+t);
+    if(!btn) return;
+    if(t===tab){btn.style.color='#7c3aed';btn.style.borderBottomColor='#7c3aed';btn.style.fontWeight='700';}
+    else{btn.style.color='#6b7280';btn.style.borderBottomColor='transparent';btn.style.fontWeight='600';}
+  });
+  if(tab==='nova') promRenderFormNovaAcao();
+  else promCarregarAcoes(tab==='ativas');
+}
+
+async function promCarregarAcoes(apenasAtivas){
+  var el=document.getElementById('prom-acoes-content');
+  if(!el) return;
+  el.innerHTML='<div style="text-align:center;padding:32px;color:#9ca3af;">Carregando...</div>';
+  try{
+    // Nicolle vê TODAS as ações de todos os reps
+    var filtro=apenasAtivas?'&status=eq.ativa':'&status=neq.ativa';
+    var acoes=await sbProm('acoes_comerciais?select=*'+filtro+'&order=created_at.desc');
+    if(!Array.isArray(acoes)||!acoes.length){
+      el.innerHTML='<div style="text-align:center;padding:32px;color:#9ca3af;">'+(apenasAtivas?'Nenhuma ação ativa.':'Nenhum histórico.')+'</div>';
+      return;
+    }
+    el.innerHTML=acoes.map(function(a){return promRenderCardAcao(a);}).join('');
+  }catch(e){
+    el.innerHTML='<div style="color:#dc2626;padding:12px;">Erro: '+e.message+'</div>';
+  }
+}
+
+function promRenderCardAcao(a){
+  var tipos={'premio_vet':'Premio Vet','premio_balconista':'Premio Balconista','relacionamento':'Relacionamento','outro':'Outro'};
+  var metas={'volume_rs':'Volume R$','unidades':'Unidades','prescricoes':'Prescricoes','positivacao':'Positivacao'};
+  var statusCor={'ativa':'background:#dcfce7;color:#16a34a','encerrada':'background:#f3f4f6;color:#6b7280','cancelada':'background:#fef2f2;color:#dc2626'};
+  var cor=statusCor[a.status]||'background:#f3f4f6;color:#6b7280';
+  var d1=a.data_inicio?a.data_inicio.split('-').reverse().join('/'):'';
+  var d2=a.data_fim?a.data_fim.split('-').reverse().join('/'):'';
+  var progH='';
+  if(a.meta_valor){
+    if(a.resultado_real!=null){
+      var pct=Math.min(100,Math.round(a.resultado_real/a.meta_valor*100));
+      progH='<div style="margin:6px 0;"><div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:3px;">'
+        +'<span>'+(metas[a.meta_tipo]||'')+': '+a.resultado_real+'/'+a.meta_valor+'</span><span>'+pct+'%</span></div>'
+        +'<div style="background:#e5e7eb;border-radius:4px;height:5px;"><div style="background:#7c3aed;width:'+pct+'%;height:5px;border-radius:4px;"></div></div></div>';
+    }else{
+      progH='<div style="font-size:11px;color:#6b7280;margin:4px 0;">Meta: '+a.meta_valor+' '+(metas[a.meta_tipo]||'')+'</div>';
+    }
+  }
+  var receitaH='';
+  if(a.tipo==='premio_vet'&&a.status==='ativa'){
+    var linkRec=window.location.origin+'/receita.html?acao='+a.id;
+    receitaH='<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:8px;margin-top:8px;">'
+      +'<div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:4px;">Link de receita <span id="prom-rec-'+a.id+'" style="background:#7c3aed;color:white;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;">...</span></div>'
+      +'<div style="display:flex;gap:6px;">'
+      +'<input value="'+linkRec+'" readonly style="flex:1;font-size:10px;padding:5px 8px;border:1px solid #ddd6fe;border-radius:6px;background:white;color:#6b7280;">'
+      +'<button data-link="'+linkRec+'" class="prom-copy-link" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;">Copiar</button>'
+      +'</div>'
+      +'<button data-acid="'+a.id+'" class="prom-ver-rec" style="margin-top:4px;font-size:11px;color:#7c3aed;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">Ver receitas enviadas</button>'
+      +'</div>';
+    setTimeout(function(id){
+      sbProm('acoes_receitas?select=id&acao_id=eq.'+id).then(function(r){
+        var el=document.getElementById('prom-rec-'+id);
+        if(el) el.textContent=Array.isArray(r)?r.length:0;
+      }).catch(function(){});
+    }.bind(null,a.id),0);
+  }
+  var updBtn=a.status==='ativa'?'<button data-acid="'+a.id+'" class="prom-upd-btn" style="font-size:11px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:6px;padding:4px 10px;cursor:pointer;">+ Update</button>':'';
+  var encBtn=a.status==='ativa'?'<button data-acid="'+a.id+'" class="prom-enc-btn" style="font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer;">Encerrar</button>':'';
+  return '<div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;background:white;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
+    +'<div style="flex:1;">'
+    +'<div style="font-weight:700;font-size:14px;color:#111;">'+a.titulo+'</div>'
+    +'<div style="font-size:11px;color:#7c3aed;font-weight:600;margin-top:2px;">'+a.cliente_nome+'</div>'
+    +'</div>'
+    +'<span style="font-size:10px;padding:3px 8px;border-radius:10px;white-space:nowrap;'+cor+';">'+a.status.toUpperCase()+'</span>'
+    +'</div>'
+    +'<div style="font-size:11px;color:#6b7280;margin:4px 0;">'+(tipos[a.tipo]||a.tipo)+' · '+d1+' a '+d2+' · por '+a.criado_por+'</div>'
+    +(a.produto_alvo?'<div style="font-size:11px;color:#6b7280;">Produto: '+a.produto_alvo+'</div>':'')
+    +(a.premio_descricao?'<div style="font-size:11px;color:#7c3aed;margin-top:2px;">Premio: '+a.premio_descricao+'</div>':'')
+    +progH+receitaH
+    +(a.observacao_final?'<div style="font-size:11px;color:#6b7280;margin-top:6px;font-style:italic;">'+a.observacao_final+'</div>':'')
+    +'<div style="display:flex;gap:8px;margin-top:10px;">'+updBtn+encBtn+'</div>'
+    +'<div id="prom-updates-'+a.id+'" style="margin-top:6px;"></div>'
+    +'</div>';
+}
+
+// Delegação de eventos para os cards de ações da promotora
+document.addEventListener('click',function(e){
+  var cpBtn=e.target.closest('.prom-copy-link');
+  if(cpBtn){navigator.clipboard.writeText(cpBtn.getAttribute('data-link')).then(function(){mostrarToast&&mostrarToast('Link copiado!');}).catch(function(){});return;}
+  var vrBtn=e.target.closest('.prom-ver-rec');
+  if(vrBtn){promVerReceitas(vrBtn.getAttribute('data-acid'));return;}
+  var updBtn=e.target.closest('.prom-upd-btn');
+  if(updBtn){promAbrirUpdate(updBtn.getAttribute('data-acid'));return;}
+  var encBtn=e.target.closest('.prom-enc-btn');
+  if(encBtn){promAbrirEncerrar(encBtn.getAttribute('data-acid'));return;}
+});
+
+async function promVerReceitas(aId){
+  var el=document.getElementById('prom-updates-'+aId);
+  el.innerHTML='<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Carregando...</div>';
+  try{
+    var res=await sbProm('acoes_receitas?acao_id=eq.'+aId+'&order=created_at.desc');
+    if(!Array.isArray(res)||!res.length){el.innerHTML='<div style="color:#9ca3af;font-size:12px;padding:6px 0;">Nenhuma receita ainda.</div>';return;}
+    var html='<div style="margin-top:6px;"><div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:6px;">'+res.length+' receita(s)</div>';
+    res.forEach(function(r){
+      var dt=new Date(r.created_at).toLocaleDateString('pt-BR');
+      html+='<div style="background:#f9fafb;border-radius:8px;padding:8px;margin-bottom:6px;">'
+        +'<div style="font-size:12px;font-weight:700;">'+r.vet_nome+'</div>'
+        +'<div style="font-size:11px;color:#6b7280;">'+r.produto_prescrito+' · '+dt+'</div>'
+        +(r.foto_url?'<a href="'+r.foto_url+'" target="_blank"><img src="'+r.foto_url+'" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-top:4px;"></a>':'')
+        +'</div>';
+    });
+    el.innerHTML=html+'</div>';
+  }catch(e){el.innerHTML='<div style="color:#dc2626;font-size:12px;">Erro: '+e.message+'</div>';}
+}
+
+function promAbrirUpdate(aId){
+  var el=document.getElementById('prom-updates-'+aId);
+  el.innerHTML='<textarea id="prom-upd-txt-'+aId+'" placeholder="Relato de campo..." rows="3" style="width:100%;padding:8px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;margin-top:6px;"></textarea>'
+    +'<button data-acid="'+aId+'" class="prom-upd-save" style="margin-top:4px;background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">Salvar update</button>';
+  document.addEventListener('click',function handler(e){
+    var saveBtn=e.target.closest('.prom-upd-save');
+    if(!saveBtn) return;
+    document.removeEventListener('click',handler);
+    var id=saveBtn.getAttribute('data-acid');
+    var txt=(document.getElementById('prom-upd-txt-'+id).value||'').trim();
+    if(!txt){alert('Digite o texto do update.');return;}
+    saveBtn.disabled=true;saveBtn.textContent='Salvando...';
+    sbProm('acoes_updates',{method:'POST',body:JSON.stringify({acao_id:id,texto:txt,criado_por:'Nicolle'})})
+      .then(function(r){
+        if(r&&r[0]&&r[0].id) document.getElementById('prom-updates-'+id).innerHTML='<div style="font-size:11px;color:#16a34a;margin-top:4px;">Update registrado.</div>';
+        else{saveBtn.disabled=false;saveBtn.textContent='Salvar update';}
+      }).catch(function(e){saveBtn.disabled=false;saveBtn.textContent='Salvar update';});
+  },{once:false});
+}
+
+function promAbrirEncerrar(aId){
+  var el=document.getElementById('prom-updates-'+aId);
+  el.innerHTML='<div style="background:#fef2f2;border-radius:8px;padding:10px;margin-top:6px;">'
+    +'<div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:6px;">Encerrar acao</div>'
+    +'<input id="prom-enc-res-'+aId+'" type="number" placeholder="Resultado real (opcional)" style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;margin-bottom:6px;">'
+    +'<textarea id="prom-enc-obs-'+aId+'" placeholder="Observacao final..." rows="2" style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;margin-bottom:6px;"></textarea>'
+    +'<div style="display:flex;gap:6px;">'
+    +'<button data-acid="'+aId+'" class="prom-enc-confirm" style="flex:1;background:#dc2626;color:white;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;">Confirmar</button>'
+    +'<button onclick="document.getElementById('prom-updates-'+aId+'').innerHTML='';" style="background:#f3f4f6;color:#6b7280;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'</div></div>';
+  document.addEventListener('click',function handler(e){
+    var confBtn=e.target.closest('.prom-enc-confirm');
+    if(!confBtn) return;
+    document.removeEventListener('click',handler);
+    var id=confBtn.getAttribute('data-acid');
+    confBtn.disabled=true;confBtn.textContent='Salvando...';
+    var res=parseFloat(document.getElementById('prom-enc-res-'+id).value)||null;
+    var obs=(document.getElementById('prom-enc-obs-'+id).value||'').trim()||null;
+    sbProm('acoes_comerciais?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'encerrada',resultado_real:res,observacao_final:obs})})
+      .then(function(){promAcoesTab('ativas');})
+      .catch(function(e){confBtn.disabled=false;confBtn.textContent='Confirmar';});
+  },{once:false});
+}
+
+function promRenderFormNovaAcao(){
+  var el=document.getElementById('prom-acoes-content');
+  if(!el) return;
+  var html='<div style="display:flex;flex-direction:column;gap:12px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Cliente *</label>';
+  html+='<div style="position:relative;"><input id="pac-cli" type="text" placeholder="Buscar cliente..." autocomplete="off" oninput="promAcBuscarCliente(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<div id="pac-cli-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div></div>';
+  html+='<div id="pac-cli-sel" style="display:none;background:#f5f3ff;border-radius:8px;padding:8px 12px;font-size:12px;color:#7c3aed;font-weight:600;"></div>';
+  html+='<div id="pac-form-resto"></div>';
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+var _pacCod=0, _pacNome='';
+function promAcBuscarCliente(q){
+  var box=document.getElementById('pac-cli-sugs');
+  if(!box) return;
+  q=(q||'').trim().toLowerCase();
+  if(!q){box.style.display='none';return;}
+  var base=typeof BASE_CLIENTES!=='undefined'?BASE_CLIENTES:[];
+  var res=base.filter(function(c){return c.nome.toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0;}).slice(0,8);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(c){
+    return '<div data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" class="pac-cli-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:13px;">'
+      +'<div style="font-weight:600;">'+c.nome+'</div>'
+      +'<div style="font-size:11px;color:#9ca3af;">'+(c.cidade||'')+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.pac-cli-sug').forEach(function(el){
+    el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
+    el.addEventListener('mouseleave',function(){this.style.background='white';});
+    el.addEventListener('click',function(){
+      _pacCod=parseInt(this.getAttribute('data-cod'));
+      _pacNome=decodeURIComponent(this.getAttribute('data-nome'));
+      document.getElementById('pac-cli').value=_pacNome;
+      box.style.display='none';
+      var sel=document.getElementById('pac-cli-sel');
+      sel.textContent='Cliente: '+_pacNome;sel.style.display='block';
+      document.getElementById('pac-form-resto').innerHTML=_buildPromFormResto();
+    });
+  });
+  box.style.display='block';
+}
+
+function _buildPromFormResto(){
+  var h='';
+  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Titulo *</label>';
+  h+='<input id="pac-titulo" type="text" placeholder="Ex: Campanha Prescricao Jul/26" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
+  h+='<select id="pac-tipo" onchange="pacTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  h+='<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
+  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
+  h+='<div style="position:relative;"><input id="pac-produto" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="pacBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  h+='<div id="pac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:140px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,.1);"></div></div></div></div>';
+  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
+  h+='<input id="pac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta tipo *</label>';
+  h+='<select id="pac-meta-tipo" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  h+='<option value="volume_rs">Volume R$</option><option value="unidades">Unidades</option><option value="prescricoes">Prescricoes</option><option value="positivacao">Positivacao</option></select></div>';
+  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta valor *</label>';
+  h+='<input id="pac-meta-valor" type="number" placeholder="Ex: 10" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Inicio *</label>';
+  h+='<input id="pac-inicio" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  h+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Fim *</label>';
+  h+='<input id="pac-fim" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  h+='<div id="pac-link-wrap" style="display:none;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px;">';
+  h+='<div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:2px;">Link de receita sera gerado ao criar</div></div>';
+  h+='<button onclick="promSalvarNovaAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">Criar Acao</button>';
+  return h;
+}
+function pacTipoMudou(){
+  var tipo=document.getElementById('pac-tipo').value;
+  var wrap=document.getElementById('pac-link-wrap');
+  if(wrap) wrap.style.display=tipo==='premio_vet'?'block':'none';
+}
+function pacBuscarProduto(q){
+  var box=document.getElementById('pac-produto-sugs');
+  if(!box) return;
+  q=(q||'').trim().toLowerCase();
+  if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
+  var res=PRECOS_VV.filter(function(p){return p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0;}).slice(0,6);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(p){
+    return '<div data-nome="'+p.nome+'" class="pac-prod-sug" style="padding:7px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+      +'<div style="font-weight:600;">'+p.nome+'</div>'
+      +'<div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.pac-prod-sug').forEach(function(el){
+    el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
+    el.addEventListener('mouseleave',function(){this.style.background='white';});
+    el.addEventListener('click',function(){
+      document.getElementById('pac-produto').value=this.getAttribute('data-nome');
+      box.style.display='none';
+    });
+  });
+  box.style.display='block';
+}
+async function promSalvarNovaAcao(){
+  var titulo=(document.getElementById('pac-titulo').value||'').trim();
+  var tipo=document.getElementById('pac-tipo').value;
+  var inicio=document.getElementById('pac-inicio').value;
+  var fim=document.getElementById('pac-fim').value;
+  var metaTipo=document.getElementById('pac-meta-tipo').value;
+  var metaValor=parseFloat(document.getElementById('pac-meta-valor').value)||null;
+  if(!_pacCod){alert('Selecione o cliente.');return;}
+  if(!titulo||!tipo||!inicio||!fim){alert('Preencha titulo, tipo e datas.');return;}
+  if(!metaValor||metaValor<=0){alert('Informe o valor da meta.');return;}
+  var payload={
+    cliente_cod:_pacCod, cliente_nome:_pacNome,
+    titulo:titulo, tipo:tipo,
+    produto_alvo:(document.getElementById('pac-produto').value||'').trim()||null,
+    premio_descricao:(document.getElementById('pac-premio').value||'').trim()||null,
+    meta_tipo:metaTipo, meta_valor:metaValor,
+    data_inicio:inicio, data_fim:fim,
+    status:'ativa', criado_por:'Nicolle'
+  };
+  try{
+    var res=await sbProm('acoes_comerciais',{method:'POST',body:JSON.stringify(payload)});
+    if(res&&res[0]&&res[0].id){ promAcoesTab('ativas'); }
+    else { alert('Erro: '+JSON.stringify(res)); }
+  }catch(e){alert('Erro: '+e.message);}
+}
+// ═══════════ FIM AÇÕES PROMOTORA ═══════════
+
 </script>
 </body>
 </html>

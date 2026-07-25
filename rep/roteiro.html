@@ -240,7 +240,7 @@ tr:hover td{background:#f8fafc!important;}
   <button onclick="abrirMenuLateral()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">☰</button>
   <img src="logo.jpg" alt="Vet Vida" onerror="this.style.display='none'">
   <div class="hi"><h1>Vet Hub</h1><p id="sub">Carregando...</p></div>
-  <div class="hr"><span class="hrep" id="badge">...</span><button class="btn-sair" onclick="sair()">Sair</button></div>
+  <div class="hr"><span class="hrep" id="badge">...</span></div>
 </div>
 
 <!-- Menu lateral (drawer) -->
@@ -259,6 +259,8 @@ tr:hover td{background:#f8fafc!important;}
     <button onclick="fecharMenuLateral();if(typeof abrirBuscaGlobal==='function')abrirBuscaGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🔍 Buscar cliente</button>
     <div style="height:1px;background:#e5e7eb;margin:10px 0;"></div>
     <button onclick="fecharMenuLateral();window.location.href='rep.html#addcliente';" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:white;background:#CC0000;border:none;font-weight:700;font-size:14px;cursor:pointer;">+ Adicionar cliente</button>
+    <div style="height:1px;background:#e5e7eb;margin:8px 4px;"></div>
+    <button onclick="sair()" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#6b7280;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🚪 Sair</button>
   </div>
 </div>
 

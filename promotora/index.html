@@ -2,6 +2,22 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+function abrirMenuLateral(){
+  var m=document.getElementById('menu-lateral');
+  var o=document.getElementById('menu-overlay');
+  if(m){m.style.left='0';}
+  if(o){o.style.display='block';}
+  document.body.style.overflow='hidden';
+}
+function fecharMenuLateral(){
+  var m=document.getElementById('menu-lateral');
+  var o=document.getElementById('menu-overlay');
+  if(m){m.style.left='-280px';}
+  if(o){o.style.display='none';}
+  document.body.style.overflow='';
+}
+</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#CC0000">
 
@@ -65,41 +81,14 @@ body {
 /* ── APP SHELL ── */
 #app { display: none; min-height: 100vh; padding-bottom: 70px; }
 
-.app-header {
-  background: #0f1215;
-  color: white;
-  padding: 12px 16px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 100;
-  border-bottom: 1px solid rgba(204,0,0,0.25);
-  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
-}
-
-.app-header-logo { display: flex; align-items: center; gap: 10px; }
-
-.app-header-logo-icon {
-  width: 30px; height: 30px;
-  background: linear-gradient(135deg, var(--red), #ff4040);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.app-header-logo-icon svg { width: 16px; height: 16px; fill: white; }
-
-.app-header-logo span { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; color: #e8edf2; }
-.app-header-logo small { font-size: 10px; opacity: 0.45; display: block; line-height: 1; color: #e8edf2; }
-
-.header-actions { display: flex; gap: 8px; }
-
-.btn-icon {
-  background: rgba(255,255,255,0.2);
-  border: none; color: white;
-  width: 34px; height: 34px;
-  border-radius: 8px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; transition: background 0.2s;
-}
-.btn-icon:hover { background: rgba(255,255,255,0.3); }
+.hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#1c2023;border-bottom:1px solid rgba(196,64,64,0.18);box-shadow:0 2px 20px rgba(0,0,0,0.18);position:sticky;top:0;z-index:100;color:white;}
+.hdr img{height:30px;display:block;}
+.hi{flex:1;min-width:0;}
+.hi h1{font-size:15px;font-weight:700;color:#e8edf2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hi p{font-size:10px;color:rgba(232,237,242,0.5);margin-top:1px;}
+.hr{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.hrep{background:#CC0000;color:white;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;}
+.bs{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:white;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;}
 
 /* ── BOTTOM NAV ── */
 .bottom-nav {
@@ -624,6 +613,38 @@ body {
 .roteiro-dot.active { background: var(--red); }
 
 </style>
+<script>
+// Interceptor universal de clicks
+function _execOc(oc) {
+  try { Function('"use strict";' + oc)(); } catch(e) { console.error('oc err:', e, oc); }
+}
+document.addEventListener('click', function(e) {
+  var el = e.target;
+  while(el && el !== document) {
+    var oc = el.getAttribute('data-oc');
+    if(oc) {
+      e.stopPropagation();
+      var fnName = (oc.match(/^(\w+)\s*\(/) || [])[1];
+      if(fnName && typeof window[fnName] === 'function') {
+        _execOc(oc);
+      } else {
+        var _oc = oc, _fn = fnName, attempts = 0;
+        var iv = setInterval(function() {
+          if(typeof window[_fn] === 'function') {
+            clearInterval(iv);
+            _execOc(_oc);
+          } else if(++attempts > 100) {
+            clearInterval(iv);
+            console.warn('fn not found:', _fn);
+          }
+        }, 50);
+      }
+      break;
+    }
+    el = el.parentElement;
+  }
+}, true);
+</script>
 </head>
 <body>
 <script>
@@ -633,20 +654,31 @@ body {
 
 <!-- APP -->
 <div id="app">
-  <header class="app-header">
-    <div class="app-header-logo">
-      <img src="logo.jpg" alt="VetVida" style="height:28px;display:block;background:white;padding:3px 8px;border-radius:6px;">
-      <div>
-        <span>VetVida Promotora</span>
-        <small id="header-usuario"></small>
-      </div>
-    </div>
-    <div class="header-actions">
-      <button class="btn-icon" onclick="sair()" title="Sair">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </button>
-    </div>
-  </header>
+<div class="hdr">
+  <button data-oc="abrirMenuLateral()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">&#9776;</button>
+  <img src="logo.jpg" alt="VetVida" onerror="this.style.display='none'" style="height:30px;background:white;padding:3px 8px;border-radius:6px;">
+  <div class="hi"><h1>VetVida</h1><p id="header-usuario">Promotora</p></div>
+  <div class="hr"><span class="hrep">NICOLLE</span></div>
+</div>
+<div id="menu-overlay" data-oc="fecharMenuLateral()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;"></div>
+<div id="menu-lateral" style="position:fixed;top:0;left:-280px;bottom:0;width:260px;background:white;z-index:501;transition:left 0.25s;box-shadow:2px 0 20px rgba(0,0,0,0.2);overflow-y:auto;">
+  <div style="background:#CC0000;padding:18px 16px;display:flex;justify-content:space-between;align-items:center;">
+    <img src="logo.jpg" alt="VetVida" style="height:32px;background:white;padding:3px 8px;border-radius:6px;" onerror="this.style.display='none'">
+    <button data-oc="fecharMenuLateral()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">&#x2715;</button>
+  </div>
+  <div style="padding:10px;">
+    <button data-oc="fecharMenuLateral();navegarPara('dashboard');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#CC0000;background:#fdf2f2;border:none;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:4px;">&#127968; In&#237;cio</button>
+    <button data-oc="fecharMenuLateral();navegarPara('visita');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">&#128205; Nova Visita</button>
+    <button data-oc="fecharMenuLateral();navegarPara('historico');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">&#128336; Hist&#243;rico</button>
+    <button data-oc="fecharMenuLateral();navegarPara('contatos');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">&#128101; Contatos</button>
+    <button data-oc="fecharMenuLateral();navegarPara('amostras');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">&#128230; Amostras</button>
+    <button data-oc="fecharMenuLateral();navegarPara('roteiro');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">&#128343; Roteiro</button>
+    <div style="height:1px;background:#e5e7eb;margin:8px 4px;"></div>
+    <button data-oc="fecharMenuLateral();navegarPara('acoes');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#7c3aed;background:#f5f3ff;border:none;font-weight:600;font-size:14px;cursor:pointer;">&#127919; A&#231;&#245;es Comerciais</button>
+    <div style="height:1px;background:#e5e7eb;margin:8px 4px;"></div>
+    <button data-oc="sair()" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#6b7280;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">&#128682; Sair</button>
+  </div>
+</div>
 
   <!-- ── SCREEN: DASHBOARD (HOME) ── -->
   <div id="screen-dashboard" class="screen active">
@@ -656,7 +688,7 @@ body {
       <div id="dash-streak" style="display:none;margin-top:8px;background:#fff7ed;border-radius:8px;padding:8px 10px;font-size:12px;color:#c2410c;font-weight:600;">🔥 <span id="dash-streak-num">0</span> dias seguidos com visitas!</div>
     </div>
 
-    <div class="card" onclick="navegarPara('ranking'); renderRanking();" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+    <div class="card" data-oc="navegarPara('ranking'); renderRanking();" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
       <div>
         <div style="font-weight:700;font-size:14px;">🎯 Ranking de Potencial</div>
         <div style="font-size:12px;color:#6b7280;">Veja quais clientes priorizar</div>
@@ -730,7 +762,7 @@ body {
   <!-- ── SCREEN: CONTATOS (CRM) ── -->
   <div id="screen-contatos" class="screen">
     <div class="card">
-      <div class="card-title">👤 Contatos <button onclick="abrirModalContato()" style="float:right;background:#CC0000;color:white;border:none;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Novo</button></div>
+      <div class="card-title">👤 Contatos <button data-oc="abrirModalContato()" style="float:right;background:#CC0000;color:white;border:none;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Novo</button></div>
       <input type="text" class="form-input" id="busca-contato" placeholder="🔍 Buscar por nome ou estabelecimento..." oninput="filtrarContatos()" style="margin-top:8px;">
     </div>
     <div id="lista-contatos"><div class="empty-state">Carregando...</div></div>
@@ -741,10 +773,10 @@ body {
     <div class="card">
       <div class="card-title">📦 Amostras</div>
       <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;">
-        <button class="filtro-am-btn active" data-status="todos" onclick="filtrarAmostrasStatus('todos',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:#CC0000;color:white;font-size:12px;font-weight:600;cursor:pointer;">Todas</button>
-        <button class="filtro-am-btn" data-status="pendente" onclick="filtrarAmostrasStatus('pendente',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Sem feedback</button>
-        <button class="filtro-am-btn" data-status="aprovado" onclick="filtrarAmostrasStatus('aprovado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Aprovadas</button>
-        <button class="filtro-am-btn" data-status="recusado" onclick="filtrarAmostrasStatus('recusado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Recusadas</button>
+        <button class="filtro-am-btn active" data-status="todos" data-oc="filtrarAmostrasStatus('todos',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:#CC0000;color:white;font-size:12px;font-weight:600;cursor:pointer;">Todas</button>
+        <button class="filtro-am-btn" data-status="pendente" data-oc="filtrarAmostrasStatus('pendente',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Sem feedback</button>
+        <button class="filtro-am-btn" data-status="aprovado" data-oc="filtrarAmostrasStatus('aprovado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Aprovadas</button>
+        <button class="filtro-am-btn" data-status="recusado" data-oc="filtrarAmostrasStatus('recusado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Recusadas</button>
       </div>
     </div>
     <div id="lista-amostras"><div class="empty-state">Carregando...</div></div>
@@ -753,7 +785,7 @@ body {
   <!-- ── SCREEN: RANKING DE POTENCIAL ── -->
   <div id="screen-ranking" class="screen">
     <div class="card">
-      <div class="card-title">🎯 Ranking de Potencial <button onclick="navegarPara('dashboard')" style="float:right;background:none;border:none;color:#CC0000;font-size:12px;font-weight:600;cursor:pointer;">← Voltar</button></div>
+      <div class="card-title">🎯 Ranking de Potencial <button data-oc="navegarPara('dashboard')" style="float:right;background:none;border:none;color:#CC0000;font-size:12px;font-weight:600;cursor:pointer;">← Voltar</button></div>
       <p style="font-size:12px;color:#6b7280;margin-top:4px;">Combina faturamento histórico com sinais de potencial ainda não explorado.</p>
       <input type="text" class="form-input" id="busca-ranking" placeholder="🔍 Buscar cliente..." oninput="filtrarRanking()" style="margin-top:10px;">
     </div>
@@ -814,7 +846,7 @@ body {
         <label class="form-label">Pessoas atendidas nesta visita</label>
         <input type="hidden" id="visita-contato">
         <div id="lista-contatos-visita" style="margin-bottom:8px;"></div>
-        <button type="button" onclick="abrirSeletorContatoVisita()" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">+ Adicionar contato</button>
+        <button type="button" data-oc="abrirSeletorContatoVisita()" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">+ Adicionar contato</button>
       </div>
 
       <!-- Objetivo -->
@@ -846,7 +878,7 @@ body {
       <div class="form-group">
         <label class="form-label">Amostras deixadas</label>
         <div id="lista-amostras-visita" style="margin-bottom:8px;"></div>
-        <button type="button" onclick="abrirModalAmostraVisita()" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">+ Registrar amostra</button>
+        <button type="button" data-oc="abrirModalAmostraVisita()" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">+ Registrar amostra</button>
       </div>
 
       <!-- Observações -->
@@ -861,7 +893,7 @@ body {
         <input type="date" class="form-input" id="visita-retorno">
       </div>
 
-      <button class="btn btn-primary" onclick="salvarVisita()" id="btn-salvar">
+      <button class="btn btn-primary" data-oc="salvarVisita()" id="btn-salvar">
         ✓ Registrar visita
       </button>
     </div>
@@ -903,19 +935,32 @@ body {
       <div id="roteiro-acoes" style="margin-top:12px;"></div>
     </div>
 
-    <button class="btn btn-secondary" style="margin-top:4px;" onclick="abrirModalMontarRoteiro()">
+    <button class="btn btn-secondary" style="margin-top:4px;" data-oc="abrirModalMontarRoteiro()">
       ✏️ Montar / Editar Roteiro
     </button>
     <div id="roteiro-form-semanas" style="display:none;"></div>
   </div>
 
+  <!-- ── SCREEN: AÇÕES COMERCIAIS ── -->
+  <div id="screen-acoes" class="screen">
+    <div class="card" style="padding-top:12px;">
+      <div class="card-title" style="margin-bottom:12px;">🎯 Ações Comerciais</div>
+      <div style="display:flex;border-bottom:1px solid #e5e7eb;margin:0 -16px 16px;flex-shrink:0;">
+        <button id="prom-tab-ativas" data-oc="promAcoesTab('ativas')" style="flex:1;padding:10px;font-size:12px;font-weight:700;color:#7c3aed;border:none;border-bottom:2px solid #7c3aed;background:white;cursor:pointer;">Ativas</button>
+        <button id="prom-tab-hist" data-oc="promAcoesTab('hist')" style="flex:1;padding:10px;font-size:12px;font-weight:600;color:#6b7280;border:none;border-bottom:2px solid transparent;background:white;cursor:pointer;">Histórico</button>
+        <button id="prom-tab-nova" data-oc="promAcoesTab('nova')" style="flex:1;padding:10px;font-size:12px;font-weight:600;color:#6b7280;border:none;border-bottom:2px solid transparent;background:white;cursor:pointer;">+ Nova</button>
+      </div>
+      <div id="prom-acoes-content"></div>
+    </div>
+  </div>
+
   <!-- ── SCREEN: GESTOR DASHBOARD ── -->
   <div id="screen-gestor" class="screen">
     <div class="gestor-tabs">
-      <button class="gestor-tab active" onclick="switchGestorTab('visao-geral', this)">Visão Geral</button>
-      <button class="gestor-tab" onclick="switchGestorTab('visitas', this)">Visitas</button>
-      <button class="gestor-tab" onclick="switchGestorTab('regioes', this)">Regiões</button>
-      <button class="gestor-tab" onclick="switchGestorTab('roteiro-gestor', this)">Roteiro</button>
+      <button class="gestor-tab active" data-oc="switchGestorTab('visao-geral', this)">Visão Geral</button>
+      <button class="gestor-tab" data-oc="switchGestorTab('visitas', this)">Visitas</button>
+      <button class="gestor-tab" data-oc="switchGestorTab('regioes', this)">Regiões</button>
+      <button class="gestor-tab" data-oc="switchGestorTab('roteiro-gestor', this)">Roteiro</button>
     </div>
 
     <!-- Visão Geral -->
@@ -967,7 +1012,7 @@ body {
           <option>Visita realizada – sem interesse</option>
         </select>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="exportarExcel()" style="margin-bottom:12px;">📥 Exportar Excel</button>
+      <button class="btn btn-secondary btn-sm" data-oc="exportarExcel()" style="margin-bottom:12px;">📥 Exportar Excel</button>
       <div id="gestor-lista-visitas"></div>
     </div>
 
@@ -992,8 +1037,8 @@ body {
     <div class="modal-title">👤 Adicionar contato à visita</div>
     <input type="text" class="form-input" id="sc-busca" placeholder="🔍 Buscar contato existente..." oninput="filtrarSeletorContato()" style="margin-bottom:10px;">
     <div id="sc-lista" style="max-height:40vh;overflow-y:auto;margin-bottom:10px;"></div>
-    <button onclick="abrirModalContatoDaVisita()" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;margin-bottom:8px;">+ Cadastrar novo contato</button>
-    <button onclick="fecharSeletorContato()" style="width:100%;background:white;border:1px solid #e5e7eb;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Fechar</button>
+    <button data-oc="abrirModalContatoDaVisita()" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;margin-bottom:8px;">+ Cadastrar novo contato</button>
+    <button data-oc="fecharSeletorContato()" style="width:100%;background:white;border:1px solid #e5e7eb;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Fechar</button>
   </div>
 </div>
 
@@ -1070,8 +1115,8 @@ body {
     </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="btn-secondary" onclick="fecharModalContato()" style="flex:1;">Cancelar</button>
-      <button class="btn-primary" onclick="salvarContato()" style="flex:1;">Salvar</button>
+      <button class="btn-secondary" data-oc="fecharModalContato()" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" data-oc="salvarContato()" style="flex:1;">Salvar</button>
     </div>
   </div>
 </div>
@@ -1103,14 +1148,14 @@ body {
       <input type="file" accept="image/*" id="amv-foto" onchange="previewFotoAmostra()" style="display:none;">
       <div id="amv-foto-preview-wrap" style="display:none;position:relative;margin-bottom:8px;">
         <img id="amv-foto-preview" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;">
-        <button type="button" onclick="removerFotoAmostra()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;">✕</button>
+        <button type="button" data-oc="removerFotoAmostra()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;">✕</button>
       </div>
-      <button type="button" onclick="document.getElementById('amv-foto').click()" id="amv-foto-btn" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">📷 Tirar/anexar foto</button>
+      <button type="button" data-oc="document.getElementById('amv-foto').click()" id="amv-foto-btn" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">📷 Tirar/anexar foto</button>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="btn-secondary" onclick="fecharModalAmostraVisita()" style="flex:1;">Cancelar</button>
-      <button class="btn-primary" onclick="confirmarAmostraVisita()" style="flex:1;">Adicionar</button>
+      <button class="btn-secondary" data-oc="fecharModalAmostraVisita()" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" data-oc="confirmarAmostraVisita()" style="flex:1;">Adicionar</button>
     </div>
   </div>
 </div>
@@ -1134,8 +1179,8 @@ body {
       <textarea class="form-input" id="fb-obs" rows="3" placeholder="Detalhes do feedback..."></textarea>
     </div>
     <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="btn-secondary" onclick="fecharModalFeedback()" style="flex:1;">Cancelar</button>
-      <button class="btn-primary" onclick="salvarFeedbackAmostra()" style="flex:1;">Salvar feedback</button>
+      <button class="btn-secondary" data-oc="fecharModalFeedback()" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" data-oc="salvarFeedbackAmostra()" style="flex:1;">Salvar feedback</button>
     </div>
   </div>
 </div>
@@ -1200,10 +1245,10 @@ body {
       <input type="text" class="form-input" id="new-endereco" placeholder="Rua, número, bairro">
     </div>
 
-    <button class="btn btn-primary" onclick="salvarNovoEstab()" id="btn-salvar-estab">
+    <button class="btn btn-primary" data-oc="salvarNovoEstab()" id="btn-salvar-estab">
       ✓ Salvar e continuar visita
     </button>
-    <button class="btn btn-secondary" style="margin-top:8px;" onclick="fecharModal('modal-novo-estab')">
+    <button class="btn btn-secondary" style="margin-top:8px;" data-oc="fecharModal('modal-novo-estab')">
       Cancelar
     </button>
   </div>
@@ -1222,7 +1267,7 @@ body {
       </div>
     </div>
     <div id="modal-cli-body" style="display:flex;flex-direction:column;gap:10px;font-size:13px;"></div>
-    <button class="btn btn-secondary" style="margin-top:16px;" onclick="fecharModal('modal-cliente-roteiro')">Fechar</button>
+    <button class="btn btn-secondary" style="margin-top:16px;" data-oc="fecharModal('modal-cliente-roteiro')">Fechar</button>
   </div>
 </div>
 
@@ -1237,10 +1282,10 @@ body {
     <div class="form-group">
       <label class="form-label">Semana</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="semana-pills">
-        <button class="btn btn-secondary" onclick="selecionarSemana(1,this)">Semana 1</button>
-        <button class="btn btn-secondary" onclick="selecionarSemana(2,this)">Semana 2</button>
-        <button class="btn btn-secondary" onclick="selecionarSemana(3,this)">Semana 3</button>
-        <button class="btn btn-secondary" onclick="selecionarSemana(4,this)">Semana 4</button>
+        <button class="btn btn-secondary" data-oc="selecionarSemana(1,this)">Semana 1</button>
+        <button class="btn btn-secondary" data-oc="selecionarSemana(2,this)">Semana 2</button>
+        <button class="btn btn-secondary" data-oc="selecionarSemana(3,this)">Semana 3</button>
+        <button class="btn btn-secondary" data-oc="selecionarSemana(4,this)">Semana 4</button>
       </div>
     </div>
 
@@ -1249,7 +1294,7 @@ body {
       <div style="display:flex;flex-direction:column;gap:6px;" id="dia-pills"></div>
     </div>
 
-    <button class="btn btn-secondary" style="margin-top:8px;" onclick="fecharModal('modal-selecionar-dia')">Cancelar</button>
+    <button class="btn btn-secondary" style="margin-top:8px;" data-oc="fecharModal('modal-selecionar-dia')">Cancelar</button>
   </div>
 </div>
 
@@ -1276,8 +1321,8 @@ body {
     <div id="modal-lista-clientes" style="margin-bottom:12px;max-height:280px;overflow-y:auto;"></div>
 
     <div style="display:flex;gap:8px;">
-      <button class="btn btn-primary" style="flex:1;" onclick="salvarDiaRoteiro()">💾 Salvar dia</button>
-      <button class="btn btn-secondary" onclick="fecharModal('modal-editar-dia')">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1;" data-oc="salvarDiaRoteiro()">💾 Salvar dia</button>
+      <button class="btn btn-secondary" data-oc="fecharModal('modal-editar-dia')">Cancelar</button>
     </div>
   </div>
 </div>
@@ -1290,7 +1335,7 @@ body {
     <div class="modal-handle"></div>
     <div class="modal-title" id="modal-visita-title"></div>
     <div id="modal-visita-body"></div>
-    <button class="btn btn-secondary" style="margin-top:16px;" onclick="fecharModal('modal-visita')">Fechar</button>
+    <button class="btn btn-secondary" style="margin-top:16px;" data-oc="fecharModal('modal-visita')">Fechar</button>
   </div>
 </div>
 
@@ -1451,9 +1496,6 @@ const NAV_NICOLLE = [
   { id:'dashboard', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>', label:'Início' },
   { id:'visita',    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>', label:'Visita' },
   { id:'historico', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>', label:'Histórico' },
-  { id:'contatos',  icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', label:'Contatos' },
-  { id:'amostras',  icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3z"/><path d="M5 7v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7"/><line x1="10" y1="12" x2="14" y2="12"/></svg>', label:'Amostras' },
-  { id:'roteiro',   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', label:'Roteiro' },
 ];
 
 const NAV_GESTOR = [
@@ -1489,6 +1531,7 @@ function navegarPara(screen) {
   if(screen === 'roteiro') renderRoteiro();
   if(screen === 'gestor') renderGestor();
   if(screen === 'dashboard') renderDashboard();
+  if(screen === 'acoes') { var _t=function(){if(typeof promAcoesTab==='function'){promAcoesTab('ativas');}else{setTimeout(_t,100);}};_t(); }
   if(screen === 'contatos') renderContatos();
   if(screen === 'amostras') renderAmostras();
 }
@@ -2967,9 +3010,10 @@ async function renderDashboard() {
     const estabsUnicosMes = new Set(vMes.map(v => (v.estabelecimento||'').trim().toLowerCase()).filter(Boolean));
     const vetsUnicosMes = new Set(
       vMes.flatMap(v => {
-        // contato é string com nomes separados por vírgula: "DR. X, DRA. Y, ..."
-        const str = v.contato || '';
-        return str.split(',').map(n => n.trim().toLowerCase()).filter(Boolean);
+        // contatos pode ser array ou string
+        if(Array.isArray(v.contatos)) return v.contatos.map(c => (c.nome||c||'').trim().toLowerCase()).filter(Boolean);
+        if(v.contato) return [(v.contato||'').trim().toLowerCase()].filter(Boolean);
+        return [];
       })
     );
     document.getElementById('dash-estabs-mes').textContent = estabsUnicosMes.size;
@@ -3668,20 +3712,314 @@ var PRODUTOS_VV = [{"cod": 1111, "nome": "ASTOR BANHO EM CASA CONDICIONADOR 300 
 
 </script>
 <!-- Modal foto expandida -->
-<div class="modal-overlay" id="modal-foto-amostra" style="align-items:center;background:rgba(0,0,0,0.9);z-index:400;" onclick="if(event.target===this) fecharFotoAmostra()">
+<div class="modal-overlay" id="modal-foto-amostra" style="align-items:center;background:rgba(0,0,0,0.9);z-index:400;" data-oc="if(event.target===this) fecharFotoAmostra()">
   <div style="max-width:100%;max-height:90vh;position:relative;padding:0;">
-    <button onclick="fecharFotoAmostra()" style="position:absolute;top:-40px;right:0;background:rgba(255,255,255,0.15);color:white;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;">✕</button>
+    <button data-oc="fecharFotoAmostra()" style="position:absolute;top:-40px;right:0;background:rgba(255,255,255,0.15);color:white;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;">✕</button>
     <img id="foto-amostra-expandida" style="max-width:100%;max-height:90vh;border-radius:12px;display:block;">
     <div id="foto-amostra-legenda" style="color:white;text-align:center;margin-top:12px;font-size:13px;"></div>
   </div>
 </div>
 <script src="faturamento_resumo.js" defer></script>
 <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW falhou:', e); });
-  });
+
+// ======= AÇÕES COMERCIAIS PROMOTORA =======
+var SB_PROM_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_PROM_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+
+function sbProm(path,opts){
+  return fetch(SB_PROM_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':SB_PROM_KEY,'Authorization':'Bearer '+SB_PROM_KEY,'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
 }
+
+function promAcoesTab(tab){
+  ['ativas','hist','nova'].forEach(function(t){
+    var btn=document.getElementById('prom-tab-'+t);
+    if(!btn) return;
+    if(t===tab){btn.style.color='#7c3aed';btn.style.borderBottomColor='#7c3aed';btn.style.fontWeight='700';}
+    else{btn.style.color='#6b7280';btn.style.borderBottomColor='transparent';btn.style.fontWeight='600';}
+  });
+  if(tab==='nova') promRenderFormNovaAcao();
+  else promCarregarAcoes(tab==='ativas');
+}
+
+async function promCarregarAcoes(apenasAtivas){
+  var el=document.getElementById('prom-acoes-content');
+  if(!el) return;
+  el.innerHTML='<div style="text-align:center;padding:32px;color:#9ca3af;">Carregando...</div>';
+  try{
+    var filtro=apenasAtivas?'&status=eq.ativa':'&status=neq.ativa';
+    var acoes=await sbProm('acoes_comerciais?select=*'+filtro+'&order=created_at.desc');
+    if(!Array.isArray(acoes)||!acoes.length){
+      el.innerHTML='<div style="text-align:center;padding:32px;color:#9ca3af;">'+(apenasAtivas?'Nenhuma acao ativa.':'Nenhum historico.')+'</div>';
+      return;
+    }
+    el.innerHTML=acoes.map(function(a){return promRenderCardAcao(a);}).join('');
+  }catch(e){
+    el.innerHTML='<div style="color:#dc2626;padding:12px;">Erro ao carregar: '+e.message+'</div>';
+  }
+}
+
+function promRenderCardAcao(a){
+  var tipos={'premio_vet':'Premio Vet','premio_balconista':'Premio Balconista','relacionamento':'Relacionamento','outro':'Outro'};
+  var metas={'volume_rs':'Volume R$','unidades':'Unidades','prescricoes':'Prescricoes','positivacao':'Positivacao'};
+  var corMap={'ativa':'background:#dcfce7;color:#16a34a','encerrada':'background:#f3f4f6;color:#6b7280','cancelada':'background:#fef2f2;color:#dc2626'};
+  var cor=corMap[a.status]||'background:#f3f4f6;color:#6b7280';
+  var d1=a.data_inicio?a.data_inicio.split('-').reverse().join('/'):'';
+  var d2=a.data_fim?a.data_fim.split('-').reverse().join('/'):'';
+  var progH='';
+  if(a.meta_valor){
+    if(a.resultado_real!=null){
+      var pct=Math.min(100,Math.round(a.resultado_real/a.meta_valor*100));
+      progH='<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:3px"><span>'+(metas[a.meta_tipo]||'')+': '+a.resultado_real+'/'+a.meta_valor+'</span><span>'+pct+'%</span></div>'
+        +'<div style="background:#e5e7eb;border-radius:4px;height:5px"><div style="background:#7c3aed;width:'+pct+'%;height:5px;border-radius:4px"></div></div></div>';
+    }else{
+      progH='<div style="font-size:11px;color:#6b7280;margin:4px 0">Meta: '+a.meta_valor+' '+(metas[a.meta_tipo]||'')+'</div>';
+    }
+  }
+  var recH='';
+  if(a.tipo==='premio_vet'&&a.status==='ativa'){
+    var lk=window.location.origin+'/receita.html?acao='+a.id;
+    recH='<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:8px;margin-top:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+      +'<span style="font-size:11px;font-weight:700;color:#7c3aed">Link de receita</span>'
+      +'<span id="prom-rec-'+a.id+'" style="background:#7c3aed;color:white;border-radius:10px;padding:1px 6px;font-size:10px">...</span></div>'
+      +'<div style="display:flex;gap:6px">'
+      +'<input value="'+lk+'" readonly style="flex:1;font-size:10px;padding:5px 8px;border:1px solid #ddd6fe;border-radius:6px;background:white;color:#6b7280">'
+      +'<button data-link="'+lk+'" class="prom-copy-link" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer">Copiar</button></div>'
+      +'<button data-acid="'+a.id+'" class="prom-ver-rec" style="margin-top:4px;font-size:11px;color:#7c3aed;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0">Ver receitas</button></div>';
+    setTimeout(function(id){
+      sbProm('acoes_receitas?select=id&acao_id=eq.'+id).then(function(r){
+        var el2=document.getElementById('prom-rec-'+id);
+        if(el2) el2.textContent=Array.isArray(r)?r.length:0;
+      }).catch(function(){});
+    }.bind(null,a.id),0);
+  }
+  var updBtn=a.status==='ativa'
+    ?'<button data-acid="'+a.id+'" class="prom-upd-btn" style="font-size:11px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:6px;padding:4px 10px;cursor:pointer">+ Update</button>':'';
+  var encBtn=a.status==='ativa'
+    ?'<button data-acid="'+a.id+'" class="prom-enc-btn" style="font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer">Encerrar</button>':'';
+  return '<div style="border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;background:white">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+    +'<div style="flex:1"><div style="font-weight:700;font-size:14px;color:#111">'+a.titulo+'</div>'
+    +'<div style="font-size:11px;color:#7c3aed;font-weight:600;margin-top:2px">'+a.cliente_nome+'</div></div>'
+    +'<span style="font-size:10px;padding:3px 8px;border-radius:10px;white-space:nowrap;'+cor+'">'+a.status.toUpperCase()+'</span></div>'
+    +'<div style="font-size:11px;color:#6b7280;margin:4px 0">'+(tipos[a.tipo]||a.tipo)+' · '+d1+' a '+d2+' · por '+a.criado_por+'</div>'
+    +(a.produto_alvo?'<div style="font-size:11px;color:#6b7280">Produto: '+a.produto_alvo+'</div>':'')
+    +(a.premio_descricao?'<div style="font-size:11px;color:#7c3aed;margin-top:2px">Premio: '+a.premio_descricao+'</div>':'')
+    +progH+recH
+    +(a.observacao_final?'<div style="font-size:11px;color:#6b7280;margin-top:6px;font-style:italic">'+a.observacao_final+'</div>':'')
+    +'<div style="display:flex;gap:8px;margin-top:10px">'+updBtn+encBtn+'</div>'
+    +'<div id="prom-updates-'+a.id+'" style="margin-top:6px"></div></div>';
+}
+
+document.addEventListener('click',function(e){
+  var cp=e.target.closest('.prom-copy-link');
+  if(cp){try{navigator.clipboard.writeText(cp.getAttribute('data-link'));}catch(ex){}return;}
+  var vr=e.target.closest('.prom-ver-rec');
+  if(vr){promVerReceitas(vr.getAttribute('data-acid'));return;}
+  var upd=e.target.closest('.prom-upd-btn');
+  if(upd){promAbrirUpdate(upd.getAttribute('data-acid'));return;}
+  var enc=e.target.closest('.prom-enc-btn');
+  if(enc){promAbrirEncerrar(enc.getAttribute('data-acid'));return;}
+  var save=e.target.closest('.prom-upd-save');
+  if(save){
+    var id=save.getAttribute('data-acid');
+    var txt=(document.getElementById('prom-upd-txt-'+id)||{}).value||'';
+    txt=txt.trim();
+    if(!txt) return;
+    save.disabled=true; save.textContent='Salvando...';
+    sbProm('acoes_updates',{method:'POST',body:JSON.stringify({acao_id:id,texto:txt,criado_por:'Nicolle'})})
+      .then(function(r){
+        var upEl=document.getElementById('prom-updates-'+id);
+        if(upEl) upEl.innerHTML='<div style="font-size:11px;color:#16a34a;margin-top:4px">Registrado.</div>';
+      }).catch(function(){save.disabled=false;save.textContent='Salvar';});
+    return;
+  }
+  var conf=e.target.closest('.prom-enc-confirm');
+  if(conf){
+    var id=conf.getAttribute('data-acid');
+    conf.disabled=true; conf.textContent='Salvando...';
+    var resEl=document.getElementById('prom-enc-res-'+id);
+    var obsEl=document.getElementById('prom-enc-obs-'+id);
+    var resVal=resEl?parseFloat(resEl.value)||null:null;
+    var obsVal=obsEl?(obsEl.value||'').trim()||null:null;
+    sbProm('acoes_comerciais?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'encerrada',resultado_real:resVal,observacao_final:obsVal})})
+      .then(function(){promAcoesTab('ativas');})
+      .catch(function(){conf.disabled=false;conf.textContent='Confirmar';});
+  }
+});
+
+async function promVerReceitas(aId){
+  var el=document.getElementById('prom-updates-'+aId);
+  if(!el) return;
+  el.innerHTML='<div style="color:#9ca3af;font-size:12px">Carregando...</div>';
+  try{
+    var res=await sbProm('acoes_receitas?acao_id=eq.'+aId+'&order=created_at.desc');
+    if(!Array.isArray(res)||!res.length){el.innerHTML='<div style="color:#9ca3af;font-size:12px">Nenhuma receita ainda.</div>';return;}
+    var html='<div style="margin-top:6px"><div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:6px">'+res.length+' receita(s)</div>';
+    res.forEach(function(r){
+      var dt=new Date(r.created_at).toLocaleDateString('pt-BR');
+      html+='<div style="background:#f9fafb;border-radius:8px;padding:8px;margin-bottom:6px">'
+        +'<div style="font-size:12px;font-weight:700">'+r.vet_nome+'</div>'
+        +'<div style="font-size:11px;color:#6b7280">'+r.produto_prescrito+' · '+dt+'</div>'
+        +(r.foto_url?'<a href="'+r.foto_url+'" target="_blank"><img src="'+r.foto_url+'" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-top:4px"></a>':'')
+        +'</div>';
+    });
+    el.innerHTML=html+'</div>';
+  }catch(e){el.innerHTML='<div style="color:#dc2626;font-size:12px">Erro: '+e.message+'</div>';}
+}
+
+function promAbrirUpdate(aId){
+  var el=document.getElementById('prom-updates-'+aId);
+  if(!el) return;
+  el.innerHTML='<textarea id="prom-upd-txt-'+aId+'" placeholder="Relato de campo..." rows="3"'
+    +' style="width:100%;padding:8px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;margin-top:6px"></textarea>'
+    +'<button data-acid="'+aId+'" class="prom-upd-save"'
+    +' style="margin-top:4px;background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer">Salvar</button>';
+}
+
+function promAbrirEncerrar(aId){
+  var el=document.getElementById('prom-updates-'+aId);
+  if(!el) return;
+  el.innerHTML='<div style="background:#fef2f2;border-radius:8px;padding:10px;margin-top:6px">'
+    +'<div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:6px">Encerrar acao</div>'
+    +'<input id="prom-enc-res-'+aId+'" type="number" placeholder="Resultado real"'
+    +' style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;margin-bottom:6px">'
+    +'<textarea id="prom-enc-obs-'+aId+'" placeholder="Observacao final..." rows="2"'
+    +' style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;margin-bottom:6px"></textarea>'
+    +'<div style="display:flex;gap:6px">'
+    +'<button data-acid="'+aId+'" class="prom-enc-confirm"'
+    +' style="flex:1;background:#dc2626;color:white;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer">Confirmar</button>'
+    +'<button data-acid="'+aId+'" class="prom-enc-cancel"'
+    +' style="background:#f3f4f6;color:#6b7280;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer">Cancelar</button>'
+    +'</div></div>';
+}
+
+var _pacCod2=0,_pacNome2='';
+function promRenderFormNovaAcao(){
+  var el=document.getElementById('prom-acoes-content');
+  if(!el) return;
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:12px">'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Cliente *</label>'
+    +'<div style="position:relative">'
+    +'<input id="pac-cli2" type="text" placeholder="Buscar cliente..." autocomplete="off"'
+    +' oninput="promBuscarCliente(this.value)"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box">'
+    +'<div id="pac-cli-sugs2" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>'
+    +'</div></div>'
+    +'<div id="pac-cli-sel2" style="display:none;background:#f5f3ff;border-radius:8px;padding:8px 12px;font-size:12px;color:#7c3aed;font-weight:600"></div>'
+    +'<div id="pac-form-resto2"></div>'
+    +'</div>';
+}
+
+function promBuscarCliente(q){
+  var box=document.getElementById('pac-cli-sugs2');
+  if(!box) return;
+  q=(q||'').trim().toLowerCase();
+  if(!q){box.style.display='none';return;}
+  var base=typeof BASE_CLIENTES!=='undefined'?BASE_CLIENTES:[];
+  var res=base.filter(function(c){
+    return c.nome.toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0;
+  }).slice(0,8);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(c){
+    return '<div data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" class="pac-cli-sug2"'
+      +' style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:13px">'
+      +'<div style="font-weight:600">'+c.nome+'</div>'
+      +'<div style="font-size:11px;color:#9ca3af">'+(c.cidade||c.municipio||'')+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.pac-cli-sug2').forEach(function(el){
+    el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
+    el.addEventListener('mouseleave',function(){this.style.background='white';});
+    el.addEventListener('click',function(){
+      _pacCod2=parseInt(this.getAttribute('data-cod'));
+      _pacNome2=decodeURIComponent(this.getAttribute('data-nome'));
+      document.getElementById('pac-cli2').value=_pacNome2;
+      box.style.display='none';
+      var sel=document.getElementById('pac-cli-sel2');
+      if(sel){sel.textContent='Cliente: '+_pacNome2;sel.style.display='block';}
+      var resto=document.getElementById('pac-form-resto2');
+      if(resto) resto.innerHTML=promBuildFormResto();
+    });
+  });
+  box.style.display='block';
+}
+
+// Cancelar encerramento via delegação
+document.addEventListener('click',function(e){
+  var cancel=e.target.closest('.prom-enc-cancel');
+  if(cancel){
+    var id=cancel.getAttribute('data-acid');
+    var el=document.getElementById('prom-updates-'+id);
+    if(el) el.innerHTML='';
+  }
+});
+
+function promBuildFormResto(){
+  return '<div style="height:1px;background:#e5e7eb;margin:4px 0"></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Titulo *</label>'
+    +'<input id="pac-titulo2" type="text" placeholder="Ex: Campanha Prescricao Jul/26"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Tipo *</label>'
+    +'<select id="pac-tipo2" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box">'
+    +'<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option>'
+    +'<option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Produto</label>'
+    +'<input id="pac-prod2" type="text" placeholder="Opcional"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Premio / Incentivo</label>'
+    +'<input id="pac-premio2" type="text" placeholder="Ex: Fone JBL"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Meta tipo *</label>'
+    +'<select id="pac-meta-tipo2" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box">'
+    +'<option value="volume_rs">Volume R$</option><option value="unidades">Unidades</option>'
+    +'<option value="prescricoes">Prescricoes</option><option value="positivacao">Positivacao</option></select></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Meta valor *</label>'
+    +'<input id="pac-meta-val2" type="number" placeholder="Ex: 10"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Inicio *</label>'
+    +'<input id="pac-inicio2" type="date"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px">Fim *</label>'
+    +'<input id="pac-fim2" type="date"'
+    +' style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box"></div></div>'
+    +'<button data-oc="promSalvarAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%">Criar Acao</button>';
+}
+
+async function promSalvarAcao(){
+  if(!_pacCod2){alert('Selecione o cliente.');return;}
+  var tEl=document.getElementById('pac-titulo2');
+  var titulo=tEl?(tEl.value||'').trim():'';
+  var tipo=(document.getElementById('pac-tipo2')||{}).value||'premio_vet';
+  var inicio=(document.getElementById('pac-inicio2')||{}).value||'';
+  var fim=(document.getElementById('pac-fim2')||{}).value||'';
+  var metaTipo=(document.getElementById('pac-meta-tipo2')||{}).value||'volume_rs';
+  var metaValEl=document.getElementById('pac-meta-val2');
+  var metaVal=metaValEl?parseFloat(metaValEl.value)||null:null;
+  if(!titulo||!inicio||!fim){alert('Preencha titulo e datas.');return;}
+  if(!metaVal||metaVal<=0){alert('Informe o valor da meta.');return;}
+  var prodEl=document.getElementById('pac-prod2');
+  var premioEl=document.getElementById('pac-premio2');
+  var payload={
+    cliente_cod:_pacCod2,cliente_nome:_pacNome2,titulo:titulo,tipo:tipo,
+    produto_alvo:prodEl?(prodEl.value||'').trim()||null:null,
+    premio_descricao:premioEl?(premioEl.value||'').trim()||null:null,
+    meta_tipo:metaTipo,meta_valor:metaVal,
+    data_inicio:inicio,data_fim:fim,
+    status:'ativa',criado_por:'Nicolle'
+  };
+  try{
+    var res=await sbProm('acoes_comerciais',{method:'POST',body:JSON.stringify(payload)});
+    if(res&&res[0]&&res[0].id) promAcoesTab('ativas');
+    else alert('Erro: '+JSON.stringify(res));
+  }catch(e){alert('Erro: '+e.message);}
+}
+// ======= FIM ACOES PROMOTORA =======
+
 </script>
 </body>
 </html>

@@ -2,6 +2,22 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+function abrirMenuLateral(){
+  var m=document.getElementById('menu-lateral');
+  var o=document.getElementById('menu-overlay');
+  if(m){m.style.left='0';}
+  if(o){o.style.display='block';}
+  document.body.style.overflow='hidden';
+}
+function fecharMenuLateral(){
+  var m=document.getElementById('menu-lateral');
+  var o=document.getElementById('menu-overlay');
+  if(m){m.style.left='-280px';}
+  if(o){o.style.display='none';}
+  document.body.style.overflow='';
+}
+</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#CC0000">
 

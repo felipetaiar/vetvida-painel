@@ -720,7 +720,7 @@ function rnd(){
     h+='<div class="mb"><div class="ml">Mensagem sugerida</div><div class="mt" id="m-'+c.cod+'">'+c.msg+'</div>';
     h+='<div class="acs"><button class="btn bc" onclick="cop('+c.cod+')">Copiar</button>'+bw;
     h+='<button class="btn bco" id="b-'+c.cod+'" style="'+btnStyle+'" onclick="abrirStatus('+c.cod+',\''+encodeURIComponent(c.nome)+'\')">'+btnLabel+'</button>';
-    h+=    h+='</div></div>';
+    h+='</div></div>';
     h+='<div style="text-align:right;margin-top:8px;display:flex;gap:6px;justify-content:flex-end">';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" data-mun="'+encodeURIComponent(c.municipio)+'" onclick="var el=this;irEstoque(parseInt(el.dataset.cod),el.dataset.nome,el.dataset.mun);" style="background:#375623;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer">📦 Contar estoque</button>';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirHist(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer">Ver historico completo</button>';

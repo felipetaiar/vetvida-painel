@@ -2904,9 +2904,15 @@ function calcularScoreRanking(c) {
 }
 
 function renderRanking() {
-  var base = typeof FATURAMENTO_RESUMO !== 'undefined' ? FATURAMENTO_RESUMO : [];
+  if (typeof FATURAMENTO_RESUMO === 'undefined') {
+    var el = document.getElementById('lista-ranking');
+    if (el) el.innerHTML = '<div class="empty-state">Carregando dados...</div>';
+    setTimeout(renderRanking, 200);
+    return;
+  }
+  var base = FATURAMENTO_RESUMO;
   if (!base.length) {
-    document.getElementById('lista-ranking').innerHTML = '<div class="empty-state">Dados de ranking ainda não disponíveis. Rode o gerar_painel.py mais recente.</div>';
+    document.getElementById('lista-ranking').innerHTML = '<div class="empty-state">Nenhum dado de ranking disponível.</div>';
     return;
   }
   RANKING_CACHE = base.map(function(c) {
@@ -3718,7 +3724,7 @@ var PRODUTOS_VV = [{"cod": 1111, "nome": "ASTOR BANHO EM CASA CONDICIONADOR 300 
     <div id="foto-amostra-legenda" style="color:white;text-align:center;margin-top:12px;font-size:13px;"></div>
   </div>
 </div>
-<script src="faturamento_resumo.js" defer></script>
+<script src="faturamento_resumo.js"></script>
 <script>
 
 // ======= AÇÕES COMERCIAIS PROMOTORA =======

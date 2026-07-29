@@ -302,7 +302,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   <button onclick="abrirMenuLateral()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">☰</button>
   <img src="logo.jpg" alt="Vet Vida" onerror="this.style.display='none'">
   <div class="hi"><h1>Vet Hub</h1><p id="sub">Carregando...</p></div>
-  <div class="hr"><span class="hrep" id="badge">...</span></div>
+  <div class="hr" style="display:flex;align-items:center;gap:8px;"><span id="notif-sininho-placeholder"></span><span class="hrep" id="badge">...</span></div>
 </div>
 
 <!-- Menu lateral (drawer) -->
@@ -566,6 +566,21 @@ function init(){
     CL.forEach(function(c){var b=_bcMap[c.cod];if(b){c.razao_social=b.razao_social||'';c.cnpj=b.cnpj||'';c.endereco=b.endereco||'';}});
   }
   _enriquecerCL();
+  // Iniciar sininho de notificacoes
+  setTimeout(function(){
+    var ph=document.getElementById('notif-sininho-placeholder');
+    if(ph){var tmp=document.createElement('div');tmp.innerHTML=sininhoPHTML();ph.parentNode.replaceChild(tmp.firstChild,ph);}
+    iniciarSininho(REP,function(tipo,ref){
+      if(tipo==='acao') abrirAcoesGlobal();
+    });
+  },600);
+  setTimeout(function(){
+    var ph=document.getElementById('notif-sininho-placeholder');
+    if(ph){ var tmp=document.createElement('div'); tmp.innerHTML=sininhoPHTML(); ph.parentNode.replaceChild(tmp.firstChild,ph); }
+    iniciarSininho(REP,function(tipo,ref){
+      if(tipo==='acao') abrirAcoesGlobal();
+    });
+  },600);
   document.getElementById('badge').textContent=REP;
   var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').innerHTML='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+'<br>Area: '+(AREAS_LABEL_DATA[REP]||'');
   document.getElementById('ct').textContent=TG;
@@ -1750,6 +1765,7 @@ async function salvarNovaAcao(){
     if(res&&res[0]&&res[0].id){
       acoesTab('ativas');
       atualizarBadgeAcoes(_acoesCod);
+      criarNotificacao('NICOLLE','acao','Nova acao de '+REP,titulo+' para '+_acoesNome,res[0].id);
     } else {
       alert('Erro ao salvar: '+(res&&res.message?res.message:JSON.stringify(res)));
     }
@@ -2017,6 +2033,137 @@ fecharAcoes = function(){
   _fecharAcoesOrig();
 };
 // === FIM AÇÕES GLOBAIS ===
+
+
+// ========= SISTEMA DE NOTIFICAÇÕES =========
+var SB_NOTIF_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_NOTIF_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+var _notifInterval=null;
+var _notifDestino='';
+
+function sbNotif(path,opts){
+  return fetch(SB_NOTIF_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':SB_NOTIF_KEY,'Authorization':'Bearer '+SB_NOTIF_KEY,
+      'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
+}
+
+async function criarNotificacao(dest,tipo,titulo,msg,refId){
+  if(!dest) return;
+  try{
+    await sbNotif('notificacoes',{method:'POST',body:JSON.stringify({
+      destinatario:dest.toUpperCase(),tipo:tipo,titulo:titulo,
+      mensagem:msg||'',referencia_id:refId||null,lida:false
+    })});
+  }catch(e){console.warn('notif err',e);}
+}
+
+function getRepPorCod(cod){
+  if(typeof BASE_CLIENTES==='undefined') return null;
+  var c=BASE_CLIENTES.find(function(x){return x.cod===cod;});
+  return c?c.vendedor:null;
+}
+
+async function carregarNotificacoes(dest){
+  try{
+    var res=await sbNotif('notificacoes?destinatario=eq.'+encodeURIComponent(dest.toUpperCase())+'&lida=eq.false&order=created_at.desc&limit=20');
+    return Array.isArray(res)?res:[];
+  }catch(e){return [];}
+}
+
+async function marcarNotifLida(id){
+  try{await sbNotif('notificacoes?id=eq.'+id,{method:'PATCH',body:JSON.stringify({lida:true})});}catch(e){}
+}
+
+function iniciarSininho(dest,onClickFn){
+  _notifDestino=dest.toUpperCase();
+  window._notifOnClick=onClickFn;
+  atualizarSininho();
+  if(_notifInterval) clearInterval(_notifInterval);
+  _notifInterval=setInterval(atualizarSininho,180000);
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('#notif-wrap')){
+      var dd=document.getElementById('notif-dropdown');
+      if(dd) dd.style.display='none';
+    }
+  });
+}
+
+async function atualizarSininho(){
+  var notifs=await carregarNotificacoes(_notifDestino);
+  window._notifCache=notifs;
+  var badge=document.getElementById('notif-badge');
+  if(badge){
+    var n=notifs.length;
+    badge.textContent=n>9?'9+':String(n);
+    badge.style.display=n>0?'flex':'none';
+  }
+}
+
+function toggleNotifDropdown(){
+  var dd=document.getElementById('notif-dropdown');
+  if(!dd) return;
+  if(dd.style.display==='block'){dd.style.display='none';return;}
+  renderNotifDropdown();
+  dd.style.display='block';
+}
+
+function renderNotifDropdown(){
+  var dd=document.getElementById('notif-dropdown');
+  var notifs=window._notifCache||[];
+  if(!notifs.length){
+    dd.innerHTML='<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px;">Sem notificacoes</div>';
+    return;
+  }
+  var icons={'visita':'📍','acao':'🎯'};
+  dd.innerHTML=notifs.map(function(n){
+    var dt=new Date(n.created_at).toLocaleDateString('pt-BR');
+    return '<div data-nid="'+n.id+'" data-tipo="'+n.tipo+'" data-ref="'+(n.referencia_id||'')+'" class="notif-item"'
+      +' style="padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;display:flex;gap:10px;align-items:flex-start;">'
+      +'<span style="font-size:16px;flex-shrink:0;">'+(icons[n.tipo]||'🔔')+'</span>'
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-weight:600;font-size:13px;color:#111;">'+n.titulo+'</div>'
+      +'<div style="font-size:11px;color:#6b7280;margin-top:1px;">'+n.mensagem+'</div>'
+      +'<div style="font-size:10px;color:#9ca3af;margin-top:2px;">'+dt+'</div>'
+      +'</div></div>';
+  }).join('')
+    +'<div style="padding:8px;text-align:center;">'
+    +'<button onclick="marcarTodasLidas()" style="font-size:12px;color:#6b7280;background:none;border:none;cursor:pointer;text-decoration:underline;">Marcar todas como lidas</button>'
+    +'</div>';
+  dd.querySelectorAll('.notif-item').forEach(function(el){
+    el.addEventListener('click',function(){
+      var id=this.getAttribute('data-nid');
+      var tipo=this.getAttribute('data-tipo');
+      var ref=this.getAttribute('data-ref');
+      marcarNotifLida(id).then(atualizarSininho);
+      document.getElementById('notif-dropdown').style.display='none';
+      if(window._notifOnClick) window._notifOnClick(tipo,ref);
+    });
+  });
+}
+
+async function marcarTodasLidas(){
+  await Promise.all((window._notifCache||[]).map(function(n){return marcarNotifLida(n.id);}) );
+  atualizarSininho();
+  var dd=document.getElementById('notif-dropdown');
+  if(dd) dd.style.display='none';
+}
+
+function sininhoPHTML(){
+  return '<div id="notif-wrap" style="position:relative;flex-shrink:0;">'
+    +'<button onclick="toggleNotifDropdown()" style="background:rgba(255,255,255,0.15);border:none;color:white;'
+    +'border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;'
+    +'justify-content:center;position:relative;">🔔'
+    +'<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#CC0000;'
+    +'color:white;border-radius:10px;font-size:9px;font-weight:700;min-width:16px;height:16px;'
+    +'align-items:center;justify-content:center;padding:0 3px;">0</span>'
+    +'</button>'
+    +'<div id="notif-dropdown" style="display:none;position:absolute;top:44px;right:0;width:300px;'
+    +'background:white;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:600;'
+    +'max-height:400px;overflow-y:auto;"></div>'
+    +'</div>';
+}
+// ========= FIM NOTIFICAÇÕES =========
 
 </script>
 

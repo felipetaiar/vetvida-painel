@@ -566,6 +566,14 @@ function init(){
     CL.forEach(function(c){var b=_bcMap[c.cod];if(b){c.razao_social=b.razao_social||'';c.cnpj=b.cnpj||'';c.endereco=b.endereco||'';}});
   }
   _enriquecerCL();
+  // Iniciar sininho de notificacoes
+  setTimeout(function(){
+    var ph=document.getElementById('notif-sininho-placeholder');
+    if(ph){var tmp=document.createElement('div');tmp.innerHTML=sininhoPHTML();ph.parentNode.replaceChild(tmp.firstChild,ph);}
+    iniciarSininho(REP,function(tipo,ref){
+      if(tipo==='acao') abrirAcoesGlobal();
+    });
+  },600);
   setTimeout(function(){
     var ph=document.getElementById('notif-sininho-placeholder');
     if(ph){ var tmp=document.createElement('div'); tmp.innerHTML=sininhoPHTML(); ph.parentNode.replaceChild(tmp.firstChild,ph); }

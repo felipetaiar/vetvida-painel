@@ -3248,7 +3248,7 @@ function buscarEstabsGenerico(query) {
   query = (query||'').toLowerCase().trim();
   if (!query) return [];
   const baseVV = (typeof BASE_CLIENTES !== 'undefined') ? BASE_CLIENTES : [];
-  const filtradosVV = baseVV.filter(e => e.nome.toLowerCase().includes(query)).slice(0, 8).map(e => ({nome: e.nome, sub: `${e.area||e.cidade||''} · ${e.vendedor||''}`}));
+  const filtradosVV = baseVV.filter(e => e.nome.toLowerCase().includes(query)||(e.razao_social||'').toLowerCase().includes(query)||(e.cnpj||'').replace(/[.\/-]/g,'').includes(query.replace(/[.\/-]/g,''))||(e.endereco||'').toLowerCase().includes(query)).slice(0, 8).map(e => ({nome: e.nome, sub: `${e.area||e.cidade||''} · ${e.vendedor||''}`}));
   const filtradosSB = ESTABELECIMENTOS.filter(e => e.nome.toLowerCase().includes(query)).slice(0, 5).map(e => ({nome: e.nome, sub: e.cidade||''}));
   return [...filtradosVV, ...filtradosSB];
 }

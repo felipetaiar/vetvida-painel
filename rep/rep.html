@@ -509,7 +509,7 @@ tr:hover td{background:#f8fafc!important;}
 
 </style>
 <script src="dados.js"></script>
-<script src="base_clientes.js" async></script>
+<script src="base_clientes.js"></script>
 <script src="radar_db.js" async></script>
 <script src="precos_vv.js" async></script>
 <script>
@@ -560,7 +560,12 @@ function init(){
   if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
   REP=pf; CL=(TODOS_DADOS[REP]||[]).slice(); TG=CL.length;
   // Enriquecer CL com razao_social, cnpj e endereco do BASE_CLIENTES
-  if(typeof BASE_CLIENTES!=='undefined'){var _bcMap={};BASE_CLIENTES.forEach(function(x){_bcMap[x.cod]=x;});CL.forEach(function(c){var b=_bcMap[c.cod];if(b){c.razao_social=b.razao_social||'';c.cnpj=b.cnpj||'';c.endereco=b.endereco||'';}});}
+  function _enriquecerCL(){
+    if(typeof BASE_CLIENTES==='undefined'){setTimeout(_enriquecerCL,100);return;}
+    var _bcMap={};BASE_CLIENTES.forEach(function(x){_bcMap[x.cod]=x;});
+    CL.forEach(function(c){var b=_bcMap[c.cod];if(b){c.razao_social=b.razao_social||'';c.cnpj=b.cnpj||'';c.endereco=b.endereco||'';}});
+  }
+  _enriquecerCL();
   document.getElementById('badge').textContent=REP;
   var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').innerHTML='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+'<br>Area: '+(AREAS_LABEL_DATA[REP]||'');
   document.getElementById('ct').textContent=TG;

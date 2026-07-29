@@ -1411,6 +1411,17 @@ function entrar(perfil) {
 
   document.getElementById('app').style.display = 'block';
   document.getElementById('header-usuario').textContent = perfil === 'nicolle' ? 'Nicolle · Promotora' : 'Felipe · Gestor';
+  // Iniciar sininho de notificacoes (apenas para Nicolle)
+  if(perfil === 'nicolle'){
+    setTimeout(function(){
+      var ph=document.getElementById('notif-sininho-placeholder');
+      if(ph){var tmp=document.createElement('div');tmp.innerHTML=sininhoPHTML();ph.parentNode.replaceChild(tmp.firstChild,ph);}
+      iniciarSininho('NICOLLE',function(tipo,ref){
+        if(tipo==='acao') navegarPara('acoes');
+        else if(tipo==='visita') navegarPara('historico');
+      });
+    },800);
+  }
 
   // Inicializar Supabase com proteção
   try { sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null; } catch(e) { console.warn("Supabase SDK indisponível", e); }

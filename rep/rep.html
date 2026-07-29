@@ -1950,7 +1950,7 @@ function acBuscarCliente(q){
   if(!box) return;
   q = (q||'').trim().toLowerCase();
   if(!q){box.style.display='none';return;}
-  var base = (typeof BASE_CLIENTES!=='undefined') ? BASE_CLIENTES : CL;
+  var base = CL; // Apenas clientes da area do rep logado
   var res = base.filter(function(c){
     return c.nome.toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(q.replace(/[.\/-]/g,''))>=0;
   }).slice(0,8);

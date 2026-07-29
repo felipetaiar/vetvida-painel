@@ -658,7 +658,7 @@ document.addEventListener('click', function(e) {
   <button data-oc="abrirMenuLateral()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">&#9776;</button>
   <img src="logo.jpg" alt="VetVida" onerror="this.style.display='none'" style="height:30px;background:white;padding:3px 8px;border-radius:6px;">
   <div class="hi"><h1>VetVida</h1><p id="header-usuario">Promotora</p></div>
-  <div class="hr"><span class="hrep">NICOLLE</span></div>
+  <div class="hr" style="display:flex;align-items:center;gap:8px;"><span id="notif-sininho-placeholder"></span><span class="hrep">NICOLLE</span></div>
 </div>
 <div id="menu-overlay" data-oc="fecharMenuLateral()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;"></div>
 <div id="menu-lateral" style="position:fixed;top:0;left:-280px;bottom:0;width:260px;background:white;z-index:501;transition:left 0.25s;box-shadow:2px 0 20px rgba(0,0,0,0.2);overflow-y:auto;">
@@ -1411,6 +1411,17 @@ function entrar(perfil) {
 
   document.getElementById('app').style.display = 'block';
   document.getElementById('header-usuario').textContent = perfil === 'nicolle' ? 'Nicolle · Promotora' : 'Felipe · Gestor';
+  // Iniciar sininho de notificacoes (apenas para Nicolle)
+  if(perfil === 'nicolle'){
+    setTimeout(function(){
+      var ph=document.getElementById('notif-sininho-placeholder');
+      if(ph){var tmp=document.createElement('div');tmp.innerHTML=sininhoPHTML();ph.parentNode.replaceChild(tmp.firstChild,ph);}
+      iniciarSininho('NICOLLE',function(tipo,ref){
+        if(tipo==='acao') navegarPara('acoes');
+        else if(tipo==='visita') navegarPara('historico');
+      });
+    },800);
+  }
 
   // Inicializar Supabase com proteção
   try { sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null; } catch(e) { console.warn("Supabase SDK indisponível", e); }
@@ -1805,6 +1816,12 @@ async function salvarVisita() {
     }
     await persistirAmostrasDaVisita(estab, data ? data.id : null);
     mostrarToast('✓ Visita registrada!');
+    // Notificar rep da area do cliente
+    try{
+      var _cliVis=typeof BASE_CLIENTES!=='undefined'?BASE_CLIENTES.find(function(c){return c.nome===estab;}):null;
+      var _repVis=_cliVis?_cliVis.vendedor:null;
+      if(_repVis) criarNotificacao(_repVis,'visita','Nova visita de Nicolle','Visita registrada em '+estab,data?data.id:null);
+    }catch(_ve){}
   } catch(e) {
     console.error('Erro ao salvar:', e);
     novaVisita.id = Date.now();
@@ -4019,11 +4036,135 @@ async function promSalvarAcao(){
   };
   try{
     var res=await sbProm('acoes_comerciais',{method:'POST',body:JSON.stringify(payload)});
-    if(res&&res[0]&&res[0].id) promAcoesTab('ativas');
+    if(res&&res[0]&&res[0].id){
+      promAcoesTab('ativas');
+      // Notificar rep da area
+      try{
+        var _cliAc=typeof BASE_CLIENTES!=='undefined'?BASE_CLIENTES.find(function(c){return c.cod===_pacCod2;}):null;
+        var _repAc=_cliAc?_cliAc.vendedor:null;
+        if(_repAc) criarNotificacao(_repAc,'acao','Nova acao de Nicolle',titulo+' para '+_pacNome2,res[0].id);
+      }catch(_ae){}
+    }
     else alert('Erro: '+JSON.stringify(res));
   }catch(e){alert('Erro: '+e.message);}
 }
 // ======= FIM ACOES PROMOTORA =======
+
+
+// ========= SISTEMA DE NOTIFICACOES =========
+var SB_NOTIF_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_NOTIF_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+var _notifInterval=null;
+var _notifDestino='';
+
+function sbNotif(path,opts){
+  return fetch(SB_NOTIF_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':SB_NOTIF_KEY,'Authorization':'Bearer '+SB_NOTIF_KEY,
+      'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
+}
+async function criarNotificacao(dest,tipo,titulo,msg,refId){
+  if(!dest) return;
+  try{
+    await sbNotif('notificacoes',{method:'POST',body:JSON.stringify({
+      destinatario:dest.toUpperCase(),tipo:tipo,titulo:titulo,
+      mensagem:msg||'',referencia_id:refId||null,lida:false
+    })});
+  }catch(e){console.warn('notif err',e);}
+}
+async function carregarNotificacoes(dest){
+  try{
+    var res=await sbNotif('notificacoes?destinatario=eq.'+encodeURIComponent(dest.toUpperCase())+'&lida=eq.false&order=created_at.desc&limit=20');
+    return Array.isArray(res)?res:[];
+  }catch(e){return [];}
+}
+async function marcarNotifLida(id){
+  try{await sbNotif('notificacoes?id=eq.'+id,{method:'PATCH',body:JSON.stringify({lida:true})});}catch(e){}
+}
+function iniciarSininho(dest,onClickFn){
+  _notifDestino=dest.toUpperCase();
+  window._notifOnClick=onClickFn;
+  atualizarSininho();
+  if(_notifInterval) clearInterval(_notifInterval);
+  _notifInterval=setInterval(atualizarSininho,180000);
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('#notif-wrap')){
+      var dd=document.getElementById('notif-dropdown');
+      if(dd) dd.style.display='none';
+    }
+  });
+}
+async function atualizarSininho(){
+  var notifs=await carregarNotificacoes(_notifDestino);
+  window._notifCache=notifs;
+  var badge=document.getElementById('notif-badge');
+  if(badge){
+    var n=notifs.length;
+    badge.textContent=n>9?'9+':String(n);
+    badge.style.display=n>0?'flex':'none';
+  }
+}
+function toggleNotifDropdown(){
+  var dd=document.getElementById('notif-dropdown');
+  if(!dd) return;
+  if(dd.style.display==='block'){dd.style.display='none';return;}
+  renderNotifDropdown();
+  dd.style.display='block';
+}
+function renderNotifDropdown(){
+  var dd=document.getElementById('notif-dropdown');
+  var notifs=window._notifCache||[];
+  if(!notifs.length){
+    dd.innerHTML='<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px;">Sem notificacoes</div>';
+    return;
+  }
+  var icons={'visita':'📍','acao':'🎯'};
+  dd.innerHTML=notifs.map(function(n){
+    var dt=new Date(n.created_at).toLocaleDateString('pt-BR');
+    return '<div data-nid="'+n.id+'" data-tipo="'+n.tipo+'" data-ref="'+(n.referencia_id||'')+'" class="notif-item"'
+      +' style="padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;display:flex;gap:10px;align-items:flex-start;">'
+      +'<span style="font-size:16px;flex-shrink:0;">'+(icons[n.tipo]||'🔔')+'</span>'
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-weight:600;font-size:13px;color:#111;">'+n.titulo+'</div>'
+      +'<div style="font-size:11px;color:#6b7280;margin-top:1px;">'+n.mensagem+'</div>'
+      +'<div style="font-size:10px;color:#9ca3af;margin-top:2px;">'+dt+'</div>'
+      +'</div></div>';
+  }).join('')
+    +'<div style="padding:8px;text-align:center;">'
+    +'<button onclick="marcarTodasLidas()" style="font-size:12px;color:#6b7280;background:none;border:none;cursor:pointer;text-decoration:underline;">Marcar todas como lidas</button>'
+    +'</div>';
+  dd.querySelectorAll('.notif-item').forEach(function(el){
+    el.addEventListener('click',function(){
+      var id=this.getAttribute('data-nid');
+      var tipo=this.getAttribute('data-tipo');
+      var ref=this.getAttribute('data-ref');
+      marcarNotifLida(id).then(atualizarSininho);
+      document.getElementById('notif-dropdown').style.display='none';
+      if(window._notifOnClick) window._notifOnClick(tipo,ref);
+    });
+  });
+}
+async function marcarTodasLidas(){
+  await Promise.all((window._notifCache||[]).map(function(n){return marcarNotifLida(n.id);}) );
+  atualizarSininho();
+  var dd=document.getElementById('notif-dropdown');
+  if(dd) dd.style.display='none';
+}
+function sininhoPHTML(){
+  return '<div id="notif-wrap" style="position:relative;flex-shrink:0;">'
+    +'<button onclick="toggleNotifDropdown()" style="background:rgba(255,255,255,0.15);border:none;color:white;'
+    +'border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;'
+    +'justify-content:center;position:relative;">🔔'
+    +'<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#CC0000;'
+    +'color:white;border-radius:10px;font-size:9px;font-weight:700;min-width:16px;height:16px;'
+    +'display:none;align-items:center;justify-content:center;padding:0 3px;">0</span>'
+    +'</button>'
+    +'<div id="notif-dropdown" style="display:none;position:absolute;top:44px;right:0;width:300px;'
+    +'background:white;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:600;'
+    +'max-height:400px;overflow-y:auto;"></div>'
+    +'</div>';
+}
+// ========= FIM NOTIFICACOES =========
 
 </script>
 </body>

@@ -1196,7 +1196,28 @@ async function verPromotor(nomeCli){
     }
     if(vC.length){
       h+='<div style="font-size:11px;font-weight:700;color:#374151;margin:8px 0 6px;text-transform:uppercase;">📍 Visitas</div>';
-      vC.forEach(function(v){h+='<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin-bottom:6px;font-size:12px;"><b>'+new Date(v.created_at).toLocaleDateString('pt-BR')+'</b> · '+(v.objetivo||'')+'<br>'+(v.resultado||'')+(v.obs?'<br><span style="color:#6b7280;">'+v.obs+'</span>':'')+'</div>';});
+      vC.forEach(function(v){
+        var ams=_AP.filter(function(a){return a.visita_id===v.id;});
+        var amH=ams.length?'<div style="margin-top:6px;"><b>📦 Amostras:</b></div>'+ams.map(function(a){
+          return '<div style="margin-left:8px;margin-top:3px;font-size:11px;color:#374151;">'+a.produto+' ('+a.quantidade+'un)'+(a.contato_nome?' — '+a.contato_nome:'')+'</div>';
+        }).join(''):'';
+        h+='<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px;">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+          +'<b style="font-size:13px;">'+new Date(v.created_at).toLocaleDateString('pt-BR')+'</b>'
+          +(v.tem_lead?'<span style="background:#fef3c7;color:#92400e;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;">🔔 Lead</span>':'')
+          +'</div>'
+          +(v.cidade?'<div style="color:#6b7280;">📍 '+v.cidade+'</div>':'')
+          +(v.tipo?'<div style="color:#6b7280;">🏥 '+v.tipo+'</div>':'')
+          +(v.contato?'<div style="color:#374151;margin-top:4px;">👤 <b>Contato:</b> '+v.contato+'</div>':'')
+          +(v.objetivo?'<div style="color:#374151;margin-top:4px;">🎯 <b>Objetivo:</b> '+v.objetivo+'</div>':'')
+          +(v.resultado?'<div style="color:#374151;margin-top:4px;">📊 <b>Resultado:</b> '+v.resultado+'</div>':'')
+          +((v.fornecedores&&v.fornecedores.length)?'<div style="color:#6b7280;margin-top:4px;">🧪 <b>Fornecedores:</b> '+(Array.isArray(v.fornecedores)?v.fornecedores.join(', '):v.fornecedores)+'</div>':'')
+          +((v.especialidades&&v.especialidades.length)?'<div style="color:#6b7280;margin-top:4px;">⚕️ <b>Especialidades:</b> '+(Array.isArray(v.especialidades)?v.especialidades.join(', '):v.especialidades)+'</div>':'')
+          +(v.obs?'<div style="color:#374151;margin-top:4px;font-style:italic;">📝 '+v.obs+'</div>':'')
+          +(v.data_retorno?'<div style="color:#6b7280;margin-top:4px;">📅 <b>Retorno:</b> '+new Date(v.data_retorno).toLocaleDateString('pt-BR')+'</div>':'')
+          +amH
+          +'</div>';
+      });
     }
   }
   document.getElementById('m-prc-b').innerHTML=h;

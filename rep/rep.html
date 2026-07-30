@@ -1122,10 +1122,13 @@ async function _carregarPromo(){
     var hq={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4'};
     // Pegar área do rep logado (ex: "GUARULHOS 1")
     var areaRep = (AREAS_LABEL_DATA[REP]||'').toUpperCase();
+    // Carregar todas as visitas — filtrar por rep_responsavel no cliente via CL
     var urlVisitas = 'https://waiujqbzncemkpznvnct.supabase.co/rest/v1/visitas?select=*&order=created_at.desc&limit=500';
-    if(areaRep) urlVisitas += '&area=eq.' + encodeURIComponent(areaRep);
     var rv=await fetch(urlVisitas,{headers:hp});
     _VP=await rv.json(); if(!Array.isArray(_VP))_VP=[];
+    // Filtrar visitas pelos clientes da área do rep
+    var _nomesCL=CL.map(function(c){return c.nome.toLowerCase();});
+    _VP=_VP.filter(function(v){return _nomesCL.indexOf((v.estabelecimento||'').toLowerCase())>=0;});
     var ra=await fetch('https://waiujqbzncemkpznvnct.supabase.co/rest/v1/amostras?select=*&order=created_at.desc',{headers:hp});
     _AP=await ra.json(); if(!Array.isArray(_AP))_AP=[];
     var rl=await fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/leads?select=*&rep_responsavel=eq.'+REP+'&order=created_at.desc',{headers:hq});
@@ -1141,29 +1144,36 @@ async function abrirTelaPromo(){
 }
 function _filtrarPR(){
   var q=(document.getElementById('q-pr').value||'').toLowerCase();
+  // Clientes únicos que têm visita ou lead
+  var estabsComVisita=_VP.filter(function(v){return !q||(v.estabelecimento||'').toLowerCase().indexOf(q)>=0;})
+    .map(function(v){return v.estabelecimento||'';});
+  var estabsComLead=_LP.filter(function(l){return !q||(l.estabelecimento||'').toLowerCase().indexOf(q)>=0;})
+    .map(function(l){return l.estabelecimento||'';});
+  // Unir e deduplicar
+  var todosEstabs=[...new Set([...estabsComVisita,...estabsComLead])].filter(Boolean).sort();
   var lista=_VP.filter(function(v){return !q||(v.estabelecimento||'').toLowerCase().indexOf(q)>=0;});
   var el=document.getElementById('lista-pr');
-  if(!lista.length){el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Nenhuma visita.</p>';return;}
-  el.innerHTML=lista.map(function(v){
-    var ams=_AP.filter(function(a){return a.visita_id===v.id;});
-    var ah=ams.map(function(a){return '<span style="background:#fffbeb;border:1px solid #fde68a;color:#b45309;font-size:10px;padding:1px 5px;border-radius:10px;display:inline-block;margin:2px;">🧪 '+a.produto+' ('+a.quantidade+'un)'+(a.feedback?' ✓':'')+'</span>';}).join('');
-    var _estab = v.estabelecimento||'Estabelecimento não identificado';
-    return '<div class="card-pr-item" data-estab="'+encodeURIComponent(_estab)+'" style="background:white;border-radius:10px;padding:10px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:3px solid '+(v.tem_lead?'#d97706':'#e5e7eb')+';cursor:pointer;">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;"><b style="font-size:13px;">'+_estab+(v.tem_lead?' 🔔':'')+'</b>'+
-      '<span style="font-size:10px;color:#9ca3af;white-space:nowrap;margin-left:4px;">'+new Date(v.created_at).toLocaleDateString('pt-BR')+'</span></div>'+
-      '<div style="font-size:11px;color:#6b7280;margin-top:2px;">'+(v.objetivo||'')+' · '+(v.resultado||'')+'</div>'+
-      (v.obs?'<div style="font-size:11px;font-style:italic;color:#374151;">'+v.obs+'</div>':'')+
-      (ah?'<div style="margin-top:4px;">'+ah+'</div>':'')+
-      '<div style="font-size:10px;color:#9ca3af;margin-top:4px;">Toque para ver detalhes ›</div>'+
-    '</div>';
+  if(!todosEstabs.length){el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Nenhuma atividade.</p>';return;}
+  // Mostrar cards por estabelecimento com indicadores de visita e lead
+  el.innerHTML=todosEstabs.map(function(estab){
+    var temLead=_LP.some(function(l){return (l.estabelecimento||'').toLowerCase()===estab.toLowerCase();});
+    var qtdVisitas=_VP.filter(function(v){return (v.estabelecimento||'').toLowerCase()===estab.toLowerCase();}).length;
+    var ul=_VP.filter(function(v){return (v.estabelecimento||'').toLowerCase()===estab.toLowerCase();}).slice(-1)[0];
+    return '<div class="card-pr-item" data-estab="'+encodeURIComponent(estab)+'" style="background:white;border-radius:10px;padding:10px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:3px solid '+(temLead?'#d97706':'#e5e7eb')+';cursor:pointer;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;"><b style="font-size:13px;">'+estab+(temLead?' 🔔':'')+'</b>'
+      +(ul?'<span style="font-size:10px;color:#9ca3af;white-space:nowrap;margin-left:4px;">'+new Date(ul.created_at).toLocaleDateString('pt-BR')+'</span>':'')+'</div>'
+      +'<div style="font-size:11px;color:#6b7280;margin-top:3px;">'
+      +(qtdVisitas?qtdVisitas+' visita'+(qtdVisitas>1?'s':''):'')
+      +(temLead?(qtdVisitas?' · ':'')+'lead aberto':'')
+      +'</div>'
+      +'<div style="font-size:10px;color:#9ca3af;margin-top:4px;">Toque para ver detalhes ›</div>'
+      +'</div>';
   }).join('');
-  // Event listeners nos cards — sem onclick inline
   document.querySelectorAll('.card-pr-item').forEach(function(el){
-    el.addEventListener('click', function(){
-      verPromotor(decodeURIComponent(this.dataset.estab));
-    });
+    el.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.estab));});
   });
 }
+
 async function verPromotor(nomeCli){
   document.getElementById('m-prc-t').textContent='🌸 '+nomeCli;
   document.getElementById('m-prc-b').innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</p>';

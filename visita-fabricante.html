@@ -5,41 +5,44 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>VetVida — Registro de Visita</title>
 <script src="/rep/base_clientes.js"></script>
+<script src="/rep/precos_vv.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f3f4f6;min-height:100vh;padding:0 0 40px;}
 .header{background:#1c2023;padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;}
 .header img{height:28px;background:white;padding:3px 8px;border-radius:6px;}
-.fab-badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;color:white;}
+.fab-badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;color:white;display:none;}
 .container{max-width:520px;margin:0 auto;padding:16px;}
 .card{background:white;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
 .card-title{font-size:15px;font-weight:700;color:#111;margin-bottom:14px;}
 .form-group{margin-bottom:14px;}
 label{display:block;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
 label.req::after{content:' *';color:#CC0000;}
-input[type=text],input[type=date],textarea,select{width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;font-family:inherit;}
+input[type=text],input[type=date],input[type=number],textarea,select{width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;font-family:inherit;}
 input:focus,textarea:focus,select:focus{border-color:#CC0000;}
 textarea{resize:vertical;min-height:80px;}
 .dropdown-wrap{position:relative;}
 .drop-list{display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:200px;overflow-y:auto;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.12);}
 .drop-item{padding:10px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f3f4f6;}
-.drop-item:hover{background:#fef2f2;}
+.drop-item:hover,.drop-item:active{background:#fef2f2;}
 .drop-item.novo{color:#CC0000;font-weight:600;}
 .check-group{display:flex;flex-wrap:wrap;gap:7px;}
 .check-pill{padding:6px 12px;border:1.5px solid #e5e7eb;border-radius:20px;font-size:12px;cursor:pointer;user-select:none;transition:.15s;}
 .check-pill.ativo{background:#CC0000;border-color:#CC0000;color:white;font-weight:600;}
-.ct-item{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;font-size:13px;}
+.item-row{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;font-size:13px;}
 .btn-add{width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:10px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;}
 .btn-primary{width:100%;padding:14px;background:#CC0000;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;}
 .btn-primary:disabled{background:#f87171;cursor:not-allowed;}
+.btn-secondary{width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-top:8px;}
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-end;}
-.modal{background:white;border-radius:16px 16px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto;}
+.modal-ov.open{display:flex;}
+.modal{background:white;border-radius:16px 16px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;}
 .foto-area{border:2px dashed #e5e7eb;border-radius:10px;padding:20px;text-align:center;cursor:pointer;background:#f9fafb;}
 .foto-area.tem-foto{border-style:solid;border-color:#CC0000;padding:8px;}
 .foto-area img{width:100%;border-radius:8px;max-height:180px;object-fit:cover;}
-.msg-ok{display:none;text-align:center;padding:40px 20px;}
 .err{background:#fef2f2;color:#dc2626;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:12px;display:none;}
 .aviso-novo{background:#fef2f2;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;color:#CC0000;font-weight:600;}
+.msg-ok{display:none;text-align:center;padding:40px 20px;}
 </style>
 </head>
 <body>
@@ -49,66 +52,86 @@ textarea{resize:vertical;min-height:80px;}
     <div style="color:white;font-weight:700;font-size:15px;">VetVida</div>
     <div id="fab-sub" style="color:rgba(255,255,255,.6);font-size:11px;">Registro de Visita</div>
   </div>
-  <span id="fab-badge" class="fab-badge" style="display:none;"></span>
+  <span id="fab-badge" class="fab-badge"></span>
 </div>
+
 <div class="container">
   <div id="form-area">
     <div id="err-geral" class="err"></div>
+
+    <!-- IDENTIFICAÇÃO -->
     <div class="card">
       <div class="card-title">Identificação</div>
       <div class="form-group"><label class="req">Seu nome</label><input id="f-promotor" type="text" placeholder="Nome do promotor"></div>
     </div>
+
+    <!-- ESTABELECIMENTO -->
     <div class="card">
       <div class="card-title">Estabelecimento</div>
       <div class="form-group">
         <label class="req">Nome do local</label>
         <div class="dropdown-wrap">
-          <input id="f-estab" type="text" placeholder="Buscar na base ou digitar novo..." autocomplete="off" oninput="buscarEstab(this.value)" onfocus="if(this.value)buscarEstab(this.value)">
+          <input id="f-estab" type="text" placeholder="Buscar na base ou digitar novo..." autocomplete="off" oninput="buscarEstab(this.value)">
           <div class="drop-list" id="drop-estab"></div>
         </div>
         <input type="hidden" id="f-estab-cod">
       </div>
       <div id="grupo-novo" style="display:none;">
-        <div class="aviso-novo">&#128205; Novo estabelecimento — preencha os dados</div>
+        <div class="aviso-novo">&#128205; Novo estabelecimento — preencha os dados adicionais</div>
         <div class="form-group"><label>Cidade</label><input id="f-cidade" type="text" placeholder="Ex: São Paulo"></div>
         <div class="form-group"><label>CNPJ (opcional)</label><input id="f-cnpj" type="text" placeholder="00.000.000/0000-00"></div>
-        <div class="form-group"><label>Segmento</label><input id="f-segmento" type="text" placeholder="Ex: Clínica Veterinária"></div>
+        <div class="form-group"><label>Segmento</label><input id="f-seg" type="text" placeholder="Ex: Clínica Veterinária"></div>
       </div>
       <div class="form-group"><label class="req">Tipo</label><div class="check-group" id="check-tipo"></div></div>
       <div class="form-group" id="grupo-esp" style="display:none;"><label>Especialidades</label><div class="check-group" id="check-esp"></div></div>
     </div>
+
+    <!-- CONTATOS -->
     <div class="card">
       <div class="card-title">Pessoas atendidas</div>
       <div id="lista-cts"></div>
-      <button class="btn-add" onclick="abrirCt()">+ Adicionar contato</button>
+      <button class="btn-add" onclick="abrirModalCt()">+ Adicionar contato</button>
     </div>
+
+    <!-- VISITA -->
     <div class="card">
       <div class="card-title">Detalhes da visita</div>
       <div class="form-group"><label class="req">Objetivo</label><div class="check-group" id="check-obj"></div></div>
       <div class="form-group"><label class="req">Resultado</label><div class="check-group" id="check-res"></div></div>
-      <div class="form-group"><label>Fornecedores mencionados</label><div class="check-group" id="check-forn"></div></div>
       <div class="form-group"><label>Observações</label><textarea id="f-obs" placeholder="Detalhes, próximos passos..."></textarea></div>
       <div class="form-group" id="grupo-ret" style="display:none;"><label>Data de retorno</label><input id="f-ret" type="date"></div>
     </div>
+
+    <!-- AMOSTRAS -->
+    <div class="card">
+      <div class="card-title">Amostras deixadas</div>
+      <div id="lista-ams"></div>
+      <button class="btn-add" onclick="abrirModalAm()">+ Registrar amostra</button>
+    </div>
+
+    <!-- FOTO -->
     <div class="card">
       <div class="card-title">Foto (opcional)</div>
       <div class="foto-area" id="foto-area" onclick="document.getElementById('f-foto').click()">
-        <div id="foto-ph"><div style="font-size:32px;margin-bottom:6px;">&#128247;</div><div style="font-size:13px;color:#6b7280;">Tirar foto ou escolher arquivo</div></div>
+        <div id="foto-ph"><div style="font-size:32px;margin-bottom:6px;">&#128247;</div><div style="font-size:13px;color:#6b7280;">Tirar foto ou escolher da galeria</div></div>
         <img id="foto-prev" style="display:none;">
       </div>
-      <input id="f-foto" type="file" accept="image/*" capture="environment" style="display:none;" onchange="prevFoto(this)">
+      <input id="f-foto" type="file" accept="image/*" style="display:none;" onchange="prevFoto(this)">
     </div>
-    <button class="btn-primary" id="btn-sv" onclick="salvar()">✓ Registrar visita</button>
+
+    <button class="btn-primary" id="btn-sv" onclick="salvar()">&#10003; Registrar visita</button>
   </div>
+
   <div class="msg-ok" id="msg-ok">
     <div style="font-size:64px;margin-bottom:12px;">&#9989;</div>
     <h2 style="color:#CC0000;font-size:20px;margin-bottom:8px;">Visita registrada!</h2>
-    <p style="color:#6b7280;font-size:14px;line-height:1.5;">Obrigado. O registro foi salvo com sucesso no sistema VetVida.</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.5;">Obrigado. O registro foi salvo com sucesso.</p>
     <button onclick="location.reload()" style="margin-top:20px;padding:12px 24px;background:#CC0000;color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Registrar outra visita</button>
   </div>
 </div>
+
 <!-- MODAL CONTATO -->
-<div class="modal-ov" id="modal-ct" onclick="if(event.target===this)fecharCt()" style="display:none;">
+<div class="modal-ov" id="modal-ct">
   <div class="modal">
     <div class="card-title">Adicionar contato</div>
     <div class="form-group"><label class="req">Nome</label><input id="ct-nome" type="text" placeholder="Nome completo"></div>
@@ -117,24 +140,48 @@ textarea{resize:vertical;min-height:80px;}
     </div>
     <div class="form-group"><label>Especialidade</label><input id="ct-esp-i" type="text" placeholder="Ex: Clínica geral"></div>
     <button class="btn-primary" onclick="confirmCt()">Adicionar</button>
-    <button onclick="fecharCt()" style="width:100%;padding:12px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-top:8px;">Cancelar</button>
+    <button class="btn-secondary" onclick="fecharModalCt()">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL AMOSTRA -->
+<div class="modal-ov" id="modal-am">
+  <div class="modal">
+    <div class="card-title">Registrar amostra</div>
+    <div class="form-group">
+      <label class="req">Produto</label>
+      <div class="dropdown-wrap">
+        <input id="am-prod" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="buscarProd(this.value)">
+        <div class="drop-list" id="drop-prod"></div>
+      </div>
+      <input type="hidden" id="am-prod-val">
+    </div>
+    <div class="form-group"><label class="req">Quantidade</label><input id="am-qtd" type="number" min="1" placeholder="Ex: 2"></div>
+    <div class="form-group">
+      <label>Contato que recebeu</label>
+      <select id="am-ct"><option value="">Selecione (opcional)...</option></select>
+    </div>
+    <button class="btn-primary" onclick="confirmAm()">Adicionar</button>
+    <button class="btn-secondary" onclick="fecharModalAm()">Cancelar</button>
   </div>
 </div>
 
 <script>
 var SB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
-var FAB_NOME='',FAB_ID='',FAB_COR='#CC0000';
-var CONTATOS=[],FOTO_FILE=null,ESTAB_NOVO=false;
-var FABRICANTES={"labyes": {"nome": "Labyes", "cor": "#2563eb"}, "homeopet": {"nome": "Homeopet", "cor": "#16a34a"}, "biogenesis": {"nome": "Biogênesis Bagó Pet", "cor": "#7c3aed"}};
+var FAB_ID='',FAB_NOME='',FAB_COR='#CC0000',FAB_LAB='';
+var CONTATOS=[],AMOSTRAS=[],FOTO_FILE=null,ESTAB_NOVO=false;
+var FABRICANTES={"labyes": {"nome": "Labyes", "cor": "#2563eb", "lab": "Labyes"}, "homeopet": {"nome": "Homeopet", "cor": "#16a34a", "lab": "Homeopet"}, "biogenesis": {"nome": "Biogênesis Bagó Pet", "cor": "#7c3aed", "lab": "Biogénesis"}};
+
 var TIPOS=['Clínica veterinária','Pet shop','Hospital 24h','Banho e tosa','Canil','Criador','Agropecuária','Groomer','Hospital veterinário'];
 var ESPECIALIDADES=['Clínica geral','Dermatologia','Oncologia','Cardiologia','Ortopedia','Neurologia','Oftalmologia','Reprodução animal','Exóticos','Emergência/UTI','Laboratório','Endocrinologia'];
 var OBJETIVOS=['Apresentação de produtos','Treinamento de balconista','Acompanhamento','Reativação de cliente','Prospecção'];
 var RESULTADOS=['Visita realizada – sem interesse','Visita realizada – interesse parcial','Interesse confirmado – acionar rep','Treinamento realizado','Cliente já atendido pelo rep','Ausente – reagendar'];
-var FORNECEDORES=['Homeopet','Dechra','Vansil','Syntec','Labyes','Organnact','Biogênesis Bagó Pet','MSD','Zoetis','Elanco'];
 
 function sbF(path,opts){
-  return fetch(SB_URL+'/rest/v1/'+path,Object.assign({headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'}},opts||{})).then(function(r){return r.json();});
+  return fetch(SB_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
 }
 
 function init(){
@@ -142,97 +189,182 @@ function init(){
   FAB_ID=p.get('fab')||'';
   var fab=FABRICANTES[FAB_ID];
   if(!fab){showErr('Link inválido. Solicite o link correto à VetVida.');document.getElementById('btn-sv').disabled=true;return;}
-  FAB_NOME=fab.nome;FAB_COR=fab.cor;
+  FAB_NOME=fab.nome; FAB_COR=fab.cor; FAB_LAB=fab.lab||fab.nome;
   var badge=document.getElementById('fab-badge');
-  badge.textContent=FAB_NOME;badge.style.background=FAB_COR;badge.style.display='inline-block';
+  badge.textContent=FAB_NOME; badge.style.background=FAB_COR; badge.style.display='inline-block';
   document.getElementById('fab-sub').textContent=FAB_NOME+' · Registro de Visita';
   document.title='VetVida — '+FAB_NOME;
   buildChecks('check-tipo',TIPOS,false,function(sel){
-    var t=sel.some(function(s){return s.toLowerCase().indexOf('clínica')>=0||s.toLowerCase().indexOf('hospital')>=0;});
-    document.getElementById('grupo-esp').style.display=t?'block':'none';
+    document.getElementById('grupo-esp').style.display=sel.some(function(s){return s.indexOf('línica')>=0||s.indexOf('ospital')>=0;})?'block':'none';
   });
   buildChecks('check-esp',ESPECIALIDADES,true,null);
   buildChecks('check-obj',OBJETIVOS,false,null);
   buildChecks('check-res',RESULTADOS,false,function(sel){
     document.getElementById('grupo-ret').style.display=sel.some(function(s){return s.indexOf('reagendar')>=0;})?'block':'none';
   });
-  buildChecks('check-forn',FORNECEDORES,true,null);
 }
 
 function buildChecks(id,arr,multi,cb){
   var el=document.getElementById(id);
   el.innerHTML=arr.map(function(o){return '<span class="check-pill" data-val="'+o+'">'+o+'</span>';}).join('');
-  el.querySelectorAll('.check-pill').forEach(function(p){
-    p.addEventListener('click',function(){
+  el.querySelectorAll('.check-pill').forEach(function(pill){
+    pill.addEventListener('click',function(){
       if(!multi) el.querySelectorAll('.check-pill').forEach(function(x){x.classList.remove('ativo');});
       this.classList.toggle('ativo');
       if(cb) cb(getChecked(id));
     });
   });
 }
-
 function getChecked(id){return Array.from(document.querySelectorAll('#'+id+' .check-pill.ativo')).map(function(p){return p.dataset.val;});}
 
+// Busca de estabelecimento
 function buscarEstab(q){
   var drop=document.getElementById('drop-estab');
-  q=(q||'').trim().toLowerCase();
+  q=(q||'').trim();
   if(!q){drop.style.display='none';return;}
+  var ql=q.toLowerCase();
   var base=typeof BASE_CLIENTES!=='undefined'?BASE_CLIENTES:[];
   var res=base.filter(function(c){
-    return c.nome.toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0||(c.cnpj||'').replace(/[\.\/-]/g,'').indexOf(q.replace(/[\.\/-]/g,''))>=0;
+    return c.nome.toLowerCase().indexOf(ql)>=0
+      ||(c.razao_social||'').toLowerCase().indexOf(ql)>=0
+      ||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(ql.replace(/[.\/-]/g,''))>=0;
   }).slice(0,8);
   var html=res.map(function(c){
-    return '<div class="drop-item" onclick="selEstab('+c.cod+','+JSON.stringify(c.nome)+','+JSON.stringify(c.cidade||c.municipio||'')+')">'+c.nome+(c.cidade||c.municipio?' <span style=\"color:#9ca3af;font-size:11px;\">'+(c.cidade||c.municipio)+'</span>':'')+'</div>';
+    return '<div class="drop-item" data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" data-cidade="'+encodeURIComponent(c.cidade||c.municipio||'')+'">'+c.nome
+      +(c.cidade||c.municipio?' <span style="color:#9ca3af;font-size:11px;">'+(c.cidade||c.municipio)+'</span>':'')+'</div>';
   }).join('');
-  var nomeFormatado=q.charAt(0).toUpperCase()+q.slice(1);
-  html+='<div class="drop-item novo" onclick="selNovo('+JSON.stringify(nomeFormatado)+')">+ Cadastrar "'+nomeFormatado+'" como novo</div>';
-  drop.innerHTML=html;drop.style.display='block';
+  var nomeF=q.charAt(0).toUpperCase()+q.slice(1);
+  html+='<div class="drop-item novo" data-novo="'+encodeURIComponent(nomeF)+'">+ Cadastrar "'+nomeF+'" como novo</div>';
+  drop.innerHTML=html;
+  drop.querySelectorAll('.drop-item:not(.novo)').forEach(function(el){
+    el.addEventListener('click',function(){
+      var nome=decodeURIComponent(this.getAttribute('data-nome'));
+      var cod=this.getAttribute('data-cod');
+      var cidade=decodeURIComponent(this.getAttribute('data-cidade'));
+      document.getElementById('f-estab').value=nome;
+      document.getElementById('f-estab-cod').value=cod;
+      document.getElementById('grupo-novo').style.display='none';
+      if(cidade) document.getElementById('f-cidade').value=cidade;
+      ESTAB_NOVO=false;
+      drop.style.display='none';
+    });
+  });
+  drop.querySelectorAll('.drop-item.novo').forEach(function(el){
+    el.addEventListener('click',function(){
+      var nome=decodeURIComponent(this.getAttribute('data-novo'));
+      document.getElementById('f-estab').value=nome;
+      document.getElementById('f-estab-cod').value='';
+      document.getElementById('grupo-novo').style.display='block';
+      ESTAB_NOVO=true;
+      drop.style.display='none';
+    });
+  });
+  drop.style.display='block';
 }
-document.addEventListener('click',function(e){if(!e.target.closest('.dropdown-wrap'))document.getElementById('drop-estab').style.display='none';});
-function selEstab(cod,nome,cidade){
-  document.getElementById('f-estab').value=nome;
-  document.getElementById('f-estab-cod').value=cod;
-  document.getElementById('drop-estab').style.display='none';
-  document.getElementById('grupo-novo').style.display='none';
-  if(cidade) document.getElementById('f-cidade').value=cidade;
-  ESTAB_NOVO=false;
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#drop-estab')&&!e.target.closest('#f-estab')) document.getElementById('drop-estab').style.display='none';
+  if(!e.target.closest('#drop-prod')&&!e.target.closest('#am-prod')) document.getElementById('drop-prod').style.display='none';
+});
+
+// CONTATOS
+function abrirModalCt(){
+  document.getElementById('ct-nome').value='';
+  document.getElementById('ct-func').value='';
+  document.getElementById('ct-esp-i').value='';
+  document.getElementById('modal-ct').classList.add('open');
 }
-function selNovo(nome){
-  document.getElementById('f-estab').value=nome;
-  document.getElementById('f-estab-cod').value='';
-  document.getElementById('drop-estab').style.display='none';
-  document.getElementById('grupo-novo').style.display='block';
-  ESTAB_NOVO=true;
-}
-function abrirCt(){document.getElementById('ct-nome').value='';document.getElementById('ct-func').value='';document.getElementById('ct-esp-i').value='';document.getElementById('modal-ct').style.display='flex';}
-function fecharCt(){document.getElementById('modal-ct').style.display='none';}
+function fecharModalCt(){document.getElementById('modal-ct').classList.remove('open');}
 function confirmCt(){
   var nome=(document.getElementById('ct-nome').value||'').trim();
   var func=document.getElementById('ct-func').value;
   var esp=(document.getElementById('ct-esp-i').value||'').trim();
   if(!nome||!func){alert('Preencha nome e função.');return;}
   CONTATOS.push({nome:nome,funcao:func,especialidade:esp});
-  renderCts();fecharCt();
+  renderCts(); fecharModalCt();
 }
 function renderCts(){
   document.getElementById('lista-cts').innerHTML=CONTATOS.map(function(c,i){
-    return '<div class="ct-item"><span>'+c.nome+' <span style="color:#6b7280;font-size:11px;">('+c.funcao+')</span></span>'
-      +'<button onclick="rmCt('+i+')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:18px;">×</button></div>';
+    return '<div class="item-row"><span>'+c.nome+' <span style="color:#6b7280;font-size:11px;">('+c.funcao+')</span></span>'
+      +'<button onclick="rmCt('+i+')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:20px;line-height:1;">×</button></div>';
   }).join('');
+  // Atualizar select de contatos no modal de amostra
+  var sel=document.getElementById('am-ct');
+  sel.innerHTML='<option value="">Selecione (opcional)...</option>';
+  CONTATOS.forEach(function(c){sel.innerHTML+='<option>'+c.nome+'</option>';});
 }
 function rmCt(i){CONTATOS.splice(i,1);renderCts();}
+
+// AMOSTRAS
+function abrirModalAm(){
+  document.getElementById('am-prod').value='';
+  document.getElementById('am-prod-val').value='';
+  document.getElementById('am-qtd').value='';
+  document.getElementById('drop-prod').style.display='none';
+  document.getElementById('modal-am').classList.add('open');
+}
+function fecharModalAm(){document.getElementById('modal-am').classList.remove('open');}
+
+function buscarProd(q){
+  var drop=document.getElementById('drop-prod');
+  q=(q||'').trim().toLowerCase();
+  if(!q||typeof PRECOS_VV==='undefined'){drop.style.display='none';return;}
+  // Filtrar por lab do fabricante
+  var res=PRECOS_VV.filter(function(p){
+    return (p.lab||'').toLowerCase().indexOf(FAB_LAB.toLowerCase())>=0
+      && p.nome.toLowerCase().indexOf(q)>=0;
+  }).slice(0,8);
+  if(!res.length){
+    // Se não achar por lab restrito, busca geral do fabricante
+    res=PRECOS_VV.filter(function(p){
+      return (p.lab||'').toLowerCase().indexOf(FAB_LAB.toLowerCase())>=0;
+    }).slice(0,8);
+  }
+  if(!res.length){drop.style.display='none';return;}
+  drop.innerHTML=res.map(function(p){
+    return '<div class="drop-item" data-nome="'+encodeURIComponent(p.nome)+'">'+p.nome+'</div>';
+  }).join('');
+  drop.querySelectorAll('.drop-item').forEach(function(el){
+    el.addEventListener('click',function(){
+      var nome=decodeURIComponent(this.getAttribute('data-nome'));
+      document.getElementById('am-prod').value=nome;
+      document.getElementById('am-prod-val').value=nome;
+      drop.style.display='none';
+    });
+  });
+  drop.style.display='block';
+}
+
+function confirmAm(){
+  var prod=(document.getElementById('am-prod-val').value||document.getElementById('am-prod').value||'').trim();
+  var qtd=parseInt(document.getElementById('am-qtd').value)||0;
+  var ct=document.getElementById('am-ct').value||'';
+  if(!prod){alert('Selecione o produto.');return;}
+  if(!qtd||qtd<1){alert('Informe a quantidade.');return;}
+  AMOSTRAS.push({produto:prod,quantidade:qtd,contato_nome:ct});
+  renderAms(); fecharModalAm();
+}
+function renderAms(){
+  document.getElementById('lista-ams').innerHTML=AMOSTRAS.map(function(a,i){
+    return '<div class="item-row"><span>'+a.produto+' <span style="color:#6b7280;font-size:11px;">('+a.quantidade+'un'+(a.contato_nome?' — '+a.contato_nome:'')+')</span></span>'
+      +'<button onclick="rmAm('+i+')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:20px;line-height:1;">×</button></div>';
+  }).join('');
+}
+function rmAm(i){AMOSTRAS.splice(i,1);renderAms();}
+
+// FOTO — sem capture para dar opção galeria/câmera
 function prevFoto(input){
-  var file=input.files[0];if(!file)return;
+  var file=input.files[0]; if(!file) return;
   FOTO_FILE=file;
   var reader=new FileReader();
   reader.onload=function(e){
     var img=document.getElementById('foto-prev');
-    img.src=e.target.result;img.style.display='block';
+    img.src=e.target.result; img.style.display='block';
     document.getElementById('foto-ph').style.display='none';
     document.getElementById('foto-area').classList.add('tem-foto');
   };
   reader.readAsDataURL(file);
 }
+
 async function salvar(){
   var btn=document.getElementById('btn-sv');
   var promotor=(document.getElementById('f-promotor').value||'').trim();
@@ -246,8 +378,9 @@ async function salvar(){
   if(!tipos.length){showErr('Selecione o tipo de estabelecimento.');return;}
   if(!objs.length){showErr('Selecione o objetivo da visita.');return;}
   if(!ress.length){showErr('Selecione o resultado da visita.');return;}
-  btn.disabled=true;btn.textContent='Salvando...';hideErr();
+  btn.disabled=true; btn.textContent='Salvando...'; hideErr();
   try{
+    // Upload foto
     var fotoUrl=null;
     if(FOTO_FILE){
       var ext=FOTO_FILE.name.split('.').pop()||'jpg';
@@ -261,26 +394,28 @@ async function salvar(){
     }
     var contato=CONTATOS.map(function(c){return c.nome+(c.funcao?' ('+c.funcao+')':'');}).join(', ');
     var payload={
-      fabricante:FAB_NOME,fabricante_id:FAB_ID,promotor_nome:promotor,
-      cliente_cod:estabCod?parseInt(estabCod):null,cliente_nome:estab,
+      fabricante:FAB_NOME, fabricante_id:FAB_ID, promotor_nome:promotor,
+      cliente_cod:estabCod?parseInt(estabCod):null, cliente_nome:estab,
       cidade:(document.getElementById('f-cidade').value||'').trim()||null,
-      tipo:tipos.join(', '),especialidades:getChecked('check-esp'),
-      contato:contato,objetivo:objs.join(', '),fornecedores:getChecked('check-forn'),
-      resultado:ress.join(', '),obs:(document.getElementById('f-obs').value||'').trim()||null,
+      tipo:tipos.join(', '), especialidades:getChecked('check-esp'),
+      contato:contato, contatos_json:CONTATOS,
+      objetivo:objs.join(', '), resultado:ress.join(', '),
+      fornecedores:[FAB_NOME],
+      obs:(document.getElementById('f-obs').value||'').trim()||null,
       data_retorno:document.getElementById('f-ret').value||null,
-      foto_url:fotoUrl,contatos_json:CONTATOS
+      amostras_json:AMOSTRAS, foto_url:fotoUrl
     };
     var res=await sbF('visitas_fabricantes',{method:'POST',body:JSON.stringify(payload)});
     if(Array.isArray(res)&&res[0]&&res[0].id){
       document.getElementById('form-area').style.display='none';
       document.getElementById('msg-ok').style.display='block';
     }else{
-      btn.disabled=false;btn.textContent='✓ Registrar visita';
+      btn.disabled=false; btn.textContent='✓ Registrar visita';
       showErr('Erro ao salvar. Verifique sua conexão e tente novamente.');
       console.error(res);
     }
   }catch(e){
-    btn.disabled=false;btn.textContent='✓ Registrar visita';
+    btn.disabled=false; btn.textContent='✓ Registrar visita';
     showErr('Erro: '+e.message);
   }
 }

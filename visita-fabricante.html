@@ -78,9 +78,15 @@ textarea{resize:vertical;min-height:80px;}
       </div>
       <div id="grupo-novo" style="display:none;">
         <div class="aviso-novo">&#128205; Novo estabelecimento — preencha os dados adicionais</div>
-        <div class="form-group"><label>Cidade</label><input id="f-cidade" type="text" placeholder="Ex: São Paulo"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group"><label>CEP</label><input id="f-cep" type="text" placeholder="00000-000" oninput="buscarCep(this.value)" maxlength="9"></div>
+          <div class="form-group"><label>Cidade</label><input id="f-cidade" type="text" placeholder="Ex: São Paulo"></div>
+        </div>
+        <div class="form-group"><label>Endereço (rua e número)</label><input id="f-endereco" type="text" placeholder="Ex: Av. Paulista, 1000"></div>
+        <div class="form-group"><label>Bairro</label><input id="f-bairro" type="text" placeholder="Ex: Bela Vista"></div>
         <div class="form-group"><label>CNPJ (opcional)</label><input id="f-cnpj" type="text" placeholder="00.000.000/0000-00"></div>
         <div class="form-group"><label>Segmento</label><input id="f-seg" type="text" placeholder="Ex: Clínica Veterinária"></div>
+        <div class="form-group"><label>Telefone (opcional)</label><input id="f-fone" type="text" placeholder="(11) 99999-9999"></div>
       </div>
       <div class="form-group"><label class="req">Tipo</label><div class="check-group" id="check-tipo"></div></div>
       <div class="form-group" id="grupo-esp" style="display:none;"><label>Especialidades</label><div class="check-group" id="check-esp"></div></div>
@@ -218,6 +224,19 @@ function buildChecks(id,arr,multi,cb){
 function getChecked(id){return Array.from(document.querySelectorAll('#'+id+' .check-pill.ativo')).map(function(p){return p.dataset.val;});}
 
 // Busca de estabelecimento
+async function buscarCep(cep){
+  cep=cep.replace(/\D/g,'');
+  if(cep.length!==8) return;
+  try{
+    var r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
+    var d=await r.json();
+    if(!d.erro){
+      document.getElementById('f-endereco').value=d.logradouro||'';
+      document.getElementById('f-bairro').value=d.bairro||'';
+      document.getElementById('f-cidade').value=d.localidade||'';
+    }
+  }catch(e){}
+}
 function buscarEstab(q){
   var drop=document.getElementById('drop-estab');
   q=(q||'').trim();

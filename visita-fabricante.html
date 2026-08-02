@@ -412,10 +412,21 @@ async function salvar(){
       if(up.ok) fotoUrl=SB_URL+'/storage/v1/object/public/receitas-acoes/'+fn;
     }
     var contato=CONTATOS.map(function(c){return c.nome+(c.funcao?' ('+c.funcao+')':'');}).join(', ');
+    var endParts=[
+      document.getElementById('f-endereco').value,
+      document.getElementById('f-bairro').value,
+      document.getElementById('f-cidade').value
+    ].map(function(s){return (s||'').trim();}).filter(Boolean).join(', ');
     var payload={
       fabricante:FAB_NOME, fabricante_id:FAB_ID, promotor_nome:promotor,
       cliente_cod:estabCod?parseInt(estabCod):null, cliente_nome:estab,
       cidade:(document.getElementById('f-cidade').value||'').trim()||null,
+      endereco:ESTAB_NOVO?endParts||null:null,
+      cep:ESTAB_NOVO?(document.getElementById('f-cep').value||'').replace(/\D/g,'')||null:null,
+      bairro:ESTAB_NOVO?(document.getElementById('f-bairro').value||'').trim()||null:null,
+      cnpj:ESTAB_NOVO?(document.getElementById('f-cnpj').value||'').trim()||null:null,
+      fone:ESTAB_NOVO?(document.getElementById('f-fone').value||'').trim()||null:null,
+      segmento:ESTAB_NOVO?(document.getElementById('f-seg').value||'').trim()||null:null,
       tipo:tipos.join(', '), especialidades:getChecked('check-esp'),
       contato:contato, contatos_json:CONTATOS,
       objetivo:objs.join(', '), resultado:ress.join(', '),

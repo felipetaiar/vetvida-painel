@@ -52,7 +52,9 @@ textarea{resize:vertical;min-height:80px;}
     <div style="color:white;font-weight:700;font-size:15px;">VetVida</div>
     <div id="fab-sub" style="color:rgba(255,255,255,.6);font-size:11px;">Registro de Visita</div>
   </div>
-  <span id="fab-badge" class="fab-badge"></span>
+  <div id="fab-logo-wrap" style="display:none;background:white;border-radius:8px;padding:4px 8px;max-height:36px;display:none;align-items:center;">
+    <img id="fab-logo-img" src="" alt="" style="height:28px;max-width:100px;object-fit:contain;">
+  </div>
 </div>
 
 <div class="container">
@@ -177,7 +179,7 @@ var SB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
 var FAB_ID='',FAB_NOME='',FAB_COR='#CC0000',FAB_LAB='';
 var CONTATOS=[],AMOSTRAS=[],FOTO_FILE=null,ESTAB_NOVO=false;
-var FABRICANTES={"labyes": {"nome": "Labyes", "cor": "#2563eb", "lab": "Labyes"}, "homeopet": {"nome": "Homeopet", "cor": "#16a34a", "lab": "Homeopet"}, "biogenesis": {"nome": "Biogênesis Bagó Pet", "cor": "#7c3aed", "lab": "Biogénesis"}};
+var FABRICANTES={"labyes":{"nome":"Labyes","cor":"#2563eb","lab":"Labyes","logo":"/logos/labyes.jpg"},"homeopet":{"nome":"Homeopet","cor":"#7c3aed","lab":"Homeopet","logo":"/logos/homeopet.jpg"},"biogenesis":{"nome":"Biogênesis Bagó Pet","cor":"#0ea5e9","lab":"Biogénesis","logo":"/logos/biogenesis.png"}};
 
 var TIPOS=['Clínica veterinária','Pet shop','Hospital 24h','Banho e tosa','Canil','Criador','Agropecuária','Groomer','Hospital veterinário'];
 var ESPECIALIDADES=['Clínica geral','Dermatologia','Oncologia','Cardiologia','Ortopedia','Neurologia','Oftalmologia','Reprodução animal','Exóticos','Emergência/UTI','Laboratório','Endocrinologia'];
@@ -196,8 +198,12 @@ function init(){
   var fab=FABRICANTES[FAB_ID];
   if(!fab){showErr('Link inválido. Solicite o link correto à VetVida.');document.getElementById('btn-sv').disabled=true;return;}
   FAB_NOME=fab.nome; FAB_COR=fab.cor; FAB_LAB=fab.lab||fab.nome;
-  var badge=document.getElementById('fab-badge');
-  badge.textContent=FAB_NOME; badge.style.background=FAB_COR; badge.style.display='inline-block';
+  var logoWrap=document.getElementById('fab-logo-wrap');
+  var logoImg=document.getElementById('fab-logo-img');
+  if(fab.logo && logoWrap && logoImg){
+    logoImg.src=fab.logo; logoImg.alt=FAB_NOME;
+    logoWrap.style.display='flex';
+  }
   document.getElementById('fab-sub').textContent=FAB_NOME+' · Registro de Visita';
   document.title='VetVida — '+FAB_NOME;
   buildChecks('check-tipo',TIPOS,false,function(sel){

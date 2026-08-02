@@ -79,14 +79,14 @@ textarea{resize:vertical;min-height:80px;}
       <div id="grupo-novo" style="display:none;">
         <div class="aviso-novo">&#128205; Novo estabelecimento — preencha os dados adicionais</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="form-group"><label>CEP</label><input id="f-cep" type="text" placeholder="00000-000" oninput="buscarCep(this.value)" maxlength="9"></div>
-          <div class="form-group"><label>Cidade</label><input id="f-cidade" type="text" placeholder="Ex: São Paulo"></div>
+          <div class="form-group"><label class="req">CEP</label><input id="f-cep" type="text" placeholder="00000-000" oninput="buscarCep(this.value)" maxlength="9"></div>
+          <div class="form-group"><label class="req">Cidade</label><input id="f-cidade" type="text" placeholder="Ex: São Paulo"></div>
         </div>
-        <div class="form-group"><label>Endereço (rua e número)</label><input id="f-endereco" type="text" placeholder="Ex: Av. Paulista, 1000"></div>
-        <div class="form-group"><label>Bairro</label><input id="f-bairro" type="text" placeholder="Ex: Bela Vista"></div>
-        <div class="form-group"><label>CNPJ (opcional)</label><input id="f-cnpj" type="text" placeholder="00.000.000/0000-00"></div>
-        <div class="form-group"><label>Segmento</label><input id="f-seg" type="text" placeholder="Ex: Clínica Veterinária"></div>
-        <div class="form-group"><label>Telefone (opcional)</label><input id="f-fone" type="text" placeholder="(11) 99999-9999"></div>
+        <div class="form-group"><label class="req">Endereço (rua e número)</label><input id="f-endereco" type="text" placeholder="Ex: Av. Paulista, 1000"></div>
+        <div class="form-group"><label class="req">Bairro</label><input id="f-bairro" type="text" placeholder="Ex: Bela Vista"></div>
+        <div class="form-group"><label class="req">CNPJ</label><input id="f-cnpj" type="text" placeholder="00.000.000/0000-00"></div>
+        <div class="form-group"><label class="req">Segmento</label><input id="f-seg" type="text" placeholder="Ex: Clínica Veterinária"></div>
+        <div class="form-group"><label class="req">Telefone</label><input id="f-fone" type="text" placeholder="(11) 99999-9999"></div>
       </div>
       <div class="form-group"><label class="req">Tipo</label><div class="check-group" id="check-tipo"></div></div>
       <div class="form-group" id="grupo-esp" style="display:none;"><label>Especialidades</label><div class="check-group" id="check-esp"></div></div>
@@ -394,6 +394,15 @@ async function salvar(){
   var ress=getChecked('check-res');
   if(!promotor){showErr('Informe seu nome.');return;}
   if(!estab){showErr('Informe o estabelecimento.');return;}
+  if(ESTAB_NOVO){
+    if(!(document.getElementById('f-cep').value||'').trim()){showErr('Informe o CEP do novo estabelecimento.');return;}
+    if(!(document.getElementById('f-endereco').value||'').trim()){showErr('Informe o endereço do novo estabelecimento.');return;}
+    if(!(document.getElementById('f-bairro').value||'').trim()){showErr('Informe o bairro do novo estabelecimento.');return;}
+    if(!(document.getElementById('f-cidade').value||'').trim()){showErr('Informe a cidade do novo estabelecimento.');return;}
+    if(!(document.getElementById('f-cnpj').value||'').trim()){showErr('Informe o CNPJ do novo estabelecimento.');return;}
+    if(!(document.getElementById('f-seg').value||'').trim()){showErr('Informe o segmento do novo estabelecimento.');return;}
+    if(!(document.getElementById('f-fone').value||'').trim()){showErr('Informe o telefone do novo estabelecimento.');return;}
+  }
   if(!tipos.length){showErr('Selecione o tipo de estabelecimento.');return;}
   if(!objs.length){showErr('Selecione o objetivo da visita.');return;}
   if(!ress.length){showErr('Selecione o resultado da visita.');return;}

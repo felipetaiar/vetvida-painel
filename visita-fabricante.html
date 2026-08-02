@@ -452,6 +452,20 @@ async function salvar(){
     };
     var res=await sbF('visitas_fabricantes',{method:'POST',body:JSON.stringify(payload)});
     if(Array.isArray(res)&&res[0]&&res[0].id){
+      // Notificar rep da area do cliente
+      try{
+        var _cliF=typeof BASE_CLIENTES!=='undefined'?BASE_CLIENTES.find(function(c){return c.cod===parseInt(estabCod)||c.nome===estab;}):null;
+        var _repF=_cliF?_cliF.vendedor:null;
+        if(_repF){
+          fetch(SB_URL+'/rest/v1/notificacoes',{
+            method:'POST',
+            headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+            body:JSON.stringify({destinatario:_repF.toUpperCase(),tipo:'visita',
+              titulo:'Visita de '+FAB_NOME,mensagem:promotor+' visitou '+estab,
+              referencia_id:res[0].id,lida:false})
+          });
+        }
+      }catch(_nf){}
       document.getElementById('form-area').style.display='none';
       document.getElementById('msg-ok').style.display='block';
     }else{

@@ -219,7 +219,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 /* ── NOVAS FEATURES ── */
 .btn-hist  { background:#5a3e8a;color:white;padding:4px 9px;border-radius:14px;font-size:11px;font-weight:700;border:none;cursor:pointer; }
 .btn-prom-h{ background:#ff69b4;color:white;padding:4px 9px;border-radius:14px;font-size:11px;font-weight:700;border:none;cursor:pointer; }
-.btn-prom-c{ background:#ff69b4;color:white;border:none;border-radius:10px;padding:4px 9px;font-size:10px;font-weight:700;cursor:pointer;margin-top:5px; }
+.btn-prom-c{ background:#ff69b4;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer; }
 #bhist     { background:#5a3e8a;color:white;text-align:center;padding:5px 0;font-size:11px;font-weight:700;display:none; }
 .mfvv      { position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;display:none;align-items:flex-end;justify-content:center; }
 .mfvv.on   { display:flex; }
@@ -747,8 +747,11 @@ function rnd(){
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" data-mun="'+encodeURIComponent(c.municipio)+'" onclick="var el=this;irEstoque(parseInt(el.dataset.cod),el.dataset.nome,el.dataset.mun);" style="background:#375623;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer">📦 Contar estoque</button>';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirHist(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer">Ver historico completo</button>';
     h+='</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirAcoes(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;" id="btn-acoes-'+c.cod+'">🎯 Ações</button>';
     h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'">🌸 Promotora</button>';
+    h+='<button class="btn-fab-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#0ea5e9;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">🏭 Fabricantes</button>';
+    h+='</div>';
     h+='</div></div>';
   });
   // Renderizar em chunks para evitar Invalid string length no mobile
@@ -759,7 +762,8 @@ function rnd(){
   tmp.innerHTML=h;
   while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
   lista.appendChild(frag);
-  document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom));});});
+  document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom));});
+  document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});});
   pg();
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
 }
@@ -1266,11 +1270,22 @@ if (sessionStorage.getItem('abrir_promo_ao_carregar')) {
   </div>
 </div>
 
+<!-- MODAL FABRICANTES -->
+<div class="mfvv" id="m-fab">
+  <div class="msvv">
+    <div class="msvv-h"></div>
+    <div class="msvv-t" id="m-fab-t">🏭 Fabricantes</div>
+    <div id="m-fab-b" style="max-height:65vh;overflow-y:auto;padding:12px;"></div>
+    <button class="msvv-f" id="btn-f-fab">Fechar</button>
+  </div>
+</div>
+
 <script>
 // Eventos dos botões fechar — sem inline onclick para evitar problema de aspas
 document.getElementById('btn-f-ac').addEventListener('click',function(){document.getElementById('m-ac').classList.remove('on');});
 document.getElementById('btn-f-pr').addEventListener('click',function(){document.getElementById('m-pr').classList.remove('on');});
 document.getElementById('btn-f-prc').addEventListener('click',function(){document.getElementById('m-prc').classList.remove('on');});
+document.getElementById('btn-f-fab').addEventListener('click',function(){document.getElementById('m-fab').classList.remove('on');});
 </script>
 
 
@@ -2195,6 +2210,84 @@ function sininhoPHTML(){
     +'</div>';
 }
 // ========= FIM NOTIFICAÇÕES =========
+
+
+// ═══════ VISITAS DE FABRICANTES ═══════
+var SB_FAB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_FAB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+
+async function verFabricantes(nomeCli, codCli){
+  var modal=document.getElementById('m-fab');
+  var titulo=document.getElementById('m-fab-t');
+  var body=document.getElementById('m-fab-b');
+  titulo.textContent='🏭 '+nomeCli+' — Fabricantes';
+  body.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</p>';
+  modal.classList.add('on');
+
+  try{
+    // Buscar por cod ou nome
+    var qs='visitas_fabricantes?order=created_at.desc&limit=50';
+    if(codCli && !isNaN(codCli)) qs+='&cliente_cod=eq.'+codCli;
+    else qs+='&cliente_nome=ilike.'+encodeURIComponent('*'+nomeCli+'*');
+    var res=await fetch(SB_FAB_URL+'/rest/v1/'+qs,{
+      headers:{'apikey':SB_FAB_KEY,'Authorization':'Bearer '+SB_FAB_KEY}
+    }).then(function(r){return r.json();});
+
+    if(!Array.isArray(res)||!res.length){
+      body.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Nenhuma visita de fabricante registrada.</p>';
+      return;
+    }
+
+    // Agrupar por fabricante
+    var porFab={};
+    res.forEach(function(v){
+      if(!porFab[v.fabricante]) porFab[v.fabricante]={};
+      if(!porFab[v.fabricante].visitas) porFab[v.fabricante].visitas=[];
+      porFab[v.fabricante].visitas.push(v);
+    });
+
+    var html='';
+    Object.keys(porFab).forEach(function(fab){
+      var visitas=porFab[fab].visitas;
+      html+='<div style="margin-bottom:16px;">'
+        +'<div style="font-size:12px;font-weight:700;color:#0ea5e9;text-transform:uppercase;margin-bottom:8px;">🏭 '+fab+' ('+visitas.length+' visita'+(visitas.length>1?'s':'')+')</div>';
+      visitas.forEach(function(v){
+        var dt=new Date(v.created_at).toLocaleDateString('pt-BR');
+        var ams=v.amostras_json;
+        var amH='';
+        if(ams&&ams.length){
+          amH='<div style="margin-top:6px;"><b>📦 Amostras:</b></div>'
+            +ams.map(function(a){
+              return '<div style="margin-left:8px;font-size:11px;color:#374151;">'+a.produto+' ('+a.quantidade+'un)'+(a.contato_nome?' — '+a.contato_nome:'')+'</div>';
+            }).join('');
+        }
+        var cts=v.contatos_json;
+        var ctH='';
+        if(cts&&cts.length){
+          ctH='<div style="margin-top:4px;"><b>👤 Contatos:</b> '+cts.map(function(c){return c.nome+(c.funcao?' ('+c.funcao+')':'');} ).join(', ')+'</div>';
+        }
+        html+='<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px;">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+          +'<b style="font-size:13px;">'+dt+'</b>'
+          +'<span style="font-size:10px;color:#6b7280;">por '+v.promotor_nome+'</span>'
+          +'</div>'
+          +(v.tipo?'<div style="color:#6b7280;">🏥 '+v.tipo+'</div>':'')
+          +ctH
+          +(v.objetivo?'<div style="color:#374151;margin-top:4px;">🎯 <b>Objetivo:</b> '+v.objetivo+'</div>':'')
+          +(v.resultado?'<div style="color:#374151;margin-top:4px;">📊 <b>Resultado:</b> '+v.resultado+'</div>':'')
+          +(v.obs?'<div style="color:#374151;margin-top:4px;font-style:italic;">📝 '+v.obs+'</div>':'')
+          +amH
+          +(v.foto_url?'<div style="margin-top:8px;"><a href="'+v.foto_url+'" target="_blank"><img src="'+v.foto_url+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:6px;"></a></div>':'')
+          +'</div>';
+      });
+      html+='</div>';
+    });
+    body.innerHTML=html;
+  }catch(e){
+    body.innerHTML='<p style="color:#dc2626;padding:12px;">Erro: '+e.message+'</p>';
+  }
+}
+// ═══════ FIM FABRICANTES ═══════
 
 </script>
 

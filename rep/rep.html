@@ -747,9 +747,11 @@ function rnd(){
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" data-mun="'+encodeURIComponent(c.municipio)+'" onclick="var el=this;irEstoque(parseInt(el.dataset.cod),el.dataset.nome,el.dataset.mun);" style="background:#375623;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer">📦 Contar estoque</button>';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirHist(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer">Ver historico completo</button>';
     h+='</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirAcoes(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;" id="btn-acoes-'+c.cod+'">🎯 Ações</button>';
     h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'">🌸 Promotora</button>';
     h+='<button class="btn-fab-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#0ea5e9;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">🏭 Fabricantes</button>';
+    h+='</div>';
     h+='</div></div>';
   });
   // Renderizar em chunks para evitar Invalid string length no mobile

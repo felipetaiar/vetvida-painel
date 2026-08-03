@@ -638,7 +638,12 @@ function rnd(){
   try{
   var b=document.getElementById('busca').value.toLowerCase();
   // Injetar prospects Biogenesis no topo
-  var BIO_P = (typeof BIO_PROSPECTS!=='undefined') ? BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;}) : [];
+  var BIO_P = [];
+  if(typeof BIO_PROSPECTS!=='undefined'){
+    BIO_P=BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;});
+  } else {
+    setTimeout(rnd,800);
+  }
   var lista=CL.filter(function(c){
     var matchFiltro=(FA==='todos'||c.tipo===FA);
     var prods_str=(c.prods||[]).map(function(p){return p.nome;}).join(' ').toLowerCase();

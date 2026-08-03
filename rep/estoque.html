@@ -430,6 +430,7 @@ function init(){
   var nome=sessionStorage.getItem('estoque_nome');
   var mun=sessionStorage.getItem('estoque_mun');
   var cnpjProspect=sessionStorage.getItem('estoque_cnpj')||'';
+  console.log('[ESTOQUE-INIT] cod='+cod+' nome='+nome+' cnpj='+cnpjProspect);
   if(cod==='BIO_PROSPECT'&&nome){
     sessionStorage.removeItem('estoque_cod');
     sessionStorage.removeItem('estoque_nome');

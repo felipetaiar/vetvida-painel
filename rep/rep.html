@@ -774,8 +774,8 @@ function rnd(){
     hBio+='<div style="background:#eff6ff;border-left:4px solid #1d4ed8;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;font-weight:700;color:#1d4ed8;">🔵 '+BIO_P.length+' Prospect'+(BIO_P.length>1?'s':'')+' Biogênesis — nunca compraram pela VetVida</div>';
     // Ordenar por ultima_compra mais antiga = mais urgente
     var BIO_P_ORD = BIO_P.slice().sort(function(a,b){
-      var da = a.ultima_compra||''; var db = b.ultima_compra||'';
-      return da < db ? -1 : da > db ? 1 : 0;
+      var da = a.ultima_compra||'0000-00'; var db = b.ultima_compra||'0000-00';
+      return da > db ? -1 : da < db ? 1 : 0; // mais recente no topo
     });
     BIO_P_ORD.forEach(function(p){
       var prods=(p.produtos||[]).slice(0,3).join(' · ');

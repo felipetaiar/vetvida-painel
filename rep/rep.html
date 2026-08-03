@@ -792,8 +792,8 @@ function rnd(){
         +'</div></div>'
         +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">'
         +'<button data-bio-cnpj="'+p.cnpj+'" class="bio-btn-det" style="background:#1d4ed8;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">🔵 Biogênesis</button>'
-        +(p.telefone?'<button data-fone="'+p.telefone+'" class="bio-btn-vis" style="background:#375623;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📋 Registrar visita</button>':'')
-        +(p.cnpj?'<button data-bio-nome="'+encodeURIComponent(p.nome)+'" data-bio-mun="'+encodeURIComponent(p.municipio||'')+'" class="bio-btn-hist" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📊 Histórico</button>':'')
+        +'<button data-bio-cnpj="'+p.cnpj+'" data-bio-nome="'+encodeURIComponent(p.nome)+'" class="bio-btn-vis" style="background:#375623;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📋 Registrar visita</button>'
+        +(p.cnpj?'<button data-bio-nome="'+encodeURIComponent(p.nome)+'" data-bio-cnpj="'+p.cnpj+'" data-bio-mun="'+encodeURIComponent(p.municipio||'')+'" class="bio-btn-hist" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📊 Histórico</button>':'')
         +(p.cnpj?'<button data-bio-nome="'+encodeURIComponent(p.nome)+'" data-bio-mun="'+encodeURIComponent(p.municipio||'')+'" class="bio-btn-estq" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📦 Contar estoque</button>':'')
         +'</div>'
         +'</div>';
@@ -808,18 +808,20 @@ function rnd(){
   });
   document.querySelectorAll('.bio-btn-vis').forEach(function(b){
     b.addEventListener('click',function(){
-      var fone=(this.dataset.fone||'').replace(/\D/g,'');
-      if(fone) window.open('https://wa.me/55'+fone,'_blank');
-      else mostrarToast('Telefone não disponível para este prospect');
+      var cnpj=this.dataset.bioCnpj||'';
+      var nome=decodeURIComponent(this.dataset.bioNome||'');
+      abrirModalVisitaBio(cnpj,nome);
     });
   });
   document.querySelectorAll('.bio-btn-hist').forEach(function(b){
     b.addEventListener('click',function(){
       var nome=decodeURIComponent(this.dataset.bioNome);
-      // Buscar cod no CL pelo nome
+      var cnpj=this.dataset.bioCnpj||'';
+      // Tentar pelo CL primeiro
       var cli=CL.find(function(c){return c.nome.toUpperCase()===nome.toUpperCase();});
-      if(cli) abrirHist(cli.cod,cli.nome);
-      else mostrarToast('Histórico disponível apenas para clientes já na base VetVida');
+      if(cli){abrirHist(cli.cod,cli.nome);return;}
+      // Prospect não está na base — mostrar histórico do Excel
+      abrirHistBio(cnpj,nome);
     });
   });
   document.querySelectorAll('.bio-btn-estq').forEach(function(b){
@@ -827,8 +829,12 @@ function rnd(){
       var nome=decodeURIComponent(this.dataset.bioNome);
       var mun=decodeURIComponent(this.dataset.bioMun||'');
       var cli=CL.find(function(c){return c.nome.toUpperCase()===nome.toUpperCase();});
-      if(cli) irEstoque(cli.cod,encodeURIComponent(cli.nome),encodeURIComponent(cli.municipio||mun));
-      else mostrarToast('Estoque disponível apenas para clientes já na base VetVida');
+      if(cli){irEstoque(cli.cod,encodeURIComponent(cli.nome),encodeURIComponent(cli.municipio||mun));return;}
+      // Prospect: usar cod=-1 como sinal de prospect, estoque.html vai tratar
+      sessionStorage.setItem('estoque_cod','BIO_PROSPECT');
+      sessionStorage.setItem('estoque_nome',nome);
+      sessionStorage.setItem('estoque_mun',mun);
+      window.location.href='estoque.html';
     });
   });
   document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom));});
@@ -2377,9 +2383,10 @@ function abrirBioDetalhes(cnpj){
   var reativado=false;
   var prodReativados=[];
   if(cliVV&&cliVV.prods){
-    var BIO_LABS=['Biog','BIOG','biog','Biogénesis','Biogenesis'];
+    var BIO_NOMES=['NUTRISANA','DRASIL','OTOSANA','PETSPORIN','PIUSANA','GOOD CARE','MUNNOMAX','NEXIN','CISPET','OMEX','AKALME','PBIOTICS'];
     prodReativados=cliVV.prods.filter(function(pr){
-      return BIO_LABS.some(function(bl){return (pr.lab||'').indexOf(bl)>=0;});
+      var nm=(pr.nome||'').toUpperCase();
+      return BIO_NOMES.some(function(bn){return nm.indexOf(bn)>=0;});
     });
     reativado=prodReativados.length>0;
   }
@@ -2421,6 +2428,116 @@ function abrirBioDetalhes(cnpj){
   document.getElementById('m-prc').classList.add('on');
 }
 // ══ FIM BIOGÊNESIS ══
+
+
+// ══ BIO: Histórico do Excel ══
+function abrirHistBio(cnpj,nome){
+  var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
+  var p=prospects.find(function(x){return x.cnpj===cnpj;});
+  var html='<div style="padding:4px">';
+  html+='<div style="font-weight:700;font-size:14px;margin-bottom:10px;">📊 Histórico Biogênesis — '+nome+'</div>';
+  if(p&&p.produtos&&p.produtos.length){
+    html+='<div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px;">Produtos comprados (distribuidor anterior):</div>';
+    html+='<div style="background:#f0f9ff;border-radius:8px;padding:10px;">';
+    p.produtos.forEach(function(pr){
+      html+='<div style="padding:4px 0;border-bottom:1px solid #e5e7eb;font-size:12px;">'+pr+'</div>';
+    });
+    html+='</div>';
+    var ult=p.ultima_compra?p.ultima_compra.split('-').reverse().join('/'):'';
+    if(ult) html+='<div style="font-size:11px;color:#9ca3af;margin-top:8px;">Última compra (dist. anterior): '+ult+'</div>';
+    if(p.total_valor) html+='<div style="font-size:11px;color:#9ca3af;">Volume histórico: R$ '+p.total_valor.toFixed(2).replace('.',',')+'</div>';
+  }else{
+    html+='<div style="color:#9ca3af;font-size:13px;">Nenhum dado de histórico disponível.</div>';
+  }
+  html+='</div>';
+  document.getElementById('m-prc-t').textContent='📊 Histórico Bio — '+nome;
+  document.getElementById('m-prc-b').innerHTML=html;
+  document.getElementById('m-prc').classList.add('on');
+}
+
+// ══ BIO: Modal de visita prospect ══
+var _bioVisitaCnpj='',_bioVisitaNome='';
+function abrirModalVisitaBio(cnpj,nome){
+  _bioVisitaCnpj=cnpj; _bioVisitaNome=nome;
+  var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
+  var p=prospects.find(function(x){return x.cnpj===cnpj;})||{};
+  var modal=document.getElementById('m-bio-visita');
+  if(!modal){
+    var div=document.createElement('div');
+    div.innerHTML='<div class="mfvv" id="m-bio-visita">'
+      +'<div class="msvv"><div class="msvv-h"></div>'
+      +'<div class="msvv-t" id="m-bv-t">📋 Registrar Visita</div>'
+      +'<div id="m-bv-b" style="padding:16px;max-height:65vh;overflow-y:auto;"></div>'
+      +'<button class="msvv-f" id="btn-f-bv">Fechar</button>'
+      +'</div></div>';
+    document.body.appendChild(div.firstChild);
+    document.getElementById('btn-f-bv').addEventListener('click',function(){
+      document.getElementById('m-bio-visita').classList.remove('on');
+    });
+  }
+  document.getElementById('m-bv-t').textContent='📋 Visita — '+nome;
+  var hoje=new Date().toISOString().split('T')[0];
+  document.getElementById('m-bv-b').innerHTML=
+    '<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Data *</label>'
+      +'<input id="bv-data" type="date" value="'+hoje+'" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Com quem falou *</label>'
+      +'<input id="bv-contato" type="text" placeholder="Nome do contato" value="'+(p.telefone?'':'')+'" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Telefone atualizado</label>'
+      +'<input id="bv-fone" type="tel" placeholder="(11) 99999-9999" value="'+(p.telefone||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Resultado *</label>'
+      +'<select id="bv-resultado" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+        +'<option value="">Selecione...</option>'
+        +'<option>Compra realizada</option>'
+        +'<option>Interesse confirmado — enviar proposta</option>'
+        +'<option>Cliente fechado — aguardando pedido</option>'
+        +'<option>Sem interesse</option>'
+        +'<option>Ausente — reagendar</option>'
+        +'<option>Já compra pela VetVida</option>'
+      +'</select>'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Observações</label>'
+      +'<textarea id="bv-obs" rows="3" placeholder="Detalhes da visita..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;resize:vertical;"></textarea>'
+    +'</div>'
+    +'<button onclick="salvarVisitaBio()" style="width:100%;background:#1d4ed8;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">✓ Salvar visita</button>';
+  document.getElementById('m-bio-visita').classList.add('on');
+}
+
+async function salvarVisitaBio(){
+  var data=document.getElementById('bv-data').value;
+  var contato=(document.getElementById('bv-contato').value||'').trim();
+  var fone=(document.getElementById('bv-fone').value||'').trim();
+  var resultado=document.getElementById('bv-resultado').value;
+  var obs=(document.getElementById('bv-obs').value||'').trim();
+  if(!data||!contato||!resultado){mostrarToast('Preencha data, contato e resultado.');return;}
+  try{
+    var SB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+    var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+    await fetch(SB_URL+'/rest/v1/visitas_fabricantes',{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({
+        fabricante:'VetVida Rep',fabricante_id:'rep',
+        promotor_nome:REP,
+        cliente_cnpj:_bioVisitaCnpj,cliente_nome:_bioVisitaNome,
+        contato:contato,telefone:fone,
+        resultado:resultado,obs:obs,
+        data_visita:data,
+        tipo:'visita_prospect_bio'
+      })
+    });
+    mostrarToast('✓ Visita registrada!');
+    document.getElementById('m-bio-visita').classList.remove('on');
+  }catch(e){mostrarToast('Erro ao salvar: '+e.message);}
+}
+// ══ FIM BIO ══
 
 </script>
 

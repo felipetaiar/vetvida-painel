@@ -636,6 +636,8 @@ function ordenar(lista){
 function rnd(){
   try{
   var b=document.getElementById('busca').value.toLowerCase();
+  // Injetar prospects Biogenesis no topo
+  var BIO_P = (typeof BIO_PROSPECTS!=='undefined') ? BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;}) : [];
   var lista=CL.filter(function(c){
     var matchFiltro=(FA==='todos'||c.tipo===FA);
     var prods_str=(c.prods||[]).map(function(p){return p.nome;}).join(' ').toLowerCase();
@@ -2288,6 +2290,32 @@ async function verFabricantes(nomeCli, codCli){
   }
 }
 // ═══════ FIM FABRICANTES ═══════
+
+
+// ══ BIOGÊNESIS PROSPECTS ══
+function abrirBioDetalhes(cnpj){
+  var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
+  var p=prospects.find(function(x){return x.cnpj===cnpj;});
+  if(!p){mostrarToast('Prospect não encontrado');return;}
+  var prods=(p.produtos||[]).map(function(pr){return '<li style="font-size:12px;padding:2px 0;">'+pr+'</li>';}).join('');
+  var ult=p.ultima_compra?p.ultima_compra.split('-').reverse().join('/'):'';
+  var html='<div style="padding:4px">'
+    +'<div style="font-weight:700;font-size:15px;margin-bottom:8px;">'+p.nome+'</div>'
+    +(p.bairro?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">📍 '+p.bairro+(p.municipio?', '+p.municipio:'')+'</div>':'')
+    +(p.endereco?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">🏠 '+p.endereco+'</div>':'')
+    +(p.telefone?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">📞 '+p.telefone+'</div>':'')
+    +(p.email?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">✉️ '+p.email+'</div>':'')
+    +'<div style="height:1px;background:#e5e7eb;margin:10px 0;"></div>'
+    +'<div style="font-weight:700;font-size:12px;color:#1d4ed8;margin-bottom:6px;">Produtos que comprava:</div>'
+    +'<ul style="padding-left:16px;margin:0;">'+prods+'</ul>'
+    +(ult?'<div style="font-size:11px;color:#9ca3af;margin-top:8px;">Última compra: '+ult+'</div>':'')
+    +(p.total_valor?'<div style="font-size:11px;color:#9ca3af;">Volume histórico: R$ '+p.total_valor.toFixed(2).replace('.',',')+'</div>':'')
+    +'</div>';
+  document.getElementById('m-prc-t').textContent='📦 '+p.nome;
+  document.getElementById('m-prc-b').innerHTML=html;
+  document.getElementById('m-prc').classList.add('on');
+}
+// ══ FIM BIOGÊNESIS ══
 
 </script>
 

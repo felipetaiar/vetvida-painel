@@ -1282,10 +1282,10 @@ document.addEventListener('click', function(e) {
     <div class="form-group">
       <label class="form-label">Semana</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="semana-pills">
-        <button class="btn btn-secondary" data-oc="selecionarSemana(1,this)">Semana 1</button>
-        <button class="btn btn-secondary" data-oc="selecionarSemana(2,this)">Semana 2</button>
-        <button class="btn btn-secondary" data-oc="selecionarSemana(3,this)">Semana 3</button>
-        <button class="btn btn-secondary" data-oc="selecionarSemana(4,this)">Semana 4</button>
+        <button class="btn btn-secondary" data-oc="selecionarSemana(1)" data-sem="1">Semana 1</button>
+        <button class="btn btn-secondary" data-oc="selecionarSemana(2)" data-sem="2">Semana 2</button>
+        <button class="btn btn-secondary" data-oc="selecionarSemana(3)" data-sem="3">Semana 3</button>
+        <button class="btn btn-secondary" data-oc="selecionarSemana(4)" data-sem="4">Semana 4</button>
       </div>
     </div>
 
@@ -2773,9 +2773,9 @@ function selecionarSemana(sem, btn) {
   document.querySelectorAll('#semana-pills .btn-sem').forEach(b => {
     b.style.background=''; b.style.color=''; b.style.border='';
   });
-  btn.style.background = 'var(--red)';
-  btn.style.color = 'white';
-  btn.style.border = 'none';
+  // btn pode ser undefined quando chamado via data-oc (this não funciona no eval)
+  var btnAtivo = btn || document.querySelector('#semana-pills .btn-sem[data-sem="'+sem+'"]');
+  if(btnAtivo) { btnAtivo.style.background = 'var(--red)'; btnAtivo.style.color = 'white'; btnAtivo.style.border = 'none'; }
 
   const diasWrap = document.getElementById('dia-pills');
   diasWrap.innerHTML = '';

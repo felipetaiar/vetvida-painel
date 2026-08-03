@@ -833,13 +833,14 @@ function rnd(){
       var nome=decodeURIComponent(this.dataset.bioNome);
       var cnpj=this.dataset.bioCnpj||'';
       var mun=decodeURIComponent(this.dataset.bioMun||'');
+      console.log('[BIO-ESTQ] nome='+nome+' cnpj='+cnpj);
       var cli=CL.find(function(c){return c.nome.toUpperCase()===nome.toUpperCase();});
       if(cli){irEstoque(cli.cod,encodeURIComponent(cli.nome),encodeURIComponent(cli.municipio||mun));return;}
-      // Prospect — modo Biogênesis no estoque
       sessionStorage.setItem('estoque_cod','BIO_PROSPECT');
       sessionStorage.setItem('estoque_cnpj',cnpj);
       sessionStorage.setItem('estoque_nome',nome);
       sessionStorage.setItem('estoque_mun',mun);
+      console.log('[BIO-ESTQ] sessionStorage setado, redirecionando...');
       window.location.href='estoque.html';
     });
   });

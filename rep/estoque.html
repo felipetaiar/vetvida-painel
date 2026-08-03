@@ -395,8 +395,8 @@ function fecharMenuLateral(){
 <div class="tst" id="tst">✓ Contagem salva!</div>
 
 <script src="base_clientes.js"></script>
-<script src="dados.js">
-<script src="bio_prospects.js"></script>
+<script src="dados.js"></script>
+<script src="bio_prospects.js" async></script>
 <script>
 var SUPABASE_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
 
@@ -435,7 +435,17 @@ function init(){
     sessionStorage.removeItem('estoque_nome');
     sessionStorage.removeItem('estoque_mun');
     sessionStorage.removeItem('estoque_cnpj');
-    iniciarModoProspectBio(cnpjProspect, nome, mun);
+    // bio_prospects.js é async — aguardar carregar com retry
+    function _tentarBio(tentativas){
+      if(typeof BIO_PROSPECTS !== 'undefined'){
+        iniciarModoProspectBio(cnpjProspect, nome, mun);
+      } else if(tentativas > 0){
+        setTimeout(function(){ _tentarBio(tentativas-1); }, 300);
+      } else {
+        alert('Erro ao carregar dados Biogênesis. Tente novamente.');
+      }
+    }
+    _tentarBio(20);
   } else if(cod&&nome){
     sessionStorage.removeItem('estoque_cod');
     sessionStorage.removeItem('estoque_nome');

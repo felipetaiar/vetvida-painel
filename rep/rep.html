@@ -831,11 +831,13 @@ function rnd(){
   document.querySelectorAll('.bio-btn-estq').forEach(function(b){
     b.addEventListener('click',function(){
       var nome=decodeURIComponent(this.dataset.bioNome);
+      var cnpj=this.dataset.bioCnpj||'';
       var mun=decodeURIComponent(this.dataset.bioMun||'');
       var cli=CL.find(function(c){return c.nome.toUpperCase()===nome.toUpperCase();});
       if(cli){irEstoque(cli.cod,encodeURIComponent(cli.nome),encodeURIComponent(cli.municipio||mun));return;}
-      // Prospect: usar cod=-1 como sinal de prospect, estoque.html vai tratar
+      // Prospect — modo Biogênesis no estoque
       sessionStorage.setItem('estoque_cod','BIO_PROSPECT');
+      sessionStorage.setItem('estoque_cnpj',cnpj);
       sessionStorage.setItem('estoque_nome',nome);
       sessionStorage.setItem('estoque_mun',mun);
       window.location.href='estoque.html';
@@ -2561,7 +2563,6 @@ async function salvarVisitaBio(){
         cliente_cnpj:_bioVisitaCnpj,cliente_nome:_bioVisitaNome,
         contato:contato,telefone:fone,
         resultado:resultado,obs:obs,
-        data_visita:data,
         tipo:'visita_prospect_bio'
       })
     });

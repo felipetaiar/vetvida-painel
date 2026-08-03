@@ -430,7 +430,11 @@ function init(){
   var nome=sessionStorage.getItem('estoque_nome');
   var mun=sessionStorage.getItem('estoque_mun');
   var cnpjProspect=sessionStorage.getItem('estoque_cnpj')||'';
-  console.log('[ESTOQUE-INIT] cod='+cod+' nome='+nome+' cnpj='+cnpjProspect);
+  // Mostrar debug na tela
+  var dbgDiv=document.createElement('div');
+  dbgDiv.style.cssText='position:fixed;top:10px;left:10px;right:10px;background:#1d4ed8;color:white;padding:12px;border-radius:8px;font-size:12px;z-index:9999;font-family:monospace;';
+  dbgDiv.innerHTML='<b>DEBUG ESTOQUE</b><br>cod: '+cod+'<br>nome: '+nome+'<br>cnpj: '+cnpjProspect+'<br><button onclick="this.parentNode.remove()" style="margin-top:6px;background:white;color:#1d4ed8;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;">Fechar</button>';
+  document.body.appendChild(dbgDiv);
   if(cod==='BIO_PROSPECT'&&nome){
     sessionStorage.removeItem('estoque_cod');
     sessionStorage.removeItem('estoque_nome');

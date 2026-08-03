@@ -806,6 +806,10 @@ function rnd(){
   document.querySelectorAll('.bio-btn-det').forEach(function(b){
     b.addEventListener('click',function(){abrirBioDetalhes(this.dataset.bioCnpj);});
   });
+  // Badge Bio clicável nos clientes da base — abrir hist
+  document.querySelectorAll('.bio-badge-base').forEach(function(b){
+    b.addEventListener('click',function(e){e.stopPropagation();abrirHistBio(this.dataset.bioCnpj,this.dataset.bioNome);});
+  });
   document.querySelectorAll('.bio-btn-vis').forEach(function(b){
     b.addEventListener('click',function(){
       var cnpj=this.dataset.bioCnpj||'';
@@ -2432,25 +2436,53 @@ function abrirBioDetalhes(cnpj){
 
 // ══ BIO: Histórico do Excel ══
 function abrirHistBio(cnpj,nome){
+  // Buscar em prospects ou na base
   var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
+  var naBase=typeof BIO_NA_BASE!=='undefined'?BIO_NA_BASE:{};
   var p=prospects.find(function(x){return x.cnpj===cnpj;});
+  // Tentar também pela base
+  if(!p){
+    var keys=Object.keys(naBase);
+    for(var i=0;i<keys.length;i++){
+      if((naBase[keys[i]].cnpj||'')===cnpj){p=naBase[keys[i]];break;}
+    }
+  }
+  var trans=(p&&p.transacoes)||[];
   var html='<div style="padding:4px">';
   html+='<div style="font-weight:700;font-size:14px;margin-bottom:10px;">📊 Histórico Biogênesis — '+nome+'</div>';
-  if(p&&p.produtos&&p.produtos.length){
-    html+='<div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px;">Produtos comprados (distribuidor anterior):</div>';
-    html+='<div style="background:#f0f9ff;border-radius:8px;padding:10px;">';
-    p.produtos.forEach(function(pr){
-      html+='<div style="padding:4px 0;border-bottom:1px solid #e5e7eb;font-size:12px;">'+pr+'</div>';
+  if(p&&p.total_valor){
+    html+='<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;">'
+      +'<span style="font-weight:700;color:#1d4ed8;">Volume total:</span> R$ '+p.total_valor.toFixed(2).replace('.',',')+' '
+      +(p.ultima_compra?'<span style="color:#9ca3af;">· Última compra: '+p.ultima_compra.split('-').reverse().join('/')+'</span>':'')+'</div>';
+  }
+  if(trans.length){
+    // Agrupar por data
+    var porData={};
+    trans.forEach(function(t){
+      if(!porData[t.data]) porData[t.data]=[];
+      porData[t.data].push(t);
     });
-    html+='</div>';
-    var ult=p.ultima_compra?p.ultima_compra.split('-').reverse().join('/'):'';
-    if(ult) html+='<div style="font-size:11px;color:#9ca3af;margin-top:8px;">Última compra (dist. anterior): '+ult+'</div>';
-    if(p.total_valor) html+='<div style="font-size:11px;color:#9ca3af;">Volume histórico: R$ '+p.total_valor.toFixed(2).replace('.',',')+'</div>';
+    var datas=Object.keys(porData).sort(function(a,b){return a>b?-1:1;});
+    datas.forEach(function(dt){
+      var itens=porData[dt];
+      var total=itens.reduce(function(s,t){return s+(t.valor||0);},0);
+      var dtFmt=dt.split('-').reverse().join('/');
+      html+='<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;background:#f8fafc;border-left:3px solid #1d4ed8;padding:6px 10px;border-radius:0 6px 6px 0;margin-bottom:4px;">'+
+        '<span style="font-weight:700;font-size:12px;color:#1d4ed8;">'+dtFmt+'</span>'+
+        '<span style="font-size:12px;color:#374151;font-weight:600;">R$ '+total.toFixed(2).replace('.',',')+'</span></div>';
+      itens.forEach(function(t){
+        html+='<div style="display:flex;justify-content:space-between;padding:4px 10px;font-size:11px;color:#374151;border-bottom:1px solid #f3f4f6;">'+
+          '<span>'+t.produto+'</span>'+
+          (t.valor?'<span style="color:#6b7280;">R$ '+t.valor.toFixed(2).replace('.',',')+'</span>':'')+
+          '</div>';
+      });
+      html+='</div>';
+    });
   }else{
-    html+='<div style="color:#9ca3af;font-size:13px;">Nenhum dado de histórico disponível.</div>';
+    html+='<div style="color:#9ca3af;font-size:13px;">Nenhuma transação encontrada.</div>';
   }
   html+='</div>';
-  document.getElementById('m-prc-t').textContent='📊 Histórico Bio — '+nome;
+  document.getElementById('m-prc-t').textContent='📊 Hist. Bio — '+nome;
   document.getElementById('m-prc-b').innerHTML=html;
   document.getElementById('m-prc').classList.add('on');
 }

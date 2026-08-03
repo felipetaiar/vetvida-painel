@@ -794,7 +794,7 @@ function rnd(){
         +'<button data-bio-cnpj="'+p.cnpj+'" class="bio-btn-det" style="background:#1d4ed8;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">🔵 Biogênesis</button>'
         +'<button data-bio-cnpj="'+p.cnpj+'" data-bio-nome="'+encodeURIComponent(p.nome)+'" class="bio-btn-vis" style="background:#375623;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📋 Registrar visita</button>'
         +(p.cnpj?'<button data-bio-nome="'+encodeURIComponent(p.nome)+'" data-bio-cnpj="'+p.cnpj+'" data-bio-mun="'+encodeURIComponent(p.municipio||'')+'" class="bio-btn-hist" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📊 Histórico</button>':'')
-        +(p.cnpj?'<button data-bio-nome="'+encodeURIComponent(p.nome)+'" data-bio-mun="'+encodeURIComponent(p.municipio||'')+'" class="bio-btn-estq" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📦 Contar estoque</button>':'')
+        +(p.cnpj?'<button data-bio-nome="'+encodeURIComponent(p.nome)+'" data-bio-cnpj="'+p.cnpj+'" data-bio-mun="'+encodeURIComponent(p.municipio||'')+'" class="bio-btn-estq" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📦 Contar estoque</button>':'')
         +'</div>'
         +'</div>';
     });

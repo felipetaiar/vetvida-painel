@@ -430,11 +430,7 @@ function init(){
   var nome=sessionStorage.getItem('estoque_nome');
   var mun=sessionStorage.getItem('estoque_mun');
   var cnpjProspect=sessionStorage.getItem('estoque_cnpj')||'';
-  // Mostrar debug na tela
-  var dbgDiv=document.createElement('div');
-  dbgDiv.style.cssText='position:fixed;top:10px;left:10px;right:10px;background:#1d4ed8;color:white;padding:12px;border-radius:8px;font-size:12px;z-index:9999;font-family:monospace;';
-  dbgDiv.innerHTML='<b>DEBUG ESTOQUE</b><br>cod: '+cod+'<br>nome: '+nome+'<br>cnpj: '+cnpjProspect+'<br><button onclick="this.parentNode.remove()" style="margin-top:6px;background:white;color:#1d4ed8;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;">Fechar</button>';
-  document.body.appendChild(dbgDiv);
+
   if(cod==='BIO_PROSPECT'&&nome){
     sessionStorage.removeItem('estoque_cod');
     sessionStorage.removeItem('estoque_nome');
@@ -1106,75 +1102,67 @@ function filtrarProdutosVV(){
 <script src="produtos_vv.js" defer>
 // ═══ MODO PROSPECT BIOGÊNESIS ═══
 function iniciarModoProspectBio(cnpj, nome, mun) {
-  // Configurar CLI_ATUAL como prospect
+  // Seguir exatamente o padrão de selecionarCliente
   CLI_ATUAL = {cod: 0, nome: nome, municipio: mun||'', cnpj_prospect: cnpj};
 
-  // Mostrar header de prospect
+  // Mostrar painel de contagem (igual ao selecionarCliente)
+  document.getElementById('cli-lista').style.display = 'none';
   document.getElementById('busca').value = nome;
-  document.getElementById('busca').disabled = true;
+  document.getElementById('pc-nome').textContent = nome;
+  document.getElementById('pc-info').textContent = '🔵 Prospect Biogênesis' + (mun?' — '+mun:'');
+  document.getElementById('painel-contagem').style.display = 'block';
+  document.getElementById('obs').value = '';
 
-  // Banner informativo
+  // Banner azul no topo do painel
+  var pc = document.getElementById('painel-contagem');
   var banner = document.getElementById('prospect-banner');
   if(!banner){
     banner = document.createElement('div');
     banner.id = 'prospect-banner';
-    banner.style.cssText = 'background:#eff6ff;border:2px solid #1d4ed8;border-radius:10px;padding:12px 16px;margin:12px 0;font-size:13px;';
-    var busca = document.getElementById('busca');
-    busca.parentNode.insertBefore(banner, busca.nextSibling);
+    banner.style.cssText = 'background:#eff6ff;border:2px solid #1d4ed8;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;';
+    pc.insertBefore(banner, pc.firstChild);
   }
-  banner.innerHTML = '<span style="font-weight:700;color:#1d4ed8;">🔵 Prospect Biogênesis</span> — '
-    + nome + '<br><span style="font-size:11px;color:#6b7280;">Registre o estoque atual dos produtos Biogênesis que o cliente possui.</span>';
+  banner.innerHTML = '<span style="font-weight:700;color:#1d4ed8;">🔵 Prospect Biogênesis</span><br>'
+    + '<span style="font-size:11px;color:#6b7280;">Registre o estoque atual. Os produtos são do histórico do distribuidor anterior.</span>';
 
-  // Montar lista de produtos a partir do BIO_PROSPECTS
+  // Montar produtos das transações Biogênesis
   var prospects = typeof BIO_PROSPECTS !== 'undefined' ? BIO_PROSPECTS : [];
   var p = prospects.find(function(x){ return x.cnpj === cnpj; });
-  if(!p){ mostrarToast('Prospect não encontrado'); return; }
-
-  // Pegar produtos únicos das transações
-  var prodsMap = {};
-  (p.transacoes||[]).forEach(function(t){
-    if(!t.produto) return;
-    if(!prodsMap[t.produto]){
-      prodsMap[t.produto] = {nome: t.produto, lab: 'Biogênesis', totalQtde: 0, nPedidos: 0, ultimoPedido: t.data};
-    }
-    prodsMap[t.produto].totalQtde += 1;
-    prodsMap[t.produto].nPedidos += 1;
-  });
-
-  PRODS_CLI = Object.values(prodsMap).sort(function(a,b){
-    return a.nome < b.nome ? -1 : 1;
-  });
-
-  if(!PRODS_CLI.length){
-    document.getElementById('prod-lista').innerHTML =
-      '<div class="empty">Nenhum produto encontrado no histórico Biogênesis deste prospect.</div>';
+  if(!p){
+    document.getElementById('prod-lista').innerHTML = '<div class="empty">Dados do prospect não encontrados.</div>';
     return;
   }
 
-  // Calcular média
-  PRODS_CLI.forEach(function(p){ p.mediaMensal = p.nPedidos > 0 ? p.nPedidos : 0; });
+  var prodsMap = {};
+  (p.transacoes||[]).forEach(function(t){
+    if(!t.produto) return;
+    if(!prodsMap[t.produto]) prodsMap[t.produto] = {nome:t.produto, nPedidos:0};
+    prodsMap[t.produto].nPedidos++;
+  });
 
-  // Renderizar igual ao padrão
-  var h = '';
-  PRODS_CLI.forEach(function(p, i){
-    var mediaStr = p.mediaMensal > 0 ? 'Comprou ' + p.mediaMensal + 'x' : '';
-    h += '<div class="prod-item">'
-      + '<div class="prod-nome">' + p.nome
-      + '<span class="prod-lab" style="background:#1d4ed8;">Bio</span>'
-      + '<div class="prod-media">' + mediaStr + '</div></div>'
-      + '<div class="qtde-wrap">'
-      + '<button class="qtde-btn" onclick="ajustarQtde('+i+',-1)">−</button>'
-      + '<input class="qtde-input" id="qtde-'+i+'" type="number" value="" min="0" placeholder="—" oninput="calcDias('+i+')">'
-      + '<button class="qtde-btn" onclick="ajustarQtde('+i+',1)">+</button>'
-      + '</div>'
-      + '<div id="dias-'+i+'" class="dias-badge" style="min-width:60px"></div>'
-      + '</div>';
+  PRODS_CLI = Object.values(prodsMap).sort(function(a,b){ return a.nome<b.nome?-1:1; });
+  PRODS_CLI.forEach(function(p){ p.mediaMensal=p.nPedidos; p.lab='Biogênesis'; });
+
+  if(!PRODS_CLI.length){
+    document.getElementById('prod-lista').innerHTML = '<div class="empty">Nenhum produto no histórico.</div>';
+    return;
+  }
+
+  var h='';
+  PRODS_CLI.forEach(function(p,i){
+    h+='<div class="prod-item">'
+      +'<div class="prod-nome">'+p.nome
+      +'<span class="prod-lab" style="background:#1d4ed8;color:white;">Bio</span>'
+      +'<div class="prod-media">Comprou '+p.nPedidos+'x</div></div>'
+      +'<div class="qtde-wrap">'
+      +'<button class="qtde-btn" onclick="ajustarQtde('+i+',-1)">−</button>'
+      +'<input class="qtde-input" id="qtde-'+i+'" type="number" value="" min="0" placeholder="—" oninput="calcDias('+i+')">'
+      +'<button class="qtde-btn" onclick="ajustarQtde('+i+',1)">+</button>'
+      +'</div>'
+      +'<div id="dias-'+i+'" class="dias-badge" style="min-width:60px"></div>'
+      +'</div>';
   });
   document.getElementById('prod-lista').innerHTML = h;
-
-  // Mostrar área de salvar
-  var saveArea = document.getElementById('save-area');
-  if(saveArea) saveArea.style.display = 'block';
 }
 // ═══ FIM MODO PROSPECT ═══
 

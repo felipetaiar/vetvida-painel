@@ -2580,11 +2580,9 @@ function _montarBioDetalhes(cnpj, cod){
 
 // ══ BIO: Histórico do Excel ══
 function abrirHistBio(cnpj,nome){
-  // Buscar em prospects ou na base
   var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
   var naBase=typeof BIO_NA_BASE!=='undefined'?BIO_NA_BASE:{};
   var p=prospects.find(function(x){return x.cnpj===cnpj;});
-  // Tentar também pela base
   if(!p){
     var keys=Object.keys(naBase);
     for(var i=0;i<keys.length;i++){
@@ -2593,40 +2591,45 @@ function abrirHistBio(cnpj,nome){
   }
   var trans=(p&&p.transacoes)||[];
   var html='<div style="padding:4px">';
-  html+='<div style="font-weight:700;font-size:14px;margin-bottom:10px;">📊 Histórico Biogênesis — '+nome+'</div>';
   if(p&&p.total_valor){
     html+='<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;">'
-      +'<span style="font-weight:700;color:#1d4ed8;">Volume total:</span> R$ '+p.total_valor.toFixed(2).replace('.',',')+' '
-      +(p.ultima_compra?'<span style="color:#9ca3af;">· Última compra: '+p.ultima_compra.split('-').reverse().join('/')+'</span>':'')+'</div>';
+      +'<span style="font-weight:700;color:#1d4ed8;">Volume total:</span> R$ '+p.total_valor.toFixed(2).replace('.',',')
+      +(p.ultima_compra?' <span style="color:#9ca3af;">\u00b7 \u00daltima compra: '+p.ultima_compra.split('-').reverse().join('/')+'</span>':'')
+      +'</div>';
   }
   if(trans.length){
-    // Agrupar por data
-    var porData={};
+    // Agrupar por pedido: mesma data (e NF quando disponivel)
+    var grupos={};
     trans.forEach(function(t){
-      if(!porData[t.data]) porData[t.data]=[];
-      porData[t.data].push(t);
+      var k=t.data+'|'+(t.nf||'');
+      if(!grupos[k]) grupos[k]={data:t.data, itens:[], total:0};
+      grupos[k].itens.push(t);
+      grupos[k].total+=(t.valor||0);
     });
-    var datas=Object.keys(porData).sort(function(a,b){return a>b?-1:1;});
-    datas.forEach(function(dt){
-      var itens=porData[dt];
-      var total=itens.reduce(function(s,t){return s+(t.valor||0);},0);
-      var dtFmt=dt.split('-').reverse().join('/');
-      html+='<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;background:#f8fafc;border-left:3px solid #1d4ed8;padding:6px 10px;border-radius:0 6px 6px 0;margin-bottom:4px;">'+
-        '<span style="font-weight:700;font-size:12px;color:#1d4ed8;">'+dtFmt+'</span>'+
-        '<span style="font-size:12px;color:#374151;font-weight:600;">R$ '+total.toFixed(2).replace('.',',')+'</span></div>';
-      itens.forEach(function(t){
-        html+='<div style="display:flex;justify-content:space-between;padding:4px 10px;font-size:11px;color:#374151;border-bottom:1px solid #f3f4f6;">'+
-          '<span>'+t.produto+'</span>'+
-          (t.valor?'<span style="color:#6b7280;">R$ '+t.valor.toFixed(2).replace('.',',')+'</span>':'')+
-          '</div>';
+    var chaves=Object.keys(grupos).sort(function(a,b){return a>b?-1:1;});
+    chaves.forEach(function(k){
+      var g=grupos[k];
+      var dtFmt=g.data.split('-').reverse().join('/');
+      // Linha de cima: DATA + TOTAL DO PEDIDO (padrao do historico VetVida)
+      html+='<div style="margin-bottom:12px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;">'
+        +'<span style="font-weight:700;font-size:13px;color:#111;">'+dtFmt+'</span>'
+        +'<span style="font-weight:700;font-size:13px;color:#CC0000;">R$ '+g.total.toFixed(2).replace('.',',')+'</span>'
+        +'</div>';
+      // Linhas de baixo: PRODUTO + QUANTIDADE
+      g.itens.forEach(function(t){
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 12px;border-bottom:1px solid #f3f4f6;">'
+          +'<span style="font-size:12px;color:#374151;flex:1;">'+t.produto+'</span>'
+          +'<span style="font-size:12px;color:#6b7280;white-space:nowrap;">'+(t.qtd||0)+' un</span>'
+          +'</div>';
       });
       html+='</div>';
     });
   }else{
-    html+='<div style="color:#9ca3af;font-size:13px;">Nenhuma transação encontrada.</div>';
+    html+='<div style="color:#9ca3af;font-size:13px;">Nenhuma transa\u00e7\u00e3o encontrada.</div>';
   }
   html+='</div>';
-  document.getElementById('m-prc-t').textContent='📊 Hist. Bio — '+nome;
+  document.getElementById('m-prc-t').textContent='\ud83d\udcca Hist. Bio \u2014 '+nome;
   document.getElementById('m-prc-b').innerHTML=html;
   document.getElementById('m-prc').classList.add('on');
 }

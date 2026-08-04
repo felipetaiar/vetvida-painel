@@ -439,7 +439,17 @@ function init(){
     // bio_prospects.js é async — aguardar carregar com retry
     // Garantir DOM completamente renderizado antes de manipular elementos
     var _cnpj=cnpjProspect, _nome=nome, _mun=mun;
-    setTimeout(function(){ iniciarModoProspectBio(_cnpj, _nome, _mun); }, 50);
+    setTimeout(function(){
+      try{
+        if(typeof iniciarModoProspectBio!=='function'){
+          alert('ERRO: funcao iniciarModoProspectBio NAO EXISTE (typeof='+(typeof iniciarModoProspectBio)+')');
+          return;
+        }
+        iniciarModoProspectBio(_cnpj, _nome, _mun);
+      }catch(e){
+        alert('ERRO NA FUNCAO:\n'+e.message+'\n\nStack:\n'+(e.stack||'').substring(0,300));
+      }
+    }, 50);
   } else if(cod&&nome){
     sessionStorage.removeItem('estoque_cod');
     sessionStorage.removeItem('estoque_nome');

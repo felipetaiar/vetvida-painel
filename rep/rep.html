@@ -732,7 +732,7 @@ function rnd(){
     h+='<div class="card'+(ic?' con':'')+'" id="cd-'+c.cod+'">';
     h+='<div class="ch '+c.tipo+'" onclick="tog('+c.cod+')">';
     h+='<div class="ct"><span class="nm">'+c.nome+'</span>';
-    if(typeof BIO_NA_BASE!=='undefined'&&BIO_NA_BASE[c.cod]){var _bioCnpj=(c.cnpj||'').replace(/[^0-9]/g,'');h+='<span data-bio-cnpj="'+_bioCnpj+'" class="bio-btn-det" style="background:#1d4ed8;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:6px;vertical-align:middle;cursor:pointer;">🔵 Bio</span>';}
+    if(typeof BIO_NA_BASE!=='undefined'&&BIO_NA_BASE[c.cod]){h+='<span data-bio-cod="'+c.cod+'" class="bio-btn-det" style="background:#1d4ed8;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:6px;vertical-align:middle;cursor:pointer;">🔵 Bio</span>';}
     h+='<div class="card-right"><span class="bg '+c.tipo+'">'+(
       c.tipo==='ativo_recente'?'ATIVO RECENTE':
       c.tipo==='risco'?'RISCO INATIVAÇÃO':
@@ -804,7 +804,10 @@ function rnd(){
   while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
   lista.appendChild(frag);
   document.querySelectorAll('.bio-btn-det').forEach(function(b){
-    b.addEventListener('click',function(){abrirBioDetalhes(this.dataset.bioCnpj);});
+    b.addEventListener('click',function(e){
+      e.stopPropagation();
+      abrirBioDetalhes(this.dataset.bioCnpj||'', this.dataset.bioCod||null);
+    });
   });
   // Badge Bio clicável nos clientes da base — abrir hist
   document.querySelectorAll('.bio-badge-base').forEach(function(b){
@@ -2410,13 +2413,25 @@ function _ehProdutoBio(nomeProd){
   return false;
 }
 
-function abrirBioDetalhes(cnpj){
+function abrirBioDetalhes(cnpj, cod){
   var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
   var naBase=typeof BIO_NA_BASE!=='undefined'?BIO_NA_BASE:{};
-  // Buscar em prospects primeiro, depois em BIO_NA_BASE pelo cnpj
-  var p=prospects.find(function(x){return x.cnpj===cnpj;});
-  // Para clientes na base: buscar via CL
-  var cliVV=CL.find(function(c){return (c.cnpj||'').replace(/[^0-9]/g,'')===(cnpj||'').replace(/[^0-9]/g,'');});
+  var cliVV=null;
+  // 1) Prioridade: buscar pelo COD (chave confiavel do dados.js)
+  if(cod!==null&&cod!==undefined&&cod!==''){
+    var _cod=parseInt(cod);
+    cliVV=CL.find(function(c){return c.cod===_cod;})||null;
+  }
+  // 2) Fallback: cnpj (somente se nao-vazio, para nao casar '' com '')
+  var _cnpjLimpo=(cnpj||'').replace(/[^0-9]/g,'');
+  if(!cliVV&&_cnpjLimpo){
+    cliVV=CL.find(function(c){
+      var cc=(c.cnpj||'').replace(/[^0-9]/g,'');
+      return cc&&cc===_cnpjLimpo;
+    })||null;
+  }
+  // Prospect (fora da base)
+  var p=_cnpjLimpo?prospects.find(function(x){return x.cnpj===_cnpjLimpo;}):null;
   var bioInfo=cliVV?naBase[cliVV.cod]:null;
   var nome=p?p.nome:(cliVV?cliVV.nome:'');
   var prods=p?(p.produtos||[]):(bioInfo?bioInfo.produtos:[]);
@@ -2426,8 +2441,19 @@ function abrirBioDetalhes(cnpj){
   // Verificar se reativou — cliente na base VetVida comprou algum produto Biogênesis após abril/2026
   var reativado=false;
   var prodReativados=[];
-  if(cliVV&&cliVV.prods){
-    prodReativados=cliVV.prods.filter(function(pr){return _ehProdutoBio(pr.nome);});
+  if(cliVV){
+    var _lista=cliVV.prods||[];
+    prodReativados=_lista.filter(function(pr){return _ehProdutoBio(pr.nome);});
+    // Fallback: prods_str (string concatenada de todos os produtos)
+    if(!prodReativados.length&&cliVV.prods_str){
+      if(_ehProdutoBio(cliVV.prods_str)){
+        var _marcas=_getMarcasBio();
+        var _up=cliVV.prods_str.toUpperCase();
+        _marcas.forEach(function(mk){
+          if(_up.indexOf(mk)>=0) prodReativados.push({nome:mk});
+        });
+      }
+    }
     reativado=prodReativados.length>0;
   }
 

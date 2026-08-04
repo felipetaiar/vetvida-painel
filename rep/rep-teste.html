@@ -910,7 +910,7 @@ var _histCod=0, _histData=null;
 function carregarHistorico(cb){
   if(HIST_CARREGADO){cb();return;}
   var s=document.createElement('script');
-  s.src='hist_'+REP.toLowerCase()+'.js';
+  s.src='teste_hist_'+REP.toLowerCase()+'.js';
   s.onload=function(){HIST_CARREGADO=true;cb();};
   s.onerror=function(){HIST_CARREGADO=true;cb();};
   document.head.appendChild(s);

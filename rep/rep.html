@@ -732,7 +732,7 @@ function rnd(){
     h+='<div class="card'+(ic?' con':'')+'" id="cd-'+c.cod+'">';
     h+='<div class="ch '+c.tipo+'" onclick="tog('+c.cod+')">';
     h+='<div class="ct"><span class="nm">'+c.nome+'</span>';
-    if(typeof BIO_NA_BASE!=='undefined'&&BIO_NA_BASE[c.cod]){var _bioCnpj=(c.cnpj||'').replace(/[^0-9]/g,'');h+='<span data-bio-cnpj="'+_bioCnpj+'" class="bio-btn-det" style="background:#1d4ed8;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:6px;vertical-align:middle;cursor:pointer;">🔵 Bio</span>';}
+    if(typeof BIO_NA_BASE!=='undefined'&&BIO_NA_BASE[c.cod]){h+='<span data-bio-cod="'+c.cod+'" class="bio-btn-det" style="background:#1d4ed8;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:6px;vertical-align:middle;cursor:pointer;">🔵 Bio</span>';}
     h+='<div class="card-right"><span class="bg '+c.tipo+'">'+(
       c.tipo==='ativo_recente'?'ATIVO RECENTE':
       c.tipo==='risco'?'RISCO INATIVAÇÃO':
@@ -804,7 +804,10 @@ function rnd(){
   while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
   lista.appendChild(frag);
   document.querySelectorAll('.bio-btn-det').forEach(function(b){
-    b.addEventListener('click',function(){abrirBioDetalhes(this.dataset.bioCnpj);});
+    b.addEventListener('click',function(e){
+      e.stopPropagation();
+      abrirBioDetalhes(this.dataset.bioCnpj||'', this.dataset.bioCod||null);
+    });
   });
   // Badge Bio clicável nos clientes da base — abrir hist
   document.querySelectorAll('.bio-badge-base').forEach(function(b){
@@ -2373,13 +2376,62 @@ async function verFabricantes(nomeCli, codCli){
 
 
 // ══ BIOGÊNESIS PROSPECTS ══
-function abrirBioDetalhes(cnpj){
+
+// ══ Deteccao de produto Biogenesis — deriva do catalogo oficial (fonte da verdade) ══
+var _MARCAS_BIO_CACHE=null;
+function _getMarcasBio(){
+  if(_MARCAS_BIO_CACHE) return _MARCAS_BIO_CACHE;
+  var marcas={};
+  if(typeof PRECOS_VV!=='undefined'){
+    PRECOS_VV.forEach(function(p){
+      var lab=(p.lab||'').toLowerCase();
+      if(lab.indexOf('biog')<0) return;
+      var n=(p.nome||'').toUpperCase().split('\u00b7')[0];
+      n=n.replace(/\d+[\.,]?\d*\s*(MG|ML|G|L|KG|%)?/g,' ');
+      n=n.replace(/\b(INJ|INJETAVEL|INJET\u00c1VEL|HOSP|CP|CPS|COMPRIMIDOS?|PASTA|SHAMPOO|CONDICIONADOR|MASCARA|M\u00c1SCARA|COLONIA|COL\u00d4NIA|SPRAY|POTE|SERINGA|FRASCO|SACHE|SACH\u00ca|CARTUCHO|KIT|TUBOS?|CAES|C\u00c3ES|GATOS|FILHOTES|PLUS|PROF|PROFISSIONAL)\b/g,' ');
+      n=n.replace(/[^\w&\s]/g,' ');
+      n=n.split(/\s+/).filter(Boolean)[0]||'';
+      if(n.length>=4) marcas[n]=true;
+    });
+  }
+  _MARCAS_BIO_CACHE=Object.keys(marcas);
+  // Fallback caso PRECOS_VV nao tenha carregado
+  if(!_MARCAS_BIO_CACHE.length){
+    _MARCAS_BIO_CACHE=['NUTRISANA','PETSPORIN','OTOSANA','OTOCARE','PREDIVET','MELOXIFLEX',
+      'KINOLOX','MECTAL','DOG&CO','CAT&CO','VITALLEDERM','PULGOFF','ASTOR','SANADOG',
+      'KETOFLEX','CARPROFLEX','OTOPHISIO','GOOD','PREMIUM','ALMOTOLIA'];
+  }
+  return _MARCAS_BIO_CACHE;
+}
+function _ehProdutoBio(nomeProd){
+  var nm=(nomeProd||'').toUpperCase();
+  if(!nm) return false;
+  var marcas=_getMarcasBio();
+  for(var i=0;i<marcas.length;i++){
+    if(nm.indexOf(marcas[i])>=0) return true;
+  }
+  return false;
+}
+
+function abrirBioDetalhes(cnpj, cod){
   var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
   var naBase=typeof BIO_NA_BASE!=='undefined'?BIO_NA_BASE:{};
-  // Buscar em prospects primeiro, depois em BIO_NA_BASE pelo cnpj
-  var p=prospects.find(function(x){return x.cnpj===cnpj;});
-  // Para clientes na base: buscar via CL
-  var cliVV=CL.find(function(c){return (c.cnpj||'').replace(/[^0-9]/g,'')===(cnpj||'').replace(/[^0-9]/g,'');});
+  var cliVV=null;
+  // 1) Prioridade: buscar pelo COD (chave confiavel do dados.js)
+  if(cod!==null&&cod!==undefined&&cod!==''){
+    var _cod=parseInt(cod);
+    cliVV=CL.find(function(c){return c.cod===_cod;})||null;
+  }
+  // 2) Fallback: cnpj (somente se nao-vazio, para nao casar '' com '')
+  var _cnpjLimpo=(cnpj||'').replace(/[^0-9]/g,'');
+  if(!cliVV&&_cnpjLimpo){
+    cliVV=CL.find(function(c){
+      var cc=(c.cnpj||'').replace(/[^0-9]/g,'');
+      return cc&&cc===_cnpjLimpo;
+    })||null;
+  }
+  // Prospect (fora da base)
+  var p=_cnpjLimpo?prospects.find(function(x){return x.cnpj===_cnpjLimpo;}):null;
   var bioInfo=cliVV?naBase[cliVV.cod]:null;
   var nome=p?p.nome:(cliVV?cliVV.nome:'');
   var prods=p?(p.produtos||[]):(bioInfo?bioInfo.produtos:[]);
@@ -2389,21 +2441,24 @@ function abrirBioDetalhes(cnpj){
   // Verificar se reativou — cliente na base VetVida comprou algum produto Biogênesis após abril/2026
   var reativado=false;
   var prodReativados=[];
-  if(cliVV&&cliVV.prods){
-    var BIO_NOMES=['NUTRISANA','DRASIL','OTOSANA','PETSPORIN','PIUSANA','GOOD CARE','MUNNOMAX','NEXIN','CISPET','OMEX','AKALME','PBIOTICS'];
-    prodReativados=cliVV.prods.filter(function(pr){
-      var nm=(pr.nome||'').toUpperCase();
-      return BIO_NOMES.some(function(bn){return nm.indexOf(bn)>=0;});
-    });
-    reativado=prodReativados.length>0;
+  if(cliVV){
+    // FONTE DA VERDADE: campo 'labs' do dados.js (mesmo que alimenta o filtro LAB do painel)
+    var _labs=cliVV.labs||[];
+    reativado=_labs.some(function(l){return (l||'').toUpperCase().indexOf('BIOG')>=0;});
+    // Produtos Bio conhecidos (prods traz apenas o top-3 por faturamento, entao pode vir vazio)
+    prodReativados=(cliVV.prods||[]).filter(function(pr){return _ehProdutoBio(pr.nome);});
   }
 
   var statusHtml='';
   if(cliVV){
     if(reativado){
+      var _detalhe=prodReativados.length
+        ? prodReativados.map(function(pr){return pr.nome;}).slice(0,5).join(', ')
+        : 'Confirmado pelo histórico de compras da marca';
       statusHtml='<div style="background:#dcfce7;border:1px solid #16a34a;border-radius:8px;padding:8px 12px;margin:8px 0;">'
-        +'<div style="font-weight:700;font-size:12px;color:#16a34a;margin-bottom:4px;">✅ REATIVADO — já compra pela VetVida</div>'
-        +'<div style="font-size:11px;color:#374151;">'+prodReativados.map(function(pr){return pr.nome;}).slice(0,5).join(', ')+'</div>'
+        +'<div style="font-weight:700;font-size:12px;color:#16a34a;margin-bottom:4px;">✅ REATIVADO — já compra Biogênesis pela VetVida</div>'
+        +'<div style="font-size:11px;color:#374151;">'+_detalhe+'</div>'
+        +'<div style="font-size:10px;color:#6b7280;margin-top:4px;">Use o filtro LAB: BIOGENESIS no histórico para ver os itens.</div>'
         +'</div>';
     } else {
       statusHtml='<div style="background:#fef2f2;border:1px solid #CC0000;border-radius:8px;padding:8px 12px;margin:8px 0;">'

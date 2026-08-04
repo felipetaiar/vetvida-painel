@@ -2373,6 +2373,43 @@ async function verFabricantes(nomeCli, codCli){
 
 
 // ══ BIOGÊNESIS PROSPECTS ══
+
+// ══ Deteccao de produto Biogenesis — deriva do catalogo oficial (fonte da verdade) ══
+var _MARCAS_BIO_CACHE=null;
+function _getMarcasBio(){
+  if(_MARCAS_BIO_CACHE) return _MARCAS_BIO_CACHE;
+  var marcas={};
+  if(typeof PRECOS_VV!=='undefined'){
+    PRECOS_VV.forEach(function(p){
+      var lab=(p.lab||'').toLowerCase();
+      if(lab.indexOf('biog')<0) return;
+      var n=(p.nome||'').toUpperCase().split('\u00b7')[0];
+      n=n.replace(/\d+[\.,]?\d*\s*(MG|ML|G|L|KG|%)?/g,' ');
+      n=n.replace(/\b(INJ|INJETAVEL|INJET\u00c1VEL|HOSP|CP|CPS|COMPRIMIDOS?|PASTA|SHAMPOO|CONDICIONADOR|MASCARA|M\u00c1SCARA|COLONIA|COL\u00d4NIA|SPRAY|POTE|SERINGA|FRASCO|SACHE|SACH\u00ca|CARTUCHO|KIT|TUBOS?|CAES|C\u00c3ES|GATOS|FILHOTES|PLUS|PROF|PROFISSIONAL)\b/g,' ');
+      n=n.replace(/[^\w&\s]/g,' ');
+      n=n.split(/\s+/).filter(Boolean)[0]||'';
+      if(n.length>=4) marcas[n]=true;
+    });
+  }
+  _MARCAS_BIO_CACHE=Object.keys(marcas);
+  // Fallback caso PRECOS_VV nao tenha carregado
+  if(!_MARCAS_BIO_CACHE.length){
+    _MARCAS_BIO_CACHE=['NUTRISANA','PETSPORIN','OTOSANA','OTOCARE','PREDIVET','MELOXIFLEX',
+      'KINOLOX','MECTAL','DOG&CO','CAT&CO','VITALLEDERM','PULGOFF','ASTOR','SANADOG',
+      'KETOFLEX','CARPROFLEX','OTOPHISIO','GOOD','PREMIUM','ALMOTOLIA'];
+  }
+  return _MARCAS_BIO_CACHE;
+}
+function _ehProdutoBio(nomeProd){
+  var nm=(nomeProd||'').toUpperCase();
+  if(!nm) return false;
+  var marcas=_getMarcasBio();
+  for(var i=0;i<marcas.length;i++){
+    if(nm.indexOf(marcas[i])>=0) return true;
+  }
+  return false;
+}
+
 function abrirBioDetalhes(cnpj){
   var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
   var naBase=typeof BIO_NA_BASE!=='undefined'?BIO_NA_BASE:{};
@@ -2390,11 +2427,7 @@ function abrirBioDetalhes(cnpj){
   var reativado=false;
   var prodReativados=[];
   if(cliVV&&cliVV.prods){
-    var BIO_NOMES=['NUTRISANA','DRASIL','OTOSANA','PETSPORIN','PIUSANA','GOOD CARE','MUNNOMAX','NEXIN','CISPET','OMEX','AKALME','PBIOTICS'];
-    prodReativados=cliVV.prods.filter(function(pr){
-      var nm=(pr.nome||'').toUpperCase();
-      return BIO_NOMES.some(function(bn){return nm.indexOf(bn)>=0;});
-    });
+    prodReativados=cliVV.prods.filter(function(pr){return _ehProdutoBio(pr.nome);});
     reativado=prodReativados.length>0;
   }
 

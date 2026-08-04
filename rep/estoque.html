@@ -437,8 +437,9 @@ function init(){
     sessionStorage.removeItem('estoque_mun');
     sessionStorage.removeItem('estoque_cnpj');
     // bio_prospects.js é async — aguardar carregar com retry
-    // bio_estoque.js é síncrono — chamar diretamente
-    iniciarModoProspectBio(cnpjProspect, nome, mun);
+    // Garantir DOM completamente renderizado antes de manipular elementos
+    var _cnpj=cnpjProspect, _nome=nome, _mun=mun;
+    setTimeout(function(){ iniciarModoProspectBio(_cnpj, _nome, _mun); }, 50);
   } else if(cod&&nome){
     sessionStorage.removeItem('estoque_cod');
     sessionStorage.removeItem('estoque_nome');

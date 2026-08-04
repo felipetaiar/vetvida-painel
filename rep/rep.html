@@ -2413,7 +2413,82 @@ function _ehProdutoBio(nomeProd){
   return false;
 }
 
+
+// ══ Normalizar nome de produto para casar entre bases diferentes ══
+function _normProd(n){
+  return (n||'').toUpperCase()
+    .replace(/[\u00c0-\u00c5]/g,'A').replace(/[\u00c8-\u00cb]/g,'E').replace(/[\u00cc-\u00cf]/g,'I')
+    .replace(/[\u00d2-\u00d6]/g,'O').replace(/[\u00d9-\u00dc]/g,'U').replace(/\u00c7/g,'C')
+    .replace(/\d+[\.,]?\d*\s*(MG|ML|G|L|KG|UN|CP|CPS|%)?/g,' ')
+    .replace(/\b(HOSP|COMPRIMIDOS?|CARTUCHO|SERINGA|FRASCO|POTE|SACHE|KIT|C\/|X)\b/g,' ')
+    .replace(/[^A-Z0-9&]/g,' ')
+    .split(/\s+/).filter(Boolean).slice(0,3).join(' ');
+}
+
+// ══ Comparativo: o que comprava (dist. anterior) x o que já comprou pela VetVida ══
+function _montarComparativoBio(prodsAnteriores, bioComprados){
+  bioComprados=bioComprados||{};
+  var compradosKeys=Object.keys(bioComprados);
+  var usados={};
+  var h='';
+
+  // Bloco 1: produtos do histórico anterior, com status individual
+  if(prodsAnteriores&&prodsAnteriores.length){
+    h+='<div style="font-weight:700;font-size:12px;color:#1d4ed8;margin-bottom:6px;">Produtos que comprava (distribuidor anterior):</div>';
+    h+='<div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:10px;">';
+    prodsAnteriores.forEach(function(pr,ix){
+      var k=_normProd(pr);
+      var achado=bioComprados[k];
+      if(!achado){
+        // casamento parcial pelo primeiro termo (marca)
+        var marca=k.split(' ')[0];
+        for(var i=0;i<compradosKeys.length;i++){
+          if(marca&&compradosKeys[i].indexOf(marca)===0){achado=bioComprados[compradosKeys[i]];break;}
+        }
+      }
+      if(achado) usados[_normProd(achado.nome)]=true;
+      var bg=ix%2?'#fafafa':'#fff';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;background:'+bg+';border-bottom:1px solid #f3f4f6;">'
+        +'<span style="font-size:11px;color:#374151;flex:1;">'+pr+'</span>'
+        +(achado
+          ?'<span style="font-size:10px;font-weight:700;color:#16a34a;white-space:nowrap;">✅ Reativado'+(achado.ultima?' · '+achado.ultima:'')+'</span>'
+          :'<span style="font-size:10px;font-weight:700;color:#CC0000;white-space:nowrap;">⚠️ Não reativado</span>')
+        +'</div>';
+    });
+    h+='</div>';
+  }
+
+  // Bloco 2: produtos Biogênesis comprados pela VetVida que NÃO estavam no histórico anterior
+  var novos=compradosKeys.filter(function(k){return !usados[k];}).map(function(k){return bioComprados[k];});
+  if(novos.length){
+    h+='<div style="font-weight:700;font-size:12px;color:#16a34a;margin-bottom:6px;">Novos produtos Biogênesis comprados pela VetVida:</div>';
+    h+='<div style="border:1px solid #dcfce7;border-radius:8px;overflow:hidden;margin-bottom:10px;">';
+    novos.forEach(function(nv,ix){
+      var bg=ix%2?'#f0fdf4':'#fff';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;background:'+bg+';border-bottom:1px solid #f3f4f6;">'
+        +'<span style="font-size:11px;color:#374151;flex:1;">'+nv.nome+'</span>'
+        +'<span style="font-size:10px;color:#16a34a;font-weight:700;white-space:nowrap;">'+(nv.qtd?nv.qtd+' un · ':'')+(nv.ultima||'')+'</span>'
+        +'</div>';
+    });
+    h+='</div>';
+  }
+
+  if(!h) h='<div style="color:#9ca3af;font-size:12px;">Sem dados de produtos.</div>';
+  return h;
+}
+
 function abrirBioDetalhes(cnpj, cod){
+  // Carregar histórico (hist_REP.js) antes de montar — traz itens com lab por pedido
+  if(typeof carregarHistorico==='function' && typeof HIST_CARREGADO!=='undefined' && !HIST_CARREGADO){
+    document.getElementById('m-prc-t').textContent='🔵 Biogênesis';
+    document.getElementById('m-prc-b').innerHTML='<p style="text-align:center;padding:24px;color:#9ca3af;">Carregando histórico...</p>';
+    document.getElementById('m-prc').classList.add('on');
+    carregarHistorico(function(){ _montarBioDetalhes(cnpj, cod); });
+    return;
+  }
+  _montarBioDetalhes(cnpj, cod);
+}
+function _montarBioDetalhes(cnpj, cod){
   var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
   var naBase=typeof BIO_NA_BASE!=='undefined'?BIO_NA_BASE:{};
   var cliVV=null;
@@ -2441,24 +2516,36 @@ function abrirBioDetalhes(cnpj, cod){
   // Verificar se reativou — cliente na base VetVida comprou algum produto Biogênesis após abril/2026
   var reativado=false;
   var prodReativados=[];
+  var _bioComprados={}; // nome normalizado -> {nome, qtd, ultima}
   if(cliVV){
-    // FONTE DA VERDADE: campo 'labs' do dados.js (mesmo que alimenta o filtro LAB do painel)
+    // Status geral: campo 'labs' (fonte da verdade, mesma do filtro LAB)
     var _labs=cliVV.labs||[];
     reativado=_labs.some(function(l){return (l||'').toUpperCase().indexOf('BIOG')>=0;});
-    // Produtos Bio conhecidos (prods traz apenas o top-3 por faturamento, entao pode vir vazio)
-    prodReativados=(cliVV.prods||[]).filter(function(pr){return _ehProdutoBio(pr.nome);});
+    // Detalhe produto a produto: itens dos pedidos (hist_REP.js), campo lab por item
+    var _hist=(typeof HIST_REP!=='undefined'&&HIST_REP[cliVV.cod])||{};
+    (_hist.pedidos||[]).forEach(function(ped){
+      (ped.itens||[]).forEach(function(it){
+        var ehBio=(it.lab&&it.lab.toUpperCase().indexOf('BIOG')>=0)||_ehProdutoBio(it.prod||it.nome);
+        if(!ehBio) return;
+        var nm=(it.prod||it.nome||'').trim();
+        if(!nm) return;
+        var k=_normProd(nm);
+        if(!_bioComprados[k]) _bioComprados[k]={nome:nm, qtd:0, ultima:ped.data||''};
+        _bioComprados[k].qtd+=(parseInt(it.qtde||it.qtd)||0);
+        var _d1=(_bioComprados[k].ultima||'').split('/').reverse().join('');
+        var _d2=(ped.data||'').split('/').reverse().join('');
+        if(_d2>_d1) _bioComprados[k].ultima=ped.data;
+      });
+    });
+    prodReativados=Object.keys(_bioComprados).map(function(k){return _bioComprados[k];});
   }
 
   var statusHtml='';
   if(cliVV){
     if(reativado){
-      var _detalhe=prodReativados.length
-        ? prodReativados.map(function(pr){return pr.nome;}).slice(0,5).join(', ')
-        : 'Confirmado pelo histórico de compras da marca';
       statusHtml='<div style="background:#dcfce7;border:1px solid #16a34a;border-radius:8px;padding:8px 12px;margin:8px 0;">'
-        +'<div style="font-weight:700;font-size:12px;color:#16a34a;margin-bottom:4px;">✅ REATIVADO — já compra Biogênesis pela VetVida</div>'
-        +'<div style="font-size:11px;color:#374151;">'+_detalhe+'</div>'
-        +'<div style="font-size:10px;color:#6b7280;margin-top:4px;">Use o filtro LAB: BIOGENESIS no histórico para ver os itens.</div>'
+        +'<div style="font-weight:700;font-size:12px;color:#16a34a;">✅ REATIVADO — já compra Biogênesis pela VetVida</div>'
+        +(prodReativados.length?'<div style="font-size:11px;color:#374151;margin-top:2px;">'+prodReativados.length+' produto(s) comprado(s) pela VetVida</div>':'')
         +'</div>';
     } else {
       statusHtml='<div style="background:#fef2f2;border:1px solid #CC0000;border-radius:8px;padding:8px 12px;margin:8px 0;">'
@@ -2480,8 +2567,7 @@ function abrirBioDetalhes(cnpj, cod){
     +(p&&p.telefone?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">📞 '+p.telefone+'</div>':'')
     +(p&&p.email?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">✉️ '+p.email+'</div>':'')
     +'<div style="height:1px;background:#e5e7eb;margin:10px 0;"></div>'
-    +'<div style="font-weight:700;font-size:12px;color:#1d4ed8;margin-bottom:6px;">Produtos que comprava (distribuidor anterior):</div>'
-    +'<ul style="padding-left:16px;margin:0;">'+prodsHtml+'</ul>'
+    +_montarComparativoBio(prods, _bioComprados)
     +(ultFmt?'<div style="font-size:11px;color:#9ca3af;margin-top:8px;">Última compra (dist. anterior): '+ultFmt+'</div>':'')
     +(p&&p.total_valor?'<div style="font-size:11px;color:#9ca3af;">Volume histórico: R$ '+p.total_valor.toFixed(2).replace('.',',')+'</div>':'')
     +'</div>';

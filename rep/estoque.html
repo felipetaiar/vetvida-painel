@@ -1095,7 +1095,31 @@ function filtrarProdutosVV(){
 <script src="produtos_vv.js" defer>
 // ═══ MODO PROSPECT BIOGÊNESIS ═══
 function iniciarModoProspectBio(cnpj, nome, mun) {
-  // Seguir exatamente o padrão de selecionarCliente
+  // DEBUG VISUAL
+  function dbg(msg){
+    var d=document.getElementById('_dbg_bio');
+    if(!d){
+      d=document.createElement('div');
+      d.id='_dbg_bio';
+      d.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;padding:8px;font-size:11px;font-family:monospace;z-index:99999;max-height:40vh;overflow-y:auto;';
+      document.body.appendChild(d);
+    }
+    d.innerHTML+=msg+'<br>';
+  }
+  dbg('1. Funcao chamada. cnpj='+cnpj);
+  dbg('2. BIO_ESTOQUE definido? '+(typeof BIO_ESTOQUE!=='undefined'?'SIM':'NAO'));
+  if(typeof BIO_ESTOQUE!=='undefined'){
+    dbg('3. Total clientes BIO_ESTOQUE: '+Object.keys(BIO_ESTOQUE).length);
+    dbg('4. Este cnpj existe? '+(BIO_ESTOQUE[cnpj]?'SIM':'NAO'));
+    if(!BIO_ESTOQUE[cnpj]){
+      var amostras=Object.keys(BIO_ESTOQUE).slice(0,3);
+      dbg('5. Exemplos de cnpj na base: '+amostras.join(', '));
+    }
+  }
+  dbg('6. painel-contagem existe? '+(document.getElementById('painel-contagem')?'SIM':'NAO'));
+  dbg('7. prod-lista existe? '+(document.getElementById('prod-lista')?'SIM':'NAO'));
+  dbg('8. pc-nome existe? '+(document.getElementById('pc-nome')?'SIM':'NAO'));
+
   CLI_ATUAL = {cod: 0, nome: nome, municipio: mun||'', cnpj_prospect: cnpj};
 
   // Mostrar painel de contagem (igual ao selecionarCliente)

@@ -512,6 +512,7 @@ tr:hover td{background:#f8fafc!important;}
 <script src="base_clientes.js"></script>
 <script src="radar_db.js" async></script>
 <script src="precos_vv.js" async></script>
+<script src="bio_prospects.js"></script>
 <script>
 // Carregar contagem de leads abertos (Supabase direto, substitui API antiga /api/sheets)
 (function(){
@@ -636,6 +637,13 @@ function ordenar(lista){
 function rnd(){
   try{
   var b=document.getElementById('busca').value.toLowerCase();
+  // Injetar prospects Biogenesis no topo
+  var BIO_P = [];
+  if(typeof BIO_PROSPECTS!=='undefined'){
+    BIO_P=BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;});
+  } else {
+    setTimeout(rnd,800);
+  }
   var lista=CL.filter(function(c){
     var matchFiltro=(FA==='todos'||c.tipo===FA);
     var prods_str=(c.prods||[]).map(function(p){return p.nome;}).join(' ').toLowerCase();
@@ -724,6 +732,7 @@ function rnd(){
     h+='<div class="card'+(ic?' con':'')+'" id="cd-'+c.cod+'">';
     h+='<div class="ch '+c.tipo+'" onclick="tog('+c.cod+')">';
     h+='<div class="ct"><span class="nm">'+c.nome+'</span>';
+    if(typeof BIO_NA_BASE!=='undefined'&&BIO_NA_BASE[c.cod]){var _bioCnpj=(c.cnpj||'').replace(/[^0-9]/g,'');h+='<span data-bio-cnpj="'+_bioCnpj+'" class="bio-btn-det" style="background:#1d4ed8;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:6px;vertical-align:middle;cursor:pointer;">🔵 Bio</span>';}
     h+='<div class="card-right"><span class="bg '+c.tipo+'">'+(
       c.tipo==='ativo_recente'?'ATIVO RECENTE':
       c.tipo==='risco'?'RISCO INATIVAÇÃO':
@@ -758,10 +767,83 @@ function rnd(){
   var lista=document.getElementById('lista');
   lista.innerHTML='';
   var frag=document.createDocumentFragment();
+  // Prospects Biogenesis no topo
+  var BIO_P=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;}):[];
+  var hBio='';
+  if(BIO_P.length&&FA!=='positivado'&&FA!=='ativo_recente'&&FA!=='risco'){
+    hBio+='<div style="background:#eff6ff;border-left:4px solid #1d4ed8;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;font-weight:700;color:#1d4ed8;">🔵 '+BIO_P.length+' Prospect'+(BIO_P.length>1?'s':'')+' Biogênesis — nunca compraram pela VetVida</div>';
+    // Ordenar por ultima_compra mais antiga = mais urgente
+    var BIO_P_ORD = BIO_P.slice().sort(function(a,b){
+      var da = a.ultima_compra||'0000-00'; var db = b.ultima_compra||'0000-00';
+      return da > db ? -1 : da < db ? 1 : 0; // mais recente no topo
+    });
+    BIO_P_ORD.forEach(function(p){
+      var prods=(p.produtos||[]).slice(0,3).join(' · ');
+      var ult=p.ultima_compra?p.ultima_compra.split('-').reverse().join('/'):'';
+      hBio+='<div class="card bio-prospect-card" style="border:2px solid #1d4ed8;border-radius:10px;padding:12px;margin-bottom:8px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+        +'<div style="flex:1;">'
+        +'<span style="background:#1d4ed8;color:white;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;">🔵 PROSPECT BIOGÊGENESIS</span>'
+        +(p.is_novo?'<span style="background:#f59e0b;color:white;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:4px;">⭐ NOVO</span>':'')
+        +'<div style="font-weight:700;font-size:14px;color:#111;margin-top:6px;">'+p.nome+'</div>'
+        +(p.bairro?'<div style="font-size:11px;color:#6b7280;margin-top:2px;">📍 '+p.bairro+'</div>':'')
+        +(prods?'<div style="font-size:11px;color:#1d4ed8;margin-top:4px;">Comprava: '+prods+(p.produtos.length>3?' +mais':'')+'</div>':'')
+        +(ult?'<div style="font-size:10px;color:#9ca3af;margin-top:2px;">Última compra: '+ult+'</div>':'')
+        +'</div></div>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">'
+        +'<button data-bio-cnpj="'+p.cnpj+'" class="bio-btn-det" style="background:#1d4ed8;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">🔵 Biogênesis</button>'
+        +'<button data-bio-cnpj="'+p.cnpj+'" data-bio-nome="'+encodeURIComponent(p.nome)+'" class="bio-btn-vis" style="background:#375623;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📋 Registrar visita</button>'
+        +(p.cnpj?'<button data-bio-nome="'+encodeURIComponent(p.nome)+'" data-bio-cnpj="'+p.cnpj+'" data-bio-mun="'+encodeURIComponent(p.municipio||'')+'" class="bio-btn-hist" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📊 Histórico</button>':'')
+        +(p.cnpj?'<button data-bio-nome="'+encodeURIComponent(p.nome)+'" data-bio-cnpj="'+p.cnpj+'" data-bio-mun="'+encodeURIComponent(p.municipio||'')+'" class="bio-btn-estq" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:bold;cursor:pointer;">📦 Contar estoque</button>':'')
+        +'</div>'
+        +'</div>';
+    });
+  }
   var tmp=document.createElement('div');
-  tmp.innerHTML=h;
+  tmp.innerHTML=hBio+h;
   while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
   lista.appendChild(frag);
+  document.querySelectorAll('.bio-btn-det').forEach(function(b){
+    b.addEventListener('click',function(){abrirBioDetalhes(this.dataset.bioCnpj);});
+  });
+  // Badge Bio clicável nos clientes da base — abrir hist
+  document.querySelectorAll('.bio-badge-base').forEach(function(b){
+    b.addEventListener('click',function(e){e.stopPropagation();abrirHistBio(this.dataset.bioCnpj,this.dataset.bioNome);});
+  });
+  document.querySelectorAll('.bio-btn-vis').forEach(function(b){
+    b.addEventListener('click',function(){
+      var cnpj=this.dataset.bioCnpj||'';
+      var nome=decodeURIComponent(this.dataset.bioNome||'');
+      abrirModalVisitaBio(cnpj,nome);
+    });
+  });
+  document.querySelectorAll('.bio-btn-hist').forEach(function(b){
+    b.addEventListener('click',function(){
+      var nome=decodeURIComponent(this.dataset.bioNome);
+      var cnpj=this.dataset.bioCnpj||'';
+      // Tentar pelo CL primeiro
+      var cli=CL.find(function(c){return c.nome.toUpperCase()===nome.toUpperCase();});
+      if(cli){abrirHist(cli.cod,cli.nome);return;}
+      // Prospect não está na base — mostrar histórico do Excel
+      abrirHistBio(cnpj,nome);
+    });
+  });
+  document.querySelectorAll('.bio-btn-estq').forEach(function(b){
+    b.addEventListener('click',function(){
+      var nome=decodeURIComponent(this.dataset.bioNome);
+      var cnpj=this.dataset.bioCnpj||'';
+      var mun=decodeURIComponent(this.dataset.bioMun||'');
+      
+      var cli=CL.find(function(c){return c.nome.toUpperCase()===nome.toUpperCase();});
+      if(cli){irEstoque(cli.cod,encodeURIComponent(cli.nome),encodeURIComponent(cli.municipio||mun));return;}
+      sessionStorage.setItem('estoque_cod','BIO_PROSPECT');
+      sessionStorage.setItem('estoque_cnpj',cnpj);
+      sessionStorage.setItem('estoque_nome',nome);
+      sessionStorage.setItem('estoque_mun',mun);
+      
+      window.location.href='estoque.html';
+    });
+  });
   document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom));});
   document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});});
   pg();
@@ -2288,6 +2370,208 @@ async function verFabricantes(nomeCli, codCli){
   }
 }
 // ═══════ FIM FABRICANTES ═══════
+
+
+// ══ BIOGÊNESIS PROSPECTS ══
+function abrirBioDetalhes(cnpj){
+  var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
+  var naBase=typeof BIO_NA_BASE!=='undefined'?BIO_NA_BASE:{};
+  // Buscar em prospects primeiro, depois em BIO_NA_BASE pelo cnpj
+  var p=prospects.find(function(x){return x.cnpj===cnpj;});
+  // Para clientes na base: buscar via CL
+  var cliVV=CL.find(function(c){return (c.cnpj||'').replace(/[^0-9]/g,'')===(cnpj||'').replace(/[^0-9]/g,'');});
+  var bioInfo=cliVV?naBase[cliVV.cod]:null;
+  var nome=p?p.nome:(cliVV?cliVV.nome:'');
+  var prods=p?(p.produtos||[]):(bioInfo?bioInfo.produtos:[]);
+  var ult=p?p.ultima_compra:(bioInfo?bioInfo.ultima_compra:'');
+  var ultFmt=ult?ult.split('-').reverse().join('/'):'';
+
+  // Verificar se reativou — cliente na base VetVida comprou algum produto Biogênesis após abril/2026
+  var reativado=false;
+  var prodReativados=[];
+  if(cliVV&&cliVV.prods){
+    var BIO_NOMES=['NUTRISANA','DRASIL','OTOSANA','PETSPORIN','PIUSANA','GOOD CARE','MUNNOMAX','NEXIN','CISPET','OMEX','AKALME','PBIOTICS'];
+    prodReativados=cliVV.prods.filter(function(pr){
+      var nm=(pr.nome||'').toUpperCase();
+      return BIO_NOMES.some(function(bn){return nm.indexOf(bn)>=0;});
+    });
+    reativado=prodReativados.length>0;
+  }
+
+  var statusHtml='';
+  if(cliVV){
+    if(reativado){
+      statusHtml='<div style="background:#dcfce7;border:1px solid #16a34a;border-radius:8px;padding:8px 12px;margin:8px 0;">'
+        +'<div style="font-weight:700;font-size:12px;color:#16a34a;margin-bottom:4px;">✅ REATIVADO — já compra pela VetVida</div>'
+        +'<div style="font-size:11px;color:#374151;">'+prodReativados.map(function(pr){return pr.nome;}).slice(0,5).join(', ')+'</div>'
+        +'</div>';
+    } else {
+      statusHtml='<div style="background:#fef2f2;border:1px solid #CC0000;border-radius:8px;padding:8px 12px;margin:8px 0;">'
+        +'<div style="font-weight:700;font-size:12px;color:#CC0000;margin-bottom:2px;">⚠️ NÃO REATIVADO — nunca comprou Biogênesis pela VetVida</div>'
+        +'<div style="font-size:11px;color:#6b7280;">Cliente na base mas sem compra da marca desde abril/2026</div>'
+        +'</div>';
+    }
+  }
+
+  var prodsHtml=(prods||[]).map(function(pr){
+    return '<li style="font-size:12px;padding:2px 0;">'+pr+'</li>';
+  }).join('');
+
+  var html='<div style="padding:4px">'
+    +'<div style="font-weight:700;font-size:15px;margin-bottom:8px;">'+nome+'</div>'
+    +statusHtml
+    +(p&&p.bairro?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">📍 '+p.bairro+(p.municipio?', '+p.municipio:'')+'</div>':'')
+    +(p&&p.endereco?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">🏠 '+p.endereco+'</div>':'')
+    +(p&&p.telefone?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">📞 '+p.telefone+'</div>':'')
+    +(p&&p.email?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">✉️ '+p.email+'</div>':'')
+    +'<div style="height:1px;background:#e5e7eb;margin:10px 0;"></div>'
+    +'<div style="font-weight:700;font-size:12px;color:#1d4ed8;margin-bottom:6px;">Produtos que comprava (distribuidor anterior):</div>'
+    +'<ul style="padding-left:16px;margin:0;">'+prodsHtml+'</ul>'
+    +(ultFmt?'<div style="font-size:11px;color:#9ca3af;margin-top:8px;">Última compra (dist. anterior): '+ultFmt+'</div>':'')
+    +(p&&p.total_valor?'<div style="font-size:11px;color:#9ca3af;">Volume histórico: R$ '+p.total_valor.toFixed(2).replace('.',',')+'</div>':'')
+    +'</div>';
+  document.getElementById('m-prc-t').textContent='🔵 Biogênesis — '+nome;
+  document.getElementById('m-prc-b').innerHTML=html;
+  document.getElementById('m-prc').classList.add('on');
+}
+// ══ FIM BIOGÊNESIS ══
+
+
+// ══ BIO: Histórico do Excel ══
+function abrirHistBio(cnpj,nome){
+  // Buscar em prospects ou na base
+  var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
+  var naBase=typeof BIO_NA_BASE!=='undefined'?BIO_NA_BASE:{};
+  var p=prospects.find(function(x){return x.cnpj===cnpj;});
+  // Tentar também pela base
+  if(!p){
+    var keys=Object.keys(naBase);
+    for(var i=0;i<keys.length;i++){
+      if((naBase[keys[i]].cnpj||'')===cnpj){p=naBase[keys[i]];break;}
+    }
+  }
+  var trans=(p&&p.transacoes)||[];
+  var html='<div style="padding:4px">';
+  html+='<div style="font-weight:700;font-size:14px;margin-bottom:10px;">📊 Histórico Biogênesis — '+nome+'</div>';
+  if(p&&p.total_valor){
+    html+='<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;">'
+      +'<span style="font-weight:700;color:#1d4ed8;">Volume total:</span> R$ '+p.total_valor.toFixed(2).replace('.',',')+' '
+      +(p.ultima_compra?'<span style="color:#9ca3af;">· Última compra: '+p.ultima_compra.split('-').reverse().join('/')+'</span>':'')+'</div>';
+  }
+  if(trans.length){
+    // Agrupar por data
+    var porData={};
+    trans.forEach(function(t){
+      if(!porData[t.data]) porData[t.data]=[];
+      porData[t.data].push(t);
+    });
+    var datas=Object.keys(porData).sort(function(a,b){return a>b?-1:1;});
+    datas.forEach(function(dt){
+      var itens=porData[dt];
+      var total=itens.reduce(function(s,t){return s+(t.valor||0);},0);
+      var dtFmt=dt.split('-').reverse().join('/');
+      html+='<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;background:#f8fafc;border-left:3px solid #1d4ed8;padding:6px 10px;border-radius:0 6px 6px 0;margin-bottom:4px;">'+
+        '<span style="font-weight:700;font-size:12px;color:#1d4ed8;">'+dtFmt+'</span>'+
+        '<span style="font-size:12px;color:#374151;font-weight:600;">R$ '+total.toFixed(2).replace('.',',')+'</span></div>';
+      itens.forEach(function(t){
+        html+='<div style="display:flex;justify-content:space-between;padding:4px 10px;font-size:11px;color:#374151;border-bottom:1px solid #f3f4f6;">'+
+          '<span>'+t.produto+'</span>'+
+          (t.valor?'<span style="color:#6b7280;">R$ '+t.valor.toFixed(2).replace('.',',')+'</span>':'')+
+          '</div>';
+      });
+      html+='</div>';
+    });
+  }else{
+    html+='<div style="color:#9ca3af;font-size:13px;">Nenhuma transação encontrada.</div>';
+  }
+  html+='</div>';
+  document.getElementById('m-prc-t').textContent='📊 Hist. Bio — '+nome;
+  document.getElementById('m-prc-b').innerHTML=html;
+  document.getElementById('m-prc').classList.add('on');
+}
+
+// ══ BIO: Modal de visita prospect ══
+var _bioVisitaCnpj='',_bioVisitaNome='';
+function abrirModalVisitaBio(cnpj,nome){
+  _bioVisitaCnpj=cnpj; _bioVisitaNome=nome;
+  var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
+  var p=prospects.find(function(x){return x.cnpj===cnpj;})||{};
+  var modal=document.getElementById('m-bio-visita');
+  if(!modal){
+    var div=document.createElement('div');
+    div.innerHTML='<div class="mfvv" id="m-bio-visita">'
+      +'<div class="msvv"><div class="msvv-h"></div>'
+      +'<div class="msvv-t" id="m-bv-t">📋 Registrar Visita</div>'
+      +'<div id="m-bv-b" style="padding:16px;max-height:65vh;overflow-y:auto;"></div>'
+      +'<button class="msvv-f" id="btn-f-bv">Fechar</button>'
+      +'</div></div>';
+    document.body.appendChild(div.firstChild);
+    document.getElementById('btn-f-bv').addEventListener('click',function(){
+      document.getElementById('m-bio-visita').classList.remove('on');
+    });
+  }
+  document.getElementById('m-bv-t').textContent='📋 Visita — '+nome;
+  var hoje=new Date().toISOString().split('T')[0];
+  document.getElementById('m-bv-b').innerHTML=
+    '<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Data *</label>'
+      +'<input id="bv-data" type="date" value="'+hoje+'" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Com quem falou *</label>'
+      +'<input id="bv-contato" type="text" placeholder="Nome do contato" value="'+(p.telefone?'':'')+'" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Telefone atualizado</label>'
+      +'<input id="bv-fone" type="tel" placeholder="(11) 99999-9999" value="'+(p.telefone||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Resultado *</label>'
+      +'<select id="bv-resultado" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+        +'<option value="">Selecione...</option>'
+        +'<option>Compra realizada</option>'
+        +'<option>Interesse confirmado — enviar proposta</option>'
+        +'<option>Cliente fechado — aguardando pedido</option>'
+        +'<option>Sem interesse</option>'
+        +'<option>Ausente — reagendar</option>'
+        +'<option>Já compra pela VetVida</option>'
+      +'</select>'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Observações</label>'
+      +'<textarea id="bv-obs" rows="3" placeholder="Detalhes da visita..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;resize:vertical;"></textarea>'
+    +'</div>'
+    +'<button onclick="salvarVisitaBio()" style="width:100%;background:#1d4ed8;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">✓ Salvar visita</button>';
+  document.getElementById('m-bio-visita').classList.add('on');
+}
+
+async function salvarVisitaBio(){
+  var data=document.getElementById('bv-data').value;
+  var contato=(document.getElementById('bv-contato').value||'').trim();
+  var fone=(document.getElementById('bv-fone').value||'').trim();
+  var resultado=document.getElementById('bv-resultado').value;
+  var obs=(document.getElementById('bv-obs').value||'').trim();
+  if(!data||!contato||!resultado){mostrarToast('Preencha data, contato e resultado.');return;}
+  try{
+    var SB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+    var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+    await fetch(SB_URL+'/rest/v1/visitas_fabricantes',{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({
+        fabricante:'VetVida Rep',fabricante_id:'rep',
+        promotor_nome:REP,
+        cliente_cnpj:_bioVisitaCnpj,cliente_nome:_bioVisitaNome,
+        contato:contato,telefone:fone,
+        resultado:resultado,obs:obs,
+        tipo:'visita_prospect_bio'
+      })
+    });
+    mostrarToast('✓ Visita registrada!');
+    document.getElementById('m-bio-visita').classList.remove('on');
+  }catch(e){mostrarToast('Erro ao salvar: '+e.message);}
+}
+// ══ FIM BIO ══
 
 </script>
 

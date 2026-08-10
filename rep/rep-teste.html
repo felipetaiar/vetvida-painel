@@ -1213,12 +1213,11 @@ async function _carregarPromo(){
     var hq={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4'};
     // Pegar área do rep logado (ex: "GUARULHOS 1")
     var areaRep = (AREAS_LABEL_DATA[REP]||'').toUpperCase();
-    // Carregar todas as visitas — filtrar por rep_responsavel no cliente via CL
-    var urlVisitas = 'https://waiujqbzncemkpznvnct.supabase.co/rest/v1/visitas?select=*&order=created_at.desc&limit=500';
+    // Filtrar visitas pela área do rep via Supabase (evita trazer visitas de outras áreas)
+    var urlVisitas = 'https://waiujqbzncemkpznvnct.supabase.co/rest/v1/visitas?select=*&order=created_at.desc&limit=500'
+      + (areaRep ? '&area=eq.' + encodeURIComponent(areaRep) : '');
     var rv=await fetch(urlVisitas,{headers:hp});
     _VP=await rv.json(); if(!Array.isArray(_VP))_VP=[];
-    // Mostrar todas as visitas (sem filtro por nome — evita falhas de match por acento/maiúscula)
-    // A área do rep já está implícita porque a Nicolle só visita clientes da VetVida
     var ra=await fetch('https://waiujqbzncemkpznvnct.supabase.co/rest/v1/amostras?select=*&order=created_at.desc',{headers:hp});
     _AP=await ra.json(); if(!Array.isArray(_AP))_AP=[];
     var rl=await fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/leads?select=*&rep_responsavel=eq.'+REP+'&order=created_at.desc',{headers:hq});
@@ -1269,9 +1268,12 @@ async function verPromotor(nomeCli){
   document.getElementById('m-prc-b').innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</p>';
   document.getElementById('m-prc').classList.add('on');
   await _carregarPromo();
-  var vC=_VP.filter(function(v){return (v.estabelecimento||'').toLowerCase().indexOf(nomeCli.toLowerCase())>=0;});
-  var aC=_AP.filter(function(a){return (a.estabelecimento_nome||'').toLowerCase().indexOf(nomeCli.toLowerCase())>=0;});
-  var lC=_LP.filter(function(l){return (l.estabelecimento||'').toLowerCase().indexOf(nomeCli.toLowerCase())>=0;});
+  // Normalizar para comparação: sem acentos, maiúsculas, espaços extras
+  function _norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+  var _nomN = _norm(nomeCli);
+  var vC=_VP.filter(function(v){return _norm(v.estabelecimento).indexOf(_nomN)>=0||_norm(_nomN).indexOf(_norm(v.estabelecimento))>=0;});
+  var aC=_AP.filter(function(a){return _norm(a.estabelecimento_nome).indexOf(_nomN)>=0;});
+  var lC=_LP.filter(function(l){return _norm(l.estabelecimento).indexOf(_nomN)>=0;});
   var h='';
   if(!vC.length&&!aC.length&&!lC.length){
     h='<p style="color:#9ca3af;text-align:center;padding:20px;">Nenhuma atividade da Nicolle aqui.</p>';

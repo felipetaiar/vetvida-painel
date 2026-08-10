@@ -128,7 +128,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 
 /* CARD BODY */
 .cb { padding: 0 16px; max-height: 0; overflow: hidden; transition: max-height 0.35s ease, padding 0.35s; }
-.cb.open { max-height: 900px; padding: 14px 16px 18px; border-top: 1px solid var(--border); }
+.cb.open { max-height: 9999px; padding: 14px 16px 18px; border-top: 1px solid var(--border); }
 .hist-section { margin-bottom: 14px; }
 .hist-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
 .hist-bars { display: flex; gap: 5px; align-items: flex-end; height: 64px; }
@@ -1217,9 +1217,8 @@ async function _carregarPromo(){
     var urlVisitas = 'https://waiujqbzncemkpznvnct.supabase.co/rest/v1/visitas?select=*&order=created_at.desc&limit=500';
     var rv=await fetch(urlVisitas,{headers:hp});
     _VP=await rv.json(); if(!Array.isArray(_VP))_VP=[];
-    // Filtrar visitas pelos clientes da área do rep
-    var _nomesCL=CL.map(function(c){return c.nome.toLowerCase();});
-    _VP=_VP.filter(function(v){return _nomesCL.indexOf((v.estabelecimento||'').toLowerCase())>=0;});
+    // Mostrar todas as visitas (sem filtro por nome — evita falhas de match por acento/maiúscula)
+    // A área do rep já está implícita porque a Nicolle só visita clientes da VetVida
     var ra=await fetch('https://waiujqbzncemkpznvnct.supabase.co/rest/v1/amostras?select=*&order=created_at.desc',{headers:hp});
     _AP=await ra.json(); if(!Array.isArray(_AP))_AP=[];
     var rl=await fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/leads?select=*&rep_responsavel=eq.'+REP+'&order=created_at.desc',{headers:hq});

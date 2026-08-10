@@ -1820,9 +1820,23 @@ function renderFormNovaAcao(){
   html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
   html+='<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
   html+='<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
-  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
-  html+='<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  html+='<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div></div></div>';
+  html+='</div></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo da acao</label>';
+  html+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
+  html+='<button type="button" id="ac-alvo-btn-prod" onclick="acAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #7c3aed;background:#7c3aed;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>';
+  html+='<button type="button" id="ac-alvo-btn-lab" onclick="acAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratorio inteiro</button>';
+  html+='</div>';
+  html+='<div id="ac-alvo-produtos">';
+  html+='<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>';
+  html+='<div id="ac-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>';
+  html+='</div>';
+  html+='<div id="ac-alvo-lab" style="display:none;">';
+  html+='<select id="ac-lab-select" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<option value="">Selecione o laboratorio...</option>';
+  html+='</select>';
+  html+='</div>';
+  html+='</div>';
   html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
   html+='<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
@@ -1843,20 +1857,57 @@ function renderFormNovaAcao(){
   html+='</div>';
   el.innerHTML=html;
 }
+function acAbrirNova(){
+  _acProdutosSelecionados=[];
+  var chips=document.getElementById('ac-produtos-chips'); if(chips) chips.innerHTML='';
+  var labSel=document.getElementById('ac-lab-select'); if(labSel) labSel.value='';
+  acAlvoModo('produtos');
+}
+
 function acTipoMudou(){
   var tipo=document.getElementById('ac-tipo').value;
   var wrap=document.getElementById('ac-link-receita-wrap');
   if(wrap) wrap.style.display=(tipo==='premio_vet')?'block':'none';
 }
+var _acProdutosSelecionados=[];
+
+function acAlvoModo(modo){
+  var btnP=document.getElementById('ac-alvo-btn-prod'), btnL=document.getElementById('ac-alvo-btn-lab');
+  var wrapP=document.getElementById('ac-alvo-produtos'), wrapL=document.getElementById('ac-alvo-lab');
+  if(modo==='produtos'){
+    wrapP.style.display='block'; wrapL.style.display='none';
+    btnP.style.background='#7c3aed'; btnP.style.borderColor='#7c3aed'; btnP.style.color='white';
+    btnL.style.background='white'; btnL.style.borderColor='#e5e7eb'; btnL.style.color='#6b7280';
+  } else {
+    wrapP.style.display='none'; wrapL.style.display='block';
+    btnL.style.background='#7c3aed'; btnL.style.borderColor='#7c3aed'; btnL.style.color='white';
+    btnP.style.background='white'; btnP.style.borderColor='#e5e7eb'; btnP.style.color='#6b7280';
+    acPopularLabs();
+  }
+}
+
+function acPopularLabs(){
+  var sel=document.getElementById('ac-lab-select');
+  if(!sel||sel.options.length>1) return;
+  if(typeof PRECOS_VV==='undefined') return;
+  var labs=Array.from(new Set(PRECOS_VV.map(function(p){return p.lab;}).filter(Boolean))).sort();
+  labs.forEach(function(l){
+    var opt=document.createElement('option'); opt.value=l; opt.textContent=l; sel.appendChild(opt);
+  });
+}
+
 function acBuscarProduto(q){
   var box=document.getElementById('ac-produto-sugs');
   if(!box) return;
   q=(q||'').trim().toLowerCase();
   if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
-  var res=PRECOS_VV.filter(function(p){return p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0;}).slice(0,6);
+  var res=PRECOS_VV.filter(function(p){
+    return (p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0)
+      && _acProdutosSelecionados.indexOf(p.nome)<0;
+  }).slice(0,6);
   if(!res.length){box.style.display='none';return;}
   box.innerHTML=res.map(function(p){
-    return '<div data-nome="'+p.nome+'" class="ac-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+    return '<div data-nome="'+p.nome.replace(/"/g,'&quot;')+'" class="ac-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
       +'<div style="font-weight:600;">'+p.nome+'</div>'
       +'<div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
   }).join('');
@@ -1864,11 +1915,31 @@ function acBuscarProduto(q){
     el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
     el.addEventListener('mouseleave',function(){this.style.background='white';});
     el.addEventListener('click',function(){
-      document.getElementById('ac-produto').value=this.getAttribute('data-nome');
+      var nome=this.getAttribute('data-nome');
+      if(_acProdutosSelecionados.indexOf(nome)<0) _acProdutosSelecionados.push(nome);
+      document.getElementById('ac-produto').value='';
       box.style.display='none';
+      acRenderChips();
     });
   });
   box.style.display='block';
+}
+
+function acRenderChips(){
+  var wrap=document.getElementById('ac-produtos-chips');
+  if(!wrap) return;
+  wrap.innerHTML=_acProdutosSelecionados.map(function(nome,i){
+    return '<span style="background:#ede9fe;color:#5b21b6;border-radius:14px;padding:5px 10px 5px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">'
+      +nome
+      +'<button type="button" data-idx="'+i+'" class="ac-chip-rm" style="background:none;border:none;color:#5b21b6;cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button>'
+      +'</span>';
+  }).join('');
+  wrap.querySelectorAll('.ac-chip-rm').forEach(function(b){
+    b.addEventListener('click',function(){
+      _acProdutosSelecionados.splice(parseInt(this.dataset.idx),1);
+      acRenderChips();
+    });
+  });
 }
 
 async function salvarNovaAcao(){
@@ -1881,10 +1952,14 @@ async function salvarNovaAcao(){
   if(!titulo||!tipo||!inicio||!fim){alert('Preencha titulo, tipo e datas.');return;}
   if(!metaTipo){alert('Selecione o tipo de meta.');return;}
   if(!metaValor||metaValor<=0){alert('Informe o valor da meta.');return;}
+  var alvoModo=(document.getElementById('ac-alvo-lab').style.display==='block')?'lab':'produtos';
+  var labSelecionado=(document.getElementById('ac-lab-select').value||'').trim();
   var payload={
     cliente_cod:_acoesCod, cliente_nome:_acoesNome,
     titulo:titulo, tipo:tipo,
-    produto_alvo:(document.getElementById('ac-produto').value||'').trim()||null,
+    produto_alvo:_acProdutosSelecionados.length?_acProdutosSelecionados.join(', '):(labSelecionado?('Todos os produtos '+labSelecionado):null),
+    produtos_alvo:(alvoModo==='produtos'&&_acProdutosSelecionados.length)?_acProdutosSelecionados:null,
+    lab_alvo:(alvoModo==='lab'&&labSelecionado)?labSelecionado:null,
     premio_descricao:(document.getElementById('ac-premio').value||'').trim()||null,
     meta_tipo:metaTipo, meta_valor:metaValor,
     data_inicio:inicio, data_fim:fim,

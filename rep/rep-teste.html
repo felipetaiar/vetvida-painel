@@ -422,7 +422,57 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   </div>
 </div>
 
-<script src="api.js"></script>
+<script>
+// api.js inline — usa Supabase direto (substitui /api/sheets que não existe no staging)
+var _SB_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
+var _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+function _sbH(){ return {'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY}; }
+
+function registrarContato(rep, cod, nome, status, obs) {
+  return fetch(_SB_URL+'/rest/v1/contatos', {
+    method: 'POST',
+    headers: Object.assign({}, _sbH(), {'Content-Type':'application/json','Prefer':'return=minimal'}),
+    body: JSON.stringify({rep:rep, cod_cliente:cod, nome_cliente:nome, status:status, obs:obs||''})
+  });
+}
+
+function buscarContatosRep(rep) {
+  return fetch(_SB_URL+'/rest/v1/contatos?select=cod_cliente,status,obs,data_hora&rep=eq.'+encodeURIComponent(rep)+'&order=data_hora.desc', {
+    headers: _sbH()
+  }).then(function(r){return r.json();}).then(function(rows){
+    var resultado = {};
+    var lista = Array.isArray(rows) ? rows : [];
+    lista.forEach(function(r) {
+      if (!r || !r.cod_cliente) return;
+      if (!resultado[r.cod_cliente]) {
+        resultado[r.cod_cliente] = { status: r.status||'Contatado', obs: r.obs||'', data: r.data_hora||'' };
+      }
+    });
+    return resultado;
+  });
+}
+
+function buscarResumoGestor() {
+  return fetch(_SB_URL+'/rest/v1/contatos?select=*&order=data_hora.desc', {
+    headers: _sbH()
+  }).then(function(r){return r.json();}).then(function(rows){
+    var hoje = new Date().toLocaleDateString('pt-BR');
+    var resumo = {};
+    var lista = Array.isArray(rows) ? rows : [];
+    lista.forEach(function(r) {
+      if (!r || !r.rep) return;
+      if (!resumo[r.rep]) resumo[r.rep] = {total:0,hoje:0,ultima:'',cods:{},detalhes:[]};
+      resumo[r.rep].cods[r.cod_cliente] = { status: r.status, obs: r.obs };
+      resumo[r.rep].total++;
+      var dt = r.data_hora ? new Date(r.data_hora).toLocaleDateString('pt-BR') : '';
+      if (dt === hoje) resumo[r.rep].hoje++;
+      if (!resumo[r.rep].ultima) resumo[r.rep].ultima = r.data_hora;
+      resumo[r.rep].detalhes.push({ data: r.data_hora, nome: r.nome_cliente, status: r.status, obs: r.obs });
+    });
+    return resumo;
+  });
+}
+</script>
 <style>
 .leads-btn{display:flex;align-items:center;gap:8px;background:#fffbeb;border:1px solid #fde68a;color:#b45309;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;margin:10px 16px 0;}
 .leads-badge{background:#d97706;color:white;font-size:11px;padding:2px 7px;border-radius:20px;}

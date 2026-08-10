@@ -2188,6 +2188,7 @@ function acBuscarCliente(q){
         extra.id = 'ac-form-resto';
         wrap.appendChild(extra);
         extra.innerHTML = _buildFormResto();
+        acAbrirNova();
       }
     });
   });
@@ -2203,9 +2204,23 @@ function _buildFormResto(){
   html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
   html += '<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
   html += '<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
-  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
-  html += '<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  html += '<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div></div></div>';
+  html += '</div></div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo da acao</label>';
+  html += '<div style="display:flex;gap:6px;margin-bottom:8px;">';
+  html += '<button type="button" id="ac-alvo-btn-prod" onclick="acAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #7c3aed;background:#7c3aed;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>';
+  html += '<button type="button" id="ac-alvo-btn-lab" onclick="acAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratorio inteiro</button>';
+  html += '</div>';
+  html += '<div id="ac-alvo-produtos">';
+  html += '<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>';
+  html += '<div id="ac-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>';
+  html += '</div>';
+  html += '<div id="ac-alvo-lab" style="display:none;">';
+  html += '<select id="ac-lab-select" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<option value="">Selecione o laboratorio...</option>';
+  html += '</select>';
+  html += '</div>';
+  html += '</div>';
   html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
   html += '<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';

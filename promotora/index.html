@@ -1055,15 +1055,7 @@ document.addEventListener('click', function(e) {
 
     <div class="form-group">
       <label class="form-label required">Função</label>
-      <select class="form-select" id="ct-funcao" onchange="onMudarFuncaoContato()">
-        <option value="">Selecione...</option>
-        <option value="Veterinário(a)">Veterinário(a)</option>
-        <option value="Comprador(a)">Comprador(a)</option>
-        <option value="Gerente">Gerente</option>
-        <option value="Dono(a)">Dono(a)</option>
-        <option value="Balconista">Balconista</option>
-        <option value="Outro">Outro</option>
-      </select>
+      <div class="check-group" id="check-ct-funcao"><!-- gerado via JS --></div>
     </div>
 
     <!-- Especialidades: só aparece se função = Veterinário -->
@@ -3213,7 +3205,7 @@ function filtrarContatos() {
 function abrirModalContato() {
   CONTATO_EDITANDO = null;
   document.getElementById('ct-nome').value = '';
-  document.getElementById('ct-funcao').value = '';
+  montarFuncoesContato();
   document.getElementById('grupo-ct-especialidades').style.display = 'none';
   document.getElementById('ct-estab').value = '';
   document.getElementById('ct-multi-clinica').checked = false;
@@ -3320,11 +3312,28 @@ function toggleMultiClinica() {
 
 // ── Função do contato → mostra/esconde especialidades ──
 function onMudarFuncaoContato() {
-  const funcao = document.getElementById('ct-funcao').value;
-  document.getElementById('grupo-ct-especialidades').style.display = (funcao === 'Veterinário(a)') ? 'block' : 'none';
+  const funcoesSel = [...document.querySelectorAll('#check-ct-funcao input:checked')].map(i => i.value);
+  document.getElementById('grupo-ct-especialidades').style.display = funcoesSel.includes('Veterinário(a)') ? 'block' : 'none';
 }
 
 // ── Especialidades multi-select (pills clicáveis) ──
+const FUNCOES_CONTATO = ['Veterinário(a)','Comprador(a)','Gerente','Dono(a)','Balconista','Outro'];
+
+function montarFuncoesContato() {
+  const cont = document.getElementById('check-ct-funcao');
+  cont.innerHTML = '';
+  FUNCOES_CONTATO.forEach(fn => {
+    const label = document.createElement('label');
+    label.className = 'check-pill';
+    label.innerHTML = `<input type="checkbox" value="${fn}"> ${fn}`;
+    label.querySelector('input').onchange = e => {
+      label.classList.toggle('checked', e.target.checked);
+      onMudarFuncaoContato();
+    };
+    cont.appendChild(label);
+  });
+}
+
 function montarEspecialidadesContato() {
   const cont = document.getElementById('check-ct-especialidades');
   cont.innerHTML = '';

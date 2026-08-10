@@ -1055,15 +1055,7 @@ document.addEventListener('click', function(e) {
 
     <div class="form-group">
       <label class="form-label required">Função</label>
-      <select class="form-select" id="ct-funcao" onchange="onMudarFuncaoContato()">
-        <option value="">Selecione...</option>
-        <option value="Veterinário(a)">Veterinário(a)</option>
-        <option value="Comprador(a)">Comprador(a)</option>
-        <option value="Gerente">Gerente</option>
-        <option value="Dono(a)">Dono(a)</option>
-        <option value="Balconista">Balconista</option>
-        <option value="Outro">Outro</option>
-      </select>
+      <div class="check-group" id="check-ct-funcao"><!-- gerado via JS --></div>
     </div>
 
     <!-- Especialidades: só aparece se função = Veterinário -->
@@ -1348,7 +1340,7 @@ const EMAILJS_TEMPLATE = 'template_rdkuoc8';
 const EMAILJS_KEY      = 'WwOgYah1tSMMg6LLR';
 
 const FORNECEDORES = ['Homeopet','Dechra','Vansil','Syntec','Labyes','Organnact','Biogênesis Bagó Pet'];
-const ESPECIALIDADES = ['Clínica geral','Dermatologia','Oncologia','Cardiologia','Ortopedia','Neurologia','Oftalmologia','Reprodução animal','Exóticos','Emergência/UTI','Laboratório','Endocrinologia','Homeopatia','Odontologia','Internação'];
+const ESPECIALIDADES = ["Acupuntura", "Anestesiologia", "Cardiologia", "Cirurgia", "Clínica Médica de Pequenos Animais", "Dermatologia", "Homeopatia", "Medicina Veterinária Intensiva", "Medicina de Animais Selvagens", "Nutrologia", "Oftalmologia", "Oncologia", "Diagnóstico por Imagem", "Endocrinologia", "Medicina Veterinária Legal", "Medicina Veterinária Preventiva (Saúde Pública)", "Nefrologia e Urologia", "Patologia", "Perícia"];
 const TIPOS_ESTABELECIMENTO = ['Clínica veterinária','Pet shop','Hospital 24h','Banho e tosa','Canil','Criador','Agropecuária','Groomer','Hospital veterinário'];
 const OBJETIVOS_VISITA = ['Apresentação de produtos','Treinamento de balconista','Acompanhamento de pedido','Reativação de cliente','Prospecção'];
 const RESULTADOS_VISITA = ['Visita realizada – sem interesse','Visita realizada – interesse parcial','Interesse confirmado – acionar rep','Treinamento realizado','Cliente já atendido pelo rep','Ausente – reagendar'];
@@ -3213,7 +3205,7 @@ function filtrarContatos() {
 function abrirModalContato() {
   CONTATO_EDITANDO = null;
   document.getElementById('ct-nome').value = '';
-  document.getElementById('ct-funcao').value = '';
+  montarFuncoesContato();
   document.getElementById('grupo-ct-especialidades').style.display = 'none';
   document.getElementById('ct-estab').value = '';
   document.getElementById('ct-multi-clinica').checked = false;
@@ -3233,15 +3225,19 @@ function editarContato(id) {
   if (!c) return;
   CONTATO_EDITANDO = id;
   document.getElementById('ct-nome').value = c.nome || '';
-  document.getElementById('ct-funcao').value = c.funcao || '';
   document.getElementById('ct-estab').value = c.estabelecimento_nome || '';
   document.getElementById('ct-telefone').value = c.telefone || '';
   document.getElementById('ct-aniversario').value = c.data_aniversario || '';
   document.getElementById('ct-hobbies').value = c.hobbies || '';
   document.getElementById('ct-obs').value = c.tipo || '';
 
+  montarFuncoesContato();
+  const funcoesSalvas = (c.funcao || '').split(',').map(s => s.trim()).filter(Boolean);
+  document.querySelectorAll('#check-ct-funcao input').forEach(inp => {
+    if (funcoesSalvas.includes(inp.value)) { inp.checked = true; inp.closest('.check-pill').classList.add('checked'); }
+  });
   montarEspecialidadesContato();
-  document.getElementById('grupo-ct-especialidades').style.display = (c.funcao === 'Veterinário(a)') ? 'block' : 'none';
+  document.getElementById('grupo-ct-especialidades').style.display = funcoesSalvas.includes('Veterinário(a)') ? 'block' : 'none';
   const espSalvas = (c.especialidade || '').split(',').map(s => s.trim()).filter(Boolean);
   document.querySelectorAll('#check-ct-especialidades input').forEach(inp => {
     if (espSalvas.includes(inp.value)) { inp.checked = true; inp.closest('.check-pill').classList.add('checked'); }
@@ -3320,11 +3316,28 @@ function toggleMultiClinica() {
 
 // ── Função do contato → mostra/esconde especialidades ──
 function onMudarFuncaoContato() {
-  const funcao = document.getElementById('ct-funcao').value;
-  document.getElementById('grupo-ct-especialidades').style.display = (funcao === 'Veterinário(a)') ? 'block' : 'none';
+  const funcoesSel = [...document.querySelectorAll('#check-ct-funcao input:checked')].map(i => i.value);
+  document.getElementById('grupo-ct-especialidades').style.display = funcoesSel.includes('Veterinário(a)') ? 'block' : 'none';
 }
 
 // ── Especialidades multi-select (pills clicáveis) ──
+const FUNCOES_CONTATO = ['Veterinário(a)','Comprador(a)','Gerente','Dono(a)','Balconista','Outro'];
+
+function montarFuncoesContato() {
+  const cont = document.getElementById('check-ct-funcao');
+  cont.innerHTML = '';
+  FUNCOES_CONTATO.forEach(fn => {
+    const label = document.createElement('label');
+    label.className = 'check-pill';
+    label.innerHTML = `<input type="checkbox" value="${fn}"> ${fn}`;
+    label.querySelector('input').onchange = e => {
+      label.classList.toggle('checked', e.target.checked);
+      onMudarFuncaoContato();
+    };
+    cont.appendChild(label);
+  });
+}
+
 function montarEspecialidadesContato() {
   const cont = document.getElementById('check-ct-especialidades');
   cont.innerHTML = '';
@@ -3417,8 +3430,9 @@ async function salvarContato() {
   const nome = document.getElementById('ct-nome').value.trim();
   if (!nome) { mostrarToast('Informe o nome do contato'); return; }
 
-  const funcao = document.getElementById('ct-funcao').value;
-  if (!funcao) { mostrarToast('Selecione a função do contato'); return; }
+  const funcoesSel = [...document.querySelectorAll('#check-ct-funcao input:checked')].map(i => i.value);
+  if (!funcoesSel.length) { mostrarToast('Selecione ao menos uma função do contato'); return; }
+  const funcao = funcoesSel.join(', ');
   const estab = document.getElementById('ct-estab').value.trim();
   if (!estab) { mostrarToast('Informe o estabelecimento principal'); return; }
 

@@ -810,7 +810,7 @@ function rnd(){
     h+='</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirAcoes(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;" id="btn-acoes-'+c.cod+'">🎯 Ações</button>';
-    h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'">🌸 Promotora</button>';
+    h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'">🌸 Promotora</button>';
     h+='<button class="btn-fab-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#0ea5e9;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">🏭 Fabricantes</button>';
     h+='</div>';
     h+='</div></div>';
@@ -899,7 +899,7 @@ function rnd(){
       window.location.href='estoque.html';
     });
   });
-  document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom));});
+  document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom),this.dataset.cod);});
   document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});});
   pg();
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
@@ -1263,9 +1263,8 @@ async function _carregarPromo(){
     var hq={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4'};
     // Pegar área do rep logado (ex: "GUARULHOS 1")
     var areaRep = (AREAS_LABEL_DATA[REP]||'').toUpperCase();
-    // Filtrar visitas pela área do rep via Supabase (evita trazer visitas de outras áreas)
-    var urlVisitas = 'https://waiujqbzncemkpznvnct.supabase.co/rest/v1/visitas?select=*&order=created_at.desc&limit=500'
-      + (areaRep ? '&area=eq.' + encodeURIComponent(areaRep) : '');
+    // Buscar todas as visitas — filtro por cod (vv-XXXX) feito no cliente
+    var urlVisitas = 'https://waiujqbzncemkpznvnct.supabase.co/rest/v1/visitas?select=*&order=created_at.desc&limit=500';
     var rv=await fetch(urlVisitas,{headers:hp});
     _VP=await rv.json(); if(!Array.isArray(_VP))_VP=[];
     var ra=await fetch('https://waiujqbzncemkpznvnct.supabase.co/rest/v1/amostras?select=*&order=created_at.desc',{headers:hp});
@@ -1313,17 +1312,25 @@ function _filtrarPR(){
   });
 }
 
-async function verPromotor(nomeCli){
+async function verPromotor(nomeCli, codCli){
   document.getElementById('m-prc-t').textContent='🌸 '+nomeCli;
   document.getElementById('m-prc-b').innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</p>';
   document.getElementById('m-prc').classList.add('on');
   await _carregarPromo();
-  // Normalizar para comparação: sem acentos, maiúsculas, espaços extras
   function _norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+  var _idVV = codCli ? 'vv-'+String(codCli) : null;
   var _nomN = _norm(nomeCli);
-  var vC=_VP.filter(function(v){return _norm(v.estabelecimento).indexOf(_nomN)>=0||_norm(_nomN).indexOf(_norm(v.estabelecimento))>=0;});
+  var vC=_VP.filter(function(v){
+    if(_idVV && v.estabelecimento_id && v.estabelecimento_id===_idVV) return true;
+    if(!_idVV || !v.estabelecimento_id || v.estabelecimento_id.indexOf('vv-')!==0)
+      return _norm(v.estabelecimento).indexOf(_nomN)>=0||_norm(_nomN).indexOf(_norm(v.estabelecimento))>=0;
+    return false;
+  });
   var aC=_AP.filter(function(a){return _norm(a.estabelecimento_nome).indexOf(_nomN)>=0;});
-  var lC=_LP.filter(function(l){return _norm(l.estabelecimento).indexOf(_nomN)>=0;});
+  var lC=_LP.filter(function(l){
+    if(_idVV && l.estabelecimento_id && l.estabelecimento_id===_idVV) return true;
+    return _norm(l.estabelecimento).indexOf(_nomN)>=0;
+  });
   var h='';
   if(!vC.length&&!aC.length&&!lC.length){
     h='<p style="color:#9ca3af;text-align:center;padding:20px;">Nenhuma atividade da Nicolle aqui.</p>';

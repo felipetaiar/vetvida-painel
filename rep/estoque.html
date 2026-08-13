@@ -678,6 +678,7 @@ function ajustarQtde(i, delta){
   var val=Math.max(0,(parseInt(inp.value)||0)+delta);
   inp.value=val;
   calcDias(i);
+  atualizarAnaliseGiro(i);
 }
 
 function getFreq(){

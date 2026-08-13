@@ -348,6 +348,12 @@ function fecharMenuLateral(){
     <div class="pc-body">
       <div class="pc-secao">
         <div class="pc-secao-titulo" style="display:flex;justify-content:space-between;align-items:center;">Produtos em estoque agora<button onclick="abrirAddProd()" style="background:#1F4E79;color:white;border:none;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Produto</button></div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:#6b7280;align-self:center;margin-right:2px;">Ordenar:</span>
+          <button class="ordem-btn ativo" data-ordem="alfabetica" onclick="mudarOrdemEstoque('alfabetica')" style="padding:4px 10px;border-radius:12px;border:1.5px solid #1F4E79;background:#1F4E79;color:white;font-size:11px;font-weight:600;cursor:pointer;">A-Z</button>
+          <button class="ordem-btn" data-ordem="media" onclick="mudarOrdemEstoque('media')" style="padding:4px 10px;border-radius:12px;border:1.5px solid #e5e7eb;background:white;color:#374151;font-size:11px;font-weight:600;cursor:pointer;">Maior média</button>
+          <button class="ordem-btn" data-ordem="lab" onclick="mudarOrdemEstoque('lab')" style="padding:4px 10px;border-radius:12px;border:1.5px solid #e5e7eb;background:white;color:#374151;font-size:11px;font-weight:600;cursor:pointer;">Laboratório</button>
+        </div>
         <div id="prod-lista"><div class="empty">Carregando produtos...</div></div>
       </div>
       <div class="obs-wrap" style="margin-bottom:12px">
@@ -602,8 +608,13 @@ function mudarOrdemEstoque(nova){
   ordenarProdsCli();
   renderListaProdutos();
   restaurarQtdesDaMemoria();
-  var btns=document.querySelectorAll('.ordem-btn');
-  btns.forEach(function(b){b.classList.toggle('ativo',b.dataset.ordem===nova);});
+  document.querySelectorAll('.ordem-btn').forEach(function(b){
+    var ativo=b.dataset.ordem===nova;
+    b.classList.toggle('ativo',ativo);
+    b.style.background=ativo?'#1F4E79':'white';
+    b.style.color=ativo?'white':'#374151';
+    b.style.borderColor=ativo?'#1F4E79':'#e5e7eb';
+  });
 }
 
 function salvarQtdesAtuaisEmMemoria(){

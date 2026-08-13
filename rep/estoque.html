@@ -552,6 +552,26 @@ function carregarProdutosCliente(cod){
 
 var ORDEM_ESTOQUE='alfabetica'; // 'alfabetica' | 'media' | 'lab'
 
+var ANALISE_CONTAGENS={}; // produto -> {qtdeAnterior, dataAnterior}
+
+async function carregarUltimasContagens(cod){
+  ANALISE_CONTAGENS={};
+  try{
+    var url=SUPABASE_URL+'/rest/v1/contagens_estoque?cod_cli=eq.'+cod+'&order=created_at.desc&limit=200';
+    var res=await fetch(url,{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}});
+    var linhas=await res.json();
+    if(!Array.isArray(linhas)) return;
+    // Para cada produto, pegar a contagem mais recente que NAO seja a que esta
+    // sendo feita agora (a mais recente de fato -- ainda nao existe registro
+    // da contagem atual até o rep salvar, entao a mais recente JA é a anterior)
+    linhas.forEach(function(l){
+      if(!ANALISE_CONTAGENS[l.produto]){
+        ANALISE_CONTAGENS[l.produto]={qtdeAnterior:l.qtde_estoque,dataAnterior:l.created_at};
+      }
+    });
+  }catch(e){console.warn('Erro ao buscar contagens anteriores:',e);}
+}
+
 function renderProdutos(cod){
   var hist=HIST_GLOBAL[cod]||{};
   var prods={};
@@ -582,7 +602,9 @@ function renderProdutos(cod){
   });
 
   ordenarProdsCli();
-  renderListaProdutos();
+  carregarUltimasContagens(cod).then(function(){
+    renderListaProdutos();
+  });
   carregarProdutosManuais();
 }
 

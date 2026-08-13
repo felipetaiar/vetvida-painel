@@ -348,6 +348,12 @@ function fecharMenuLateral(){
     <div class="pc-body">
       <div class="pc-secao">
         <div class="pc-secao-titulo" style="display:flex;justify-content:space-between;align-items:center;">Produtos em estoque agora<button onclick="abrirAddProd()" style="background:#1F4E79;color:white;border:none;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Produto</button></div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:#6b7280;align-self:center;margin-right:2px;">Ordenar:</span>
+          <button class="ordem-btn ativo" data-ordem="alfabetica" onclick="mudarOrdemEstoque('alfabetica')" style="padding:4px 10px;border-radius:12px;border:1.5px solid #1F4E79;background:#1F4E79;color:white;font-size:11px;font-weight:600;cursor:pointer;">A-Z</button>
+          <button class="ordem-btn" data-ordem="media" onclick="mudarOrdemEstoque('media')" style="padding:4px 10px;border-radius:12px;border:1.5px solid #e5e7eb;background:white;color:#374151;font-size:11px;font-weight:600;cursor:pointer;">Maior média</button>
+          <button class="ordem-btn" data-ordem="lab" onclick="mudarOrdemEstoque('lab')" style="padding:4px 10px;border-radius:12px;border:1.5px solid #e5e7eb;background:white;color:#374151;font-size:11px;font-weight:600;cursor:pointer;">Laboratório</button>
+        </div>
         <div id="prod-lista"><div class="empty">Carregando produtos...</div></div>
       </div>
       <div class="obs-wrap" style="margin-bottom:12px">
@@ -544,11 +550,16 @@ function carregarProdutosCliente(cod){
   document.head.appendChild(s);
 }
 
+var ORDEM_ESTOQUE='alfabetica'; // 'alfabetica' | 'media' | 'lab'
+
 function renderProdutos(cod){
   var hist=HIST_GLOBAL[cod]||{};
   var prods={};
 
-  // Pegar produtos dos pedidos recentes (últimos 12 meses)
+  // AJUSTE 1: só considerar pedidos/produtos com compra nos ÚLTIMOS 12 MESES --
+  // produtos parados há mais de 12 meses não entram na lista de contagem.
+  // hist.pedidos já vem filtrado a 12m na origem (dados.js); hist.parados
+  // é quem trazia itens antigos -- removido da listagem de contagem.
   (hist.pedidos||[]).forEach(function(ped){
     (ped.itens||[]).forEach(function(item){
       if(!prods[item.prod]){
@@ -559,29 +570,74 @@ function renderProdutos(cod){
     });
   });
 
-  // Adicionar produtos parados
-  (hist.parados||[]).forEach(function(p){
-    if(!prods[p.prod]){
-      prods[p.prod]={nome:p.prod,lab:p.lab||'',totalQtde:0,nPedidos:0,ultimoPedido:p.ultimo,parado:true};
-    }
-  });
-
   PRODS_CLI=Object.values(prods);
 
   if(!PRODS_CLI.length){
-    document.getElementById('prod-lista').innerHTML='<div class="empty">Nenhum produto encontrado no histórico deste cliente.</div>';
+    document.getElementById('prod-lista').innerHTML='<div class="empty">Nenhum produto com compra nos últimos 12 meses para este cliente.</div>';
     return;
   }
 
-  // Calcular media mensal de cada produto
   PRODS_CLI.forEach(function(p){
     p.mediaMensal=p.nPedidos>0?Math.round(p.totalQtde/Math.max(p.nPedidos,1)):0;
   });
 
+  ordenarProdsCli();
+  renderListaProdutos();
+  carregarProdutosManuais();
+}
+
+// AJUSTE 2+3: ordenação (padrão alfabética, com opção de trocar)
+function ordenarProdsCli(){
+  if(ORDEM_ESTOQUE==='alfabetica'){
+    PRODS_CLI.sort(function(a,b){return a.nome.localeCompare(b.nome,'pt-BR');});
+  } else if(ORDEM_ESTOQUE==='media'){
+    PRODS_CLI.sort(function(a,b){return b.mediaMensal-a.mediaMensal;});
+  } else if(ORDEM_ESTOQUE==='lab'){
+    PRODS_CLI.sort(function(a,b){
+      var la=(a.lab||'').localeCompare(b.lab||'','pt-BR');
+      return la!==0?la:a.nome.localeCompare(b.nome,'pt-BR');
+    });
+  }
+}
+
+function mudarOrdemEstoque(nova){
+  // Preservar quantidades já digitadas antes de reordenar (mesma lógica
+  // de preservação usada em adicionarProdVV, ver AJUSTE 4)
+  salvarQtdesAtuaisEmMemoria();
+  ORDEM_ESTOQUE=nova;
+  ordenarProdsCli();
+  renderListaProdutos();
+  restaurarQtdesDaMemoria();
+  document.querySelectorAll('.ordem-btn').forEach(function(b){
+    var ativo=b.dataset.ordem===nova;
+    b.classList.toggle('ativo',ativo);
+    b.style.background=ativo?'#1F4E79':'white';
+    b.style.color=ativo?'white':'#374151';
+    b.style.borderColor=ativo?'#1F4E79':'#e5e7eb';
+  });
+}
+
+function salvarQtdesAtuaisEmMemoria(){
+  PRODS_CLI.forEach(function(p,i){
+    var inp=document.getElementById('qtde-'+i);
+    p._qtdeDigitada=(inp&&inp.value!=='')?inp.value:'';
+  });
+}
+
+function restaurarQtdesDaMemoria(){
+  PRODS_CLI.forEach(function(p,i){
+    if(p._qtdeDigitada!==undefined&&p._qtdeDigitada!==''){
+      var inp=document.getElementById('qtde-'+i);
+      if(inp){inp.value=p._qtdeDigitada;calcDias(i);}
+    }
+  });
+}
+
+function renderListaProdutos(){
   var h='';
   PRODS_CLI.forEach(function(p, i){
     var labTag=p.lab&&p.lab!=='OUTRO'?'<span class="prod-lab">'+p.lab+'</span>':'';
-    var mediaStr=p.mediaMensal>0?'Média: '+p.mediaMensal+' un/compra':'Parado';
+    var mediaStr=p.mediaMensal>0?'Média: '+p.mediaMensal+' un/compra':(p.manual?'Produto novo':'Parado');
     h+='<div class="prod-item">'+
        '<div class="prod-nome">'+p.nome+labTag+'<div class="prod-media">'+mediaStr+'</div></div>'+
        '<div class="qtde-wrap">'+
@@ -593,8 +649,6 @@ function renderProdutos(cod){
        '</div>';
   });
   document.getElementById('prod-lista').innerHTML=h;
-  // Carregar produtos manuais do Supabase
-  carregarProdutosManuais();
 }
 
 function ajustarQtde(i, delta){
@@ -1065,27 +1119,21 @@ function adicionarProdVV(cod){
   var prod=(typeof PRODUTOS_VV!=='undefined'?PRODUTOS_VV:[]).find(function(p){return p.cod===cod;});
   if(!prod)return;
   if(PRODS_CLI.find(function(x){return x.nome===prod.nome;})){toast('Produto já está na lista');return;}
+
+  // AJUSTE 4 (bug corrigido): preservar as quantidades já digitadas ANTES
+  // de adicionar o novo produto e re-renderizar -- antes disso, tudo que
+  // o rep já tinha contado era perdido ao adicionar um item novo.
+  salvarQtdesAtuaisEmMemoria();
+
   PRODS_CLI.push({nome:prod.nome,lab:prod.lab,qtd:0,totalQtde:0,nPedidos:0,mediaMensal:0,manual:true});
   document.getElementById('m-add-prod').style.display='none';
-  // Re-renderizar lista de produtos (mesmo padrão da renderização original)
-  var h='';
-  PRODS_CLI.forEach(function(p,i){
-    var labTag=p.lab&&p.lab!=='OUTRO'?'<span class="prod-lab">'+p.lab+'</span>':'';
-    var mediaStr=p.mediaMensal>0?'Média: '+p.mediaMensal+' un/compra':(p.manual?'Produto novo':'Parado');
-    h+='<div class="prod-item">'+
-       '<div class="prod-nome">'+p.nome+labTag+'<div class="prod-media">'+mediaStr+'</div></div>'+
-       '<div class="qtde-wrap">'+
-       '<button class="qtde-btn" onclick="ajustarQtde('+i+',-1)">−</button>'+
-       '<input class="qtde-input" id="qtde-'+i+'" type="number" value="0" min="0" oninput="calcDias('+i+')">'+
-       '<button class="qtde-btn" onclick="ajustarQtde('+i+',1)">+</button>'+
-       '</div>'+
-       '<div id="dias-'+i+'" class="dias-badge" style="min-width:60px"></div>'+
-       '</div>';
-  });
-  document.getElementById('prod-lista').innerHTML=h;
-  // Salvar produto manual no Supabase
+
+  ordenarProdsCli();
+  renderListaProdutos();
+  restaurarQtdesDaMemoria();
+
   salvarProdutoManual(prod.nome, prod.lab);
-  toast('✓ '+prod.nome+' adicionado!');
+  toast('✓ '+prod.nome+' adicionado! Suas contagens anteriores foram mantidas.');
 }
 
 function salvarProdutoManual(nome, lab) {

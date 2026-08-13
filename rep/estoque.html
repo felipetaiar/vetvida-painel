@@ -552,6 +552,23 @@ function carregarProdutosCliente(cod){
 
 var ORDEM_ESTOQUE='alfabetica'; // 'alfabetica' | 'media' | 'lab'
 
+var ANALISE_CONTAGENS={}; // produto -> {qtdeAnterior, dataAnterior}
+
+async function carregarUltimasContagens(cod){
+  ANALISE_CONTAGENS={};
+  try{
+    var url=SUPABASE_URL+'/rest/v1/contagens_estoque?cod_cli=eq.'+cod+'&order=created_at.desc&limit=200';
+    var res=await fetch(url,{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}});
+    var linhas=await res.json();
+    if(!Array.isArray(linhas)) return;
+    linhas.forEach(function(l){
+      if(!ANALISE_CONTAGENS[l.produto]){
+        ANALISE_CONTAGENS[l.produto]={qtdeAnterior:l.qtde_estoque,dataAnterior:l.created_at};
+      }
+    });
+  }catch(e){console.warn('Erro ao buscar contagens anteriores:',e);}
+}
+
 function renderProdutos(cod){
   var hist=HIST_GLOBAL[cod]||{};
   var prods={};
@@ -582,7 +599,9 @@ function renderProdutos(cod){
   });
 
   ordenarProdsCli();
-  renderListaProdutos();
+  carregarUltimasContagens(cod).then(function(){
+    renderListaProdutos();
+  });
   carregarProdutosManuais();
 }
 
@@ -633,16 +652,72 @@ function restaurarQtdesDaMemoria(){
   });
 }
 
+function comprasDesde(cod,nomeProduto,dataIso){
+  var hist=HIST_GLOBAL[cod]||{};
+  var total=0;
+  var dataRef=new Date(dataIso);
+  (hist.pedidos||[]).forEach(function(ped){
+    var partes=(ped.data||'').split('/');
+    if(partes.length!==3) return;
+    var dtPed=new Date(partes[2],partes[1]-1,partes[0]);
+    if(dtPed<=dataRef) return;
+    (ped.itens||[]).forEach(function(item){
+      if(item.prod===nomeProduto) total+=(item.qtde||0);
+    });
+  });
+  return total;
+}
+
+function montarAnaliseHtml(p){
+  var analise=ANALISE_CONTAGENS[p.nome];
+  if(!analise) return '';
+  var comprado=comprasDesde(CLI_ATUAL.cod,p.nome,analise.dataAnterior);
+  var dataFmt=new Date(analise.dataAnterior).toLocaleDateString('pt-BR');
+  return '<div class="analise-estoque" style="font-size:10px;color:#6b7280;margin-top:3px;">'+
+    'Última contagem: '+analise.qtdeAnterior+' un ('+dataFmt+')'+
+    (comprado>0?' · Comprou '+comprado+' un desde então':'')+
+    '</div>';
+}
+
+function atualizarAnaliseGiro(i){
+  var p=PRODS_CLI[i];
+  var analise=ANALISE_CONTAGENS[p.nome];
+  var badge=document.getElementById('giro-'+i);
+  if(!analise||!badge) return;
+  var inp=document.getElementById('qtde-'+i);
+  var atual=inp?parseInt(inp.value):NaN;
+  if(isNaN(atual)){badge.innerHTML='';return;}
+  var comprado=comprasDesde(CLI_ATUAL.cod,p.nome,analise.dataAnterior);
+  var vendido=analise.qtdeAnterior+comprado-atual;
+  if(vendido<0){
+    badge.innerHTML='<span style="color:#CC0000;">⚠ Verificar contagem</span>';
+    return;
+  }
+  var media=p.mediaMensal||0;
+  if(media<=0){
+    badge.innerHTML=vendido>0?('Girou '+vendido+' un no período'):'';
+    return;
+  }
+  var razao=vendido/media;
+  if(razao>=1.3){
+    badge.innerHTML='<span style="color:#16a34a;">▲ Girando acima da média — reforçar pedido</span>';
+  } else if(razao<=0.5){
+    badge.innerHTML='<span style="color:#CC0000;">▼ Abaixo da média — considerar não repor</span>';
+  } else {
+    badge.innerHTML='<span style="color:#6b7280;">Girou '+vendido+' un, dentro da média</span>';
+  }
+}
+
 function renderListaProdutos(){
   var h='';
   PRODS_CLI.forEach(function(p, i){
     var labTag=p.lab&&p.lab!=='OUTRO'?'<span class="prod-lab">'+p.lab+'</span>':'';
     var mediaStr=p.mediaMensal>0?'Média: '+p.mediaMensal+' un/compra':(p.manual?'Produto novo':'Parado');
     h+='<div class="prod-item">'+
-       '<div class="prod-nome">'+p.nome+labTag+'<div class="prod-media">'+mediaStr+'</div></div>'+
+       '<div class="prod-nome">'+p.nome+labTag+'<div class="prod-media">'+mediaStr+'</div>'+montarAnaliseHtml(p)+'<div id="giro-'+i+'" style="font-size:10px;font-weight:600;margin-top:2px;"></div></div>'+
        '<div class="qtde-wrap">'+
        '<button class="qtde-btn" onclick="ajustarQtde('+i+',-1)">−</button>'+
-       '<input class="qtde-input" id="qtde-'+i+'" type="number" value="0" min="0" oninput="calcDias('+i+')">'+
+       '<input class="qtde-input" id="qtde-'+i+'" type="number" value="0" min="0" oninput="calcDias('+i+');atualizarAnaliseGiro('+i+')">'+
        '<button class="qtde-btn" onclick="ajustarQtde('+i+',1)">+</button>'+
        '</div>'+
        '<div id="dias-'+i+'" class="dias-badge" style="min-width:60px"></div>'+
@@ -656,6 +731,7 @@ function ajustarQtde(i, delta){
   var val=Math.max(0,(parseInt(inp.value)||0)+delta);
   inp.value=val;
   calcDias(i);
+  atualizarAnaliseGiro(i);
 }
 
 function getFreq(){

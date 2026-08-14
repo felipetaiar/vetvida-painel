@@ -2575,6 +2575,16 @@ function _montarComparativoBio(prodsAnteriores, bioComprados){
   return h;
 }
 
+
+// Função de notificação toast -- reaproveita o elemento #tst já existente no HTML
+function mostrarToast(msg){
+  var t=document.getElementById('tst');
+  if(!t) return;
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2500);
+}
+
 function abrirBioDetalhes(cnpj, cod){
   // Carregar histórico (hist_REP.js) antes de montar — traz itens com lab por pedido
   if(typeof carregarHistorico==='function' && typeof HIST_CARREGADO!=='undefined' && !HIST_CARREGADO){
@@ -2803,7 +2813,7 @@ async function salvarVisitaBio(){
       body:JSON.stringify({
         fabricante:'VetVida Rep',fabricante_id:'rep',
         promotor_nome:REP,
-        cliente_cnpj:_bioVisitaCnpj,cliente_nome:_bioVisitaNome,
+        cliente_nome:_bioVisitaNome,
         contato:contato,telefone:fone,
         resultado:resultado,obs:obs,
         tipo:'visita_prospect_bio'

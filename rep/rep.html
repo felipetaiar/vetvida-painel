@@ -855,6 +855,13 @@ function rnd(){
 
 function sF(t,b){FA=t;document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');rnd();}
 function fil(){rnd();}
+function mostrarToast(msg){
+  var t=document.getElementById('tst');
+  if(!t) return;
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2500);
+}
 function tog(cod){var cb=document.getElementById('cb-'+cod);cb.classList.toggle('open');}
 function cop(c){navigator.clipboard.writeText(document.getElementById('m-'+c).innerText).then(function(){var t=document.getElementById('tst');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);});}
 function regWa(c){var cl=CL.find(function(x){return x.cod===c;});if(cl)registrarContato(REP,c,cl.nome,'whatsapp','').catch(function(e){console.warn(e);});}

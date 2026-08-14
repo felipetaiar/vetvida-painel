@@ -2807,24 +2807,22 @@ async function salvarVisitaBio(){
   try{
     var SB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
     var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
-    var _resp=await fetch(SB_URL+'/rest/v1/visitas_fabricantes',{
+    var _resp=await fetch(SB_URL+'/rest/v1/visitas_prospects_bio',{
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
       body:JSON.stringify({
-        fabricante:'VetVida Rep',fabricante_id:'rep',
-        promotor_nome:REP,
+        rep:REP,
+        cliente_cnpj:_bioVisitaCnpj||null,
         cliente_nome:_bioVisitaNome,
-        contato:contato,telefone:fone,
-        resultado:resultado,obs:obs,
-        tipo:'visita_prospect_bio'
+        contato:contato,
+        telefone:fone||null,
+        resultado:resultado,
+        obs:obs||null,
+        data_visita:data
       })
     });
     if(!_resp.ok){
-      var _erroTxt=await _resp.text();
-      var _dbg=document.createElement('div');
-      _dbg.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#000;color:#f00;padding:10px;font-size:11px;font-family:monospace;z-index:99999;max-height:50vh;overflow-y:auto;';
-      _dbg.innerHTML='STATUS: '+_resp.status+'<br>ERRO: '+_erroTxt+'<br><button onclick="this.parentNode.remove()" style="margin-top:6px;padding:4px 12px;">Fechar</button>';
-      document.body.appendChild(_dbg);
+      mostrarToast('Erro ao salvar visita. Tente novamente.');
       return;
     }
     mostrarToast('✓ Visita registrada!');

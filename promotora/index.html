@@ -1327,7 +1327,10 @@ document.addEventListener('click', function(e) {
     <div class="modal-handle"></div>
     <div class="modal-title" id="modal-visita-title"></div>
     <div id="modal-visita-body"></div>
-    <button class="btn btn-secondary" style="margin-top:16px;" data-oc="fecharModal('modal-visita')">Fechar</button>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn" style="flex:1;background:#25D366;color:white;" onclick="compartilharVisita()">📤 Compartilhar</button>
+      <button class="btn btn-secondary" style="flex:1;" data-oc="fecharModal('modal-visita')">Fechar</button>
+    </div>
   </div>
 </div>
 
@@ -2600,9 +2603,47 @@ async function reabrirParaEdicao() {
 }
 
 // ─── DETALHE VISITA ───────────────────────────────────────────────────────────
+let _visitaCompartilhando = null;
+
+
+// ─── Compartilhar card de visita (Web Share API) ──────────────────────────
+async function compartilharVisita(){
+  const v = _visitaCompartilhando;
+  if(!v){ if(typeof mostrarToast==='function') mostrarToast('Nenhuma visita selecionada'); return; }
+
+  let txt = `📍 *${v.estabelecimento}*\n`;
+  txt += `🌸 Visita da Nicolle · ${typeof formatarDataSimples==='function' ? formatarDataSimples(v.data) : (v.data||'')}\n\n`;
+  if(v.cidade) txt += `Região: ${v.cidade}\n`;
+  if(v.tipo) txt += `Tipo: ${v.tipo}\n`;
+  if(v.contato) txt += `Contato: ${v.contato}\n`;
+  if(v.objetivo) txt += `Objetivo: ${v.objetivo}\n`;
+  if(v.resultado) txt += `Resultado: ${v.resultado}\n`;
+  if(v.fornecedores && v.fornecedores.length) txt += `Fornecedores mencionados: ${v.fornecedores.join(', ')}\n`;
+  if(v.especialidades && v.especialidades.length) txt += `Especialidades: ${v.especialidades.join(', ')}\n`;
+  if(v.obs) txt += `Obs: ${v.obs}\n`;
+  if(v.data_retorno) txt += `Retorno agendado: ${typeof formatarDataSimples==='function' ? formatarDataSimples(v.data_retorno) : v.data_retorno}\n`;
+  if(v.tem_lead) txt += `🔔 Lead gerado para o rep\n`;
+
+  if(navigator.share){
+    try{
+      await navigator.share({ title: 'Visita — '+v.estabelecimento, text: txt });
+    }catch(e){
+      // usuário cancelou -- não é erro
+    }
+  } else {
+    try{
+      await navigator.clipboard.writeText(txt);
+      if(typeof mostrarToast==='function') mostrarToast('Texto copiado! Cole no WhatsApp.');
+    }catch(e){
+      if(typeof mostrarToast==='function') mostrarToast('Não foi possível compartilhar neste dispositivo.');
+    }
+  }
+}
+
 async function abrirDetalheVisita(id) {
   const v = VISITAS.find(x=>String(x.id)===String(id));
   if(!v) return;
+  _visitaCompartilhando = v;
   document.getElementById('modal-visita-title').textContent = v.estabelecimento;
   document.getElementById('modal-visita-body').innerHTML = `
     <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;">

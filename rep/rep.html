@@ -128,7 +128,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 
 /* CARD BODY */
 .cb { padding: 0 16px; max-height: 0; overflow: hidden; transition: max-height 0.35s ease, padding 0.35s; }
-.cb.open { max-height: 900px; padding: 14px 16px 18px; border-top: 1px solid var(--border); }
+.cb.open { max-height: 9999px; padding: 14px 16px 18px; border-top: 1px solid var(--border); }
 .hist-section { margin-bottom: 14px; }
 .hist-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
 .hist-bars { display: flex; gap: 5px; align-items: flex-end; height: 64px; }
@@ -297,6 +297,11 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 .cross-cuidado{font-size:11px;color:#92400e;background:#fffbeb;border-radius:8px;padding:6px 10px;margin-top:6px;line-height:1.4;}
 
 </style></head><body>
+<div style="position:fixed;top:0;left:0;right:0;background:#f59e0b;color:#000;text-align:center;padding:8px;font-weight:700;font-size:13px;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.2);">
+  ⚠️ AMBIENTE DE TESTE — dados vindos do ERP Target (nao afeta producao) ⚠️
+</div>
+<div style="height:36px;"></div>
+
 
 <div class="hdr">
   <button onclick="abrirMenuLateral()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">☰</button>
@@ -417,7 +422,57 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   </div>
 </div>
 
-<script src="api.js"></script>
+<script>
+// api.js inline — usa Supabase direto (substitui /api/sheets que não existe no staging)
+var _SB_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
+var _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+function _sbH(){ return {'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY}; }
+
+function registrarContato(rep, cod, nome, status, obs) {
+  return fetch(_SB_URL+'/rest/v1/contatos', {
+    method: 'POST',
+    headers: Object.assign({}, _sbH(), {'Content-Type':'application/json','Prefer':'return=minimal'}),
+    body: JSON.stringify({rep:rep, cod_cliente:cod, nome_cliente:nome, status:status, obs:obs||''})
+  });
+}
+
+function buscarContatosRep(rep) {
+  return fetch(_SB_URL+'/rest/v1/contatos?select=cod_cliente,status,obs,data_hora&rep=eq.'+encodeURIComponent(rep)+'&order=data_hora.desc', {
+    headers: _sbH()
+  }).then(function(r){return r.json();}).then(function(rows){
+    var resultado = {};
+    var lista = Array.isArray(rows) ? rows : [];
+    lista.forEach(function(r) {
+      if (!r || !r.cod_cliente) return;
+      if (!resultado[r.cod_cliente]) {
+        resultado[r.cod_cliente] = { status: r.status||'Contatado', obs: r.obs||'', data: r.data_hora||'' };
+      }
+    });
+    return resultado;
+  });
+}
+
+function buscarResumoGestor() {
+  return fetch(_SB_URL+'/rest/v1/contatos?select=*&order=data_hora.desc', {
+    headers: _sbH()
+  }).then(function(r){return r.json();}).then(function(rows){
+    var hoje = new Date().toLocaleDateString('pt-BR');
+    var resumo = {};
+    var lista = Array.isArray(rows) ? rows : [];
+    lista.forEach(function(r) {
+      if (!r || !r.rep) return;
+      if (!resumo[r.rep]) resumo[r.rep] = {total:0,hoje:0,ultima:'',cods:{},detalhes:[]};
+      resumo[r.rep].cods[r.cod_cliente] = { status: r.status, obs: r.obs };
+      resumo[r.rep].total++;
+      var dt = r.data_hora ? new Date(r.data_hora).toLocaleDateString('pt-BR') : '';
+      if (dt === hoje) resumo[r.rep].hoje++;
+      if (!resumo[r.rep].ultima) resumo[r.rep].ultima = r.data_hora;
+      resumo[r.rep].detalhes.push({ data: r.data_hora, nome: r.nome_cliente, status: r.status, obs: r.obs });
+    });
+    return resumo;
+  });
+}
+</script>
 <style>
 .leads-btn{display:flex;align-items:center;gap:8px;background:#fffbeb;border:1px solid #fde68a;color:#b45309;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;margin:10px 16px 0;}
 .leads-badge{background:#d97706;color:white;font-size:11px;padding:2px 7px;border-radius:20px;}
@@ -508,11 +563,11 @@ tr:hover td{background:#f8fafc!important;}
 .filtro-label{color:#64748b!important;}
 
 </style>
-<script src="dados.js"></script>
-<script src="base_clientes.js"></script>
+<script src="teste_dados.js"></script>
+<script src="teste_base_clientes.js"></script>
 <script src="radar_db.js" async></script>
-<script src="precos_vv.js" async></script>
-<script src="bio_prospects.js"></script>
+<script src="teste_precos_vv.js" async></script>
+<!-- bio_prospects.js desativado no ambiente de teste (bases de codigo diferentes) -->
 <script>
 // Carregar contagem de leads abertos (Supabase direto, substitui API antiga /api/sheets)
 (function(){
@@ -638,12 +693,9 @@ function rnd(){
   try{
   var b=document.getElementById('busca').value.toLowerCase();
   // Injetar prospects Biogenesis no topo
-  var BIO_P = [];
-  if(typeof BIO_PROSPECTS!=='undefined'){
-    BIO_P=BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;});
-  } else {
-    setTimeout(rnd,800);
-  }
+  var BIO_P = (typeof BIO_PROSPECTS!=='undefined')
+    ? BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;})
+    : [];  // bio_prospects.js desativado no ambiente de teste (bases incompativeis) -- sem retry infinito
   var lista=CL.filter(function(c){
     var matchFiltro=(FA==='todos'||c.tipo===FA);
     var prods_str=(c.prods||[]).map(function(p){return p.nome;}).join(' ').toLowerCase();
@@ -758,7 +810,7 @@ function rnd(){
     h+='</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirAcoes(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;" id="btn-acoes-'+c.cod+'">🎯 Ações</button>';
-    h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'">🌸 Promotora</button>';
+    h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'">🌸 Promotora</button>';
     h+='<button class="btn-fab-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#0ea5e9;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">🏭 Fabricantes</button>';
     h+='</div>';
     h+='</div></div>';
@@ -847,7 +899,7 @@ function rnd(){
       window.location.href='estoque.html';
     });
   });
-  document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom));});
+  document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom),this.dataset.cod);});
   document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});});
   pg();
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
@@ -855,13 +907,6 @@ function rnd(){
 
 function sF(t,b){FA=t;document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');rnd();}
 function fil(){rnd();}
-function mostrarToast(msg){
-  var t=document.getElementById('tst');
-  if(!t) return;
-  t.textContent=msg;
-  t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},2500);
-}
 function tog(cod){var cb=document.getElementById('cb-'+cod);cb.classList.toggle('open');}
 function cop(c){navigator.clipboard.writeText(document.getElementById('m-'+c).innerText).then(function(){var t=document.getElementById('tst');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);});}
 function regWa(c){var cl=CL.find(function(x){return x.cod===c;});if(cl)registrarContato(REP,c,cl.nome,'whatsapp','').catch(function(e){console.warn(e);});}
@@ -912,7 +957,7 @@ var _histCod=0, _histData=null;
 function carregarHistorico(cb){
   if(HIST_CARREGADO){cb();return;}
   var s=document.createElement('script');
-  s.src='hist_'+REP.toLowerCase()+'.js';
+  s.src='teste_hist_'+REP.toLowerCase()+'.js';
   s.onload=function(){HIST_CARREGADO=true;cb();};
   s.onerror=function(){HIST_CARREGADO=true;cb();};
   document.head.appendChild(s);
@@ -1218,13 +1263,10 @@ async function _carregarPromo(){
     var hq={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4'};
     // Pegar área do rep logado (ex: "GUARULHOS 1")
     var areaRep = (AREAS_LABEL_DATA[REP]||'').toUpperCase();
-    // Carregar todas as visitas — filtrar por rep_responsavel no cliente via CL
+    // Buscar todas as visitas — filtro por cod (vv-XXXX) feito no cliente
     var urlVisitas = 'https://waiujqbzncemkpznvnct.supabase.co/rest/v1/visitas?select=*&order=created_at.desc&limit=500';
     var rv=await fetch(urlVisitas,{headers:hp});
     _VP=await rv.json(); if(!Array.isArray(_VP))_VP=[];
-    // Filtrar visitas pelos clientes da área do rep
-    var _nomesCL=CL.map(function(c){return c.nome.toLowerCase();});
-    _VP=_VP.filter(function(v){return _nomesCL.indexOf((v.estabelecimento||'').toLowerCase())>=0;});
     var ra=await fetch('https://waiujqbzncemkpznvnct.supabase.co/rest/v1/amostras?select=*&order=created_at.desc',{headers:hp});
     _AP=await ra.json(); if(!Array.isArray(_AP))_AP=[];
     var rl=await fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/leads?select=*&rep_responsavel=eq.'+REP+'&order=created_at.desc',{headers:hq});
@@ -1270,14 +1312,25 @@ function _filtrarPR(){
   });
 }
 
-async function verPromotor(nomeCli){
+async function verPromotor(nomeCli, codCli){
   document.getElementById('m-prc-t').textContent='🌸 '+nomeCli;
   document.getElementById('m-prc-b').innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</p>';
   document.getElementById('m-prc').classList.add('on');
   await _carregarPromo();
-  var vC=_VP.filter(function(v){return (v.estabelecimento||'').toLowerCase().indexOf(nomeCli.toLowerCase())>=0;});
-  var aC=_AP.filter(function(a){return (a.estabelecimento_nome||'').toLowerCase().indexOf(nomeCli.toLowerCase())>=0;});
-  var lC=_LP.filter(function(l){return (l.estabelecimento||'').toLowerCase().indexOf(nomeCli.toLowerCase())>=0;});
+  function _norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+  var _idVV = codCli ? 'vv-'+String(codCli) : null;
+  var _nomN = _norm(nomeCli);
+  var vC=_VP.filter(function(v){
+    if(_idVV && v.estabelecimento_id && v.estabelecimento_id===_idVV) return true;
+    if(!_idVV || !v.estabelecimento_id || v.estabelecimento_id.indexOf('vv-')!==0)
+      return _norm(v.estabelecimento).indexOf(_nomN)>=0||_norm(_nomN).indexOf(_norm(v.estabelecimento))>=0;
+    return false;
+  });
+  var aC=_AP.filter(function(a){return _norm(a.estabelecimento_nome).indexOf(_nomN)>=0;});
+  var lC=_LP.filter(function(l){
+    if(_idVV && l.estabelecimento_id && l.estabelecimento_id===_idVV) return true;
+    return _norm(l.estabelecimento).indexOf(_nomN)>=0;
+  });
   var h='';
   if(!vC.length&&!aC.length&&!lC.length){
     h='<p style="color:#9ca3af;text-align:center;padding:20px;">Nenhuma atividade da Nicolle aqui.</p>';
@@ -1804,10 +1857,9 @@ function renderCardAcao(a){
       }).catch(function(){});
     }.bind(null,a.id),0);
   }
-  var clienteH=a.cliente_nome?'<div style="font-size:12px;font-weight:600;color:#7c3aed;margin-top:2px;">👤 '+a.cliente_nome+'</div>':'<div style="font-size:12px;font-weight:600;color:#9ca3af;margin-top:2px;">👥 Todos os clientes</div>';
   var html='<div style="background:white;border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
-    +'<div style="flex:1;"><div style="font-weight:700;font-size:14px;color:#111;">'+a.titulo+'</div>'+clienteH+'</div>'
+    +'<div style="font-weight:700;font-size:14px;color:#111;flex:1;">'+a.titulo+'</div>'
     +'<span style="font-size:10px;padding:3px 8px;border-radius:10px;white-space:nowrap;background:'+cor+';">'+a.status.toUpperCase()+'</span>'
     +'</div>'
     +'<div style="font-size:11px;color:#6b7280;margin:4px 0;">'+(tipos[a.tipo]||a.tipo)+' · '+d1+' a '+d2+' · por '+a.criado_por+'</div>'
@@ -1828,23 +1880,9 @@ function renderFormNovaAcao(){
   html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
   html+='<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
   html+='<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
-  html+='</div></div>';
-  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo da acao</label>';
-  html+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
-  html+='<button type="button" id="ac-alvo-btn-prod" onclick="acAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #7c3aed;background:#7c3aed;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>';
-  html+='<button type="button" id="ac-alvo-btn-lab" onclick="acAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratorio inteiro</button>';
-  html+='</div>';
-  html+='<div id="ac-alvo-produtos">';
-  html+='<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  html+='<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>';
-  html+='<div id="ac-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>';
-  html+='</div>';
-  html+='<div id="ac-alvo-lab" style="display:none;">';
-  html+='<select id="ac-lab-select" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  html+='<option value="">Selecione o laboratorio...</option>';
-  html+='</select>';
-  html+='</div>';
-  html+='</div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
+  html+='<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div></div></div>';
   html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
   html+='<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
@@ -1864,59 +1902,21 @@ function renderFormNovaAcao(){
   html+='<button onclick="salvarNovaAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">Criar Acao</button>';
   html+='</div>';
   el.innerHTML=html;
-  acAbrirNova();
 }
-function acAbrirNova(){
-  _acProdutosSelecionados=[];
-  var chips=document.getElementById('ac-produtos-chips'); if(chips) chips.innerHTML='';
-  var labSel=document.getElementById('ac-lab-select'); if(labSel) labSel.value='';
-  acAlvoModo('produtos');
-}
-
 function acTipoMudou(){
   var tipo=document.getElementById('ac-tipo').value;
   var wrap=document.getElementById('ac-link-receita-wrap');
   if(wrap) wrap.style.display=(tipo==='premio_vet')?'block':'none';
 }
-var _acProdutosSelecionados=[];
-
-function acAlvoModo(modo){
-  var btnP=document.getElementById('ac-alvo-btn-prod'), btnL=document.getElementById('ac-alvo-btn-lab');
-  var wrapP=document.getElementById('ac-alvo-produtos'), wrapL=document.getElementById('ac-alvo-lab');
-  if(modo==='produtos'){
-    wrapP.style.display='block'; wrapL.style.display='none';
-    btnP.style.background='#7c3aed'; btnP.style.borderColor='#7c3aed'; btnP.style.color='white';
-    btnL.style.background='white'; btnL.style.borderColor='#e5e7eb'; btnL.style.color='#6b7280';
-  } else {
-    wrapP.style.display='none'; wrapL.style.display='block';
-    btnL.style.background='#7c3aed'; btnL.style.borderColor='#7c3aed'; btnL.style.color='white';
-    btnP.style.background='white'; btnP.style.borderColor='#e5e7eb'; btnP.style.color='#6b7280';
-    acPopularLabs();
-  }
-}
-
-function acPopularLabs(){
-  var sel=document.getElementById('ac-lab-select');
-  if(!sel||sel.options.length>1) return;
-  if(typeof PRECOS_VV==='undefined') return;
-  var labs=Array.from(new Set(PRECOS_VV.map(function(p){return p.lab;}).filter(Boolean))).sort();
-  labs.forEach(function(l){
-    var opt=document.createElement('option'); opt.value=l; opt.textContent=l; sel.appendChild(opt);
-  });
-}
-
 function acBuscarProduto(q){
   var box=document.getElementById('ac-produto-sugs');
   if(!box) return;
   q=(q||'').trim().toLowerCase();
   if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
-  var res=PRECOS_VV.filter(function(p){
-    return (p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0)
-      && _acProdutosSelecionados.indexOf(p.nome)<0;
-  }).slice(0,6);
+  var res=PRECOS_VV.filter(function(p){return p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0;}).slice(0,6);
   if(!res.length){box.style.display='none';return;}
   box.innerHTML=res.map(function(p){
-    return '<div data-nome="'+p.nome.replace(/"/g,'&quot;')+'" class="ac-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+    return '<div data-nome="'+p.nome+'" class="ac-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
       +'<div style="font-weight:600;">'+p.nome+'</div>'
       +'<div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
   }).join('');
@@ -1924,31 +1924,11 @@ function acBuscarProduto(q){
     el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
     el.addEventListener('mouseleave',function(){this.style.background='white';});
     el.addEventListener('click',function(){
-      var nome=this.getAttribute('data-nome');
-      if(_acProdutosSelecionados.indexOf(nome)<0) _acProdutosSelecionados.push(nome);
-      document.getElementById('ac-produto').value='';
+      document.getElementById('ac-produto').value=this.getAttribute('data-nome');
       box.style.display='none';
-      acRenderChips();
     });
   });
   box.style.display='block';
-}
-
-function acRenderChips(){
-  var wrap=document.getElementById('ac-produtos-chips');
-  if(!wrap) return;
-  wrap.innerHTML=_acProdutosSelecionados.map(function(nome,i){
-    return '<span style="background:#ede9fe;color:#5b21b6;border-radius:14px;padding:5px 10px 5px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">'
-      +nome
-      +'<button type="button" data-idx="'+i+'" class="ac-chip-rm" style="background:none;border:none;color:#5b21b6;cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button>'
-      +'</span>';
-  }).join('');
-  wrap.querySelectorAll('.ac-chip-rm').forEach(function(b){
-    b.addEventListener('click',function(){
-      _acProdutosSelecionados.splice(parseInt(this.dataset.idx),1);
-      acRenderChips();
-    });
-  });
 }
 
 async function salvarNovaAcao(){
@@ -1961,14 +1941,10 @@ async function salvarNovaAcao(){
   if(!titulo||!tipo||!inicio||!fim){alert('Preencha titulo, tipo e datas.');return;}
   if(!metaTipo){alert('Selecione o tipo de meta.');return;}
   if(!metaValor||metaValor<=0){alert('Informe o valor da meta.');return;}
-  var alvoModo=(document.getElementById('ac-alvo-lab').style.display==='block')?'lab':'produtos';
-  var labSelecionado=(document.getElementById('ac-lab-select').value||'').trim();
   var payload={
     cliente_cod:_acoesCod, cliente_nome:_acoesNome,
     titulo:titulo, tipo:tipo,
-    produto_alvo:_acProdutosSelecionados.length?_acProdutosSelecionados.join(', '):(labSelecionado?('Todos os produtos '+labSelecionado):null),
-    produtos_alvo:(alvoModo==='produtos'&&_acProdutosSelecionados.length)?_acProdutosSelecionados:null,
-    lab_alvo:(alvoModo==='lab'&&labSelecionado)?labSelecionado:null,
+    produto_alvo:(document.getElementById('ac-produto').value||'').trim()||null,
     premio_descricao:(document.getElementById('ac-premio').value||'').trim()||null,
     meta_tipo:metaTipo, meta_valor:metaValor,
     data_inicio:inicio, data_fim:fim,
@@ -2196,7 +2172,6 @@ function acBuscarCliente(q){
         extra.id = 'ac-form-resto';
         wrap.appendChild(extra);
         extra.innerHTML = _buildFormResto();
-        acAbrirNova();
       }
     });
   });
@@ -2212,23 +2187,9 @@ function _buildFormResto(){
   html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
   html += '<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
   html += '<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
-  html += '</div></div>';
-  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo da acao</label>';
-  html += '<div style="display:flex;gap:6px;margin-bottom:8px;">';
-  html += '<button type="button" id="ac-alvo-btn-prod" onclick="acAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #7c3aed;background:#7c3aed;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>';
-  html += '<button type="button" id="ac-alvo-btn-lab" onclick="acAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratorio inteiro</button>';
-  html += '</div>';
-  html += '<div id="ac-alvo-produtos">';
-  html += '<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  html += '<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>';
-  html += '<div id="ac-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>';
-  html += '</div>';
-  html += '<div id="ac-alvo-lab" style="display:none;">';
-  html += '<select id="ac-lab-select" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  html += '<option value="">Selecione o laboratorio...</option>';
-  html += '</select>';
-  html += '</div>';
-  html += '</div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
+  html += '<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div></div></div>';
   html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
   html += '<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
@@ -2576,16 +2537,6 @@ function _montarComparativoBio(prodsAnteriores, bioComprados){
   return h;
 }
 
-
-// Função de notificação toast -- reaproveita o elemento #tst já existente no HTML
-function mostrarToast(msg){
-  var t=document.getElementById('tst');
-  if(!t) return;
-  t.textContent=msg;
-  t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},2500);
-}
-
 function abrirBioDetalhes(cnpj, cod){
   // Carregar histórico (hist_REP.js) antes de montar — traz itens com lab por pedido
   if(typeof carregarHistorico==='function' && typeof HIST_CARREGADO!=='undefined' && !HIST_CARREGADO){
@@ -2808,24 +2759,18 @@ async function salvarVisitaBio(){
   try{
     var SB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
     var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
-    var _resp=await fetch(SB_URL+'/rest/v1/visitas_prospects_bio',{
+    await fetch(SB_URL+'/rest/v1/visitas_fabricantes',{
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
       body:JSON.stringify({
-        rep:REP,
-        cliente_cnpj:_bioVisitaCnpj||null,
-        cliente_nome:_bioVisitaNome,
-        contato:contato,
-        telefone:fone||null,
-        resultado:resultado,
-        obs:obs||null,
-        data_visita:data
+        fabricante:'VetVida Rep',fabricante_id:'rep',
+        promotor_nome:REP,
+        cliente_cnpj:_bioVisitaCnpj,cliente_nome:_bioVisitaNome,
+        contato:contato,telefone:fone,
+        resultado:resultado,obs:obs,
+        tipo:'visita_prospect_bio'
       })
     });
-    if(!_resp.ok){
-      mostrarToast('Erro ao salvar visita. Tente novamente.');
-      return;
-    }
     mostrarToast('✓ Visita registrada!');
     document.getElementById('m-bio-visita').classList.remove('on');
   }catch(e){mostrarToast('Erro ao salvar: '+e.message);}

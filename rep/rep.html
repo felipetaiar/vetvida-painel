@@ -318,6 +318,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
     <a href="roteiro.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">🗓 Roteiro</a>
     <button onclick="fecharMenuLateral();abrirCalculadora();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🧮 Calculadora</button>
     <button onclick="fecharMenuLateral();abrirAcoesGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🎯 Ações Comerciais</button>
+    <button onclick="fecharMenuLateral();abrirPdvGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">📅 Agenda PDV</button>
     <button onclick="fecharMenuLateral();abrirTelaPromo();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🌸 Leads da promotora</button>
     <a href="radar.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">📡 Radar Comercial</a>
     <button onclick="fecharMenuLateral();abrirBuscaGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🔍 Buscar cliente</button>
@@ -760,6 +761,7 @@ function rnd(){
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirAcoes(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;" id="btn-acoes-'+c.cod+'">🎯 Ações</button>';
     h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'">🌸 Promotora</button>';
     h+='<button class="btn-fab-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#0ea5e9;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">🏭 Fabricantes</button>';
+    h+='<button class="btn-pdv-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#f59e0b;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">📅 PDV</button>';
     h+='</div>';
     h+='</div></div>';
   });
@@ -808,6 +810,9 @@ function rnd(){
       e.stopPropagation();
       abrirBioDetalhes(this.dataset.bioCnpj||'', this.dataset.bioCod||null);
     });
+  });
+  document.querySelectorAll('.btn-pdv-c').forEach(function(b){
+    b.addEventListener('click',function(){abrirPdvCliente(parseInt(this.dataset.cod),decodeURIComponent(this.dataset.nom));});
   });
   // Badge Bio clicável nos clientes da base — abrir hist
   document.querySelectorAll('.bio-badge-base').forEach(function(b){

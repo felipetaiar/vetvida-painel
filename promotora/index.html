@@ -675,6 +675,7 @@ document.addEventListener('click', function(e) {
     <button data-oc="fecharMenuLateral();navegarPara('roteiro');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">&#128343; Roteiro</button>
     <div style="height:1px;background:#e5e7eb;margin:8px 4px;"></div>
     <button data-oc="fecharMenuLateral();navegarPara('acoes');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#7c3aed;background:#f5f3ff;border:none;font-weight:600;font-size:14px;cursor:pointer;">&#127919; A&#231;&#245;es Comerciais</button>
+    <button data-oc="fecharMenuLateral();navegarPara('pdv');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">📅 Agenda PDV</button>
     <div style="height:1px;background:#e5e7eb;margin:8px 4px;"></div>
     <button data-oc="sair()" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#6b7280;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">&#128682; Sair</button>
   </div>
@@ -1538,6 +1539,7 @@ function navegarPara(screen) {
   if(screen === 'gestor') renderGestor();
   if(screen === 'dashboard') renderDashboard();
   if(screen === 'acoes') { var _t=function(){if(typeof promAcoesTab==='function'){promAcoesTab('ativas');}else{setTimeout(_t,100);}};_t(); }
+  if(screen === 'pdv') renderPdvNicolle();
   if(screen === 'contatos') renderContatos();
   if(screen === 'amostras') renderAmostras();
 }

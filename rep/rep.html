@@ -1377,12 +1377,34 @@ if (sessionStorage.getItem('abrir_promo_ao_carregar')) {
   </div>
 </div>
 
+<!-- MODAL PDV -->
+<div class="mfvv" id="m-pdv">
+  <div class="msvv">
+    <div class="msvv-h"></div>
+    <div class="msvv-t" id="m-pdv-t">📅 Agenda PDV</div>
+    <div id="m-pdv-b" style="max-height:70vh;overflow-y:auto;padding:12px;"></div>
+    <button class="msvv-f" id="btn-f-pdv">Fechar</button>
+  </div>
+</div>
+
+<!-- MODAL PDV - FORM SOLICITACAO -->
+<div class="mfvv" id="m-pdv-form">
+  <div class="msvv">
+    <div class="msvv-h"></div>
+    <div class="msvv-t" id="m-pdv-form-t">📅 Solicitar PDV</div>
+    <div id="m-pdv-form-b" style="max-height:70vh;overflow-y:auto;padding:12px;"></div>
+    <button class="msvv-f" id="btn-f-pdv-form">Fechar</button>
+  </div>
+</div>
+
 <script>
 // Eventos dos botões fechar — sem inline onclick para evitar problema de aspas
 document.getElementById('btn-f-ac').addEventListener('click',function(){document.getElementById('m-ac').classList.remove('on');});
 document.getElementById('btn-f-pr').addEventListener('click',function(){document.getElementById('m-pr').classList.remove('on');});
 document.getElementById('btn-f-prc').addEventListener('click',function(){document.getElementById('m-prc').classList.remove('on');});
 document.getElementById('btn-f-fab').addEventListener('click',function(){document.getElementById('m-fab').classList.remove('on');});
+document.getElementById('btn-f-pdv').addEventListener('click',function(){document.getElementById('m-pdv').classList.remove('on');});
+document.getElementById('btn-f-pdv-form').addEventListener('click',function(){document.getElementById('m-pdv-form').classList.remove('on');});
 </script>
 
 

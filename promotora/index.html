@@ -942,7 +942,20 @@ document.addEventListener('click', function(e) {
     <div id="roteiro-form-semanas" style="display:none;"></div>
   </div>
 
-  <!-- ── SCREEN: AÇÕES COMERCIAIS ── -->
+  <!-- ── SCREEN: AGENDA PDV ── -->
+  <div id="screen-pdv" class="screen">
+    <div class="card" style="padding-top:12px;">
+      <div class="card-title" style="margin-bottom:12px;">📅 Agenda PDV</div>
+      <div style="display:flex;border-bottom:1px solid #e5e7eb;margin:0 -16px 16px;flex-shrink:0;">
+        <button id="pdv-tab-pend" data-oc="pdvNicolleTab(\'pendentes\')" style="flex:1;padding:10px;font-size:12px;font-weight:700;color:#f59e0b;border:none;border-bottom:2px solid #f59e0b;background:white;cursor:pointer;">Pendentes</button>
+        <button id="pdv-tab-conf" data-oc="pdvNicolleTab(\'confirmados\')" style="flex:1;padding:10px;font-size:12px;font-weight:700;color:#9ca3af;border:none;border-bottom:2px solid transparent;background:white;cursor:pointer;">Confirmados</button>
+        <button id="pdv-tab-cal" data-oc="pdvNicolleTab(\'calendario\')" style="flex:1;padding:10px;font-size:12px;font-weight:700;color:#9ca3af;border:none;border-bottom:2px solid transparent;background:white;cursor:pointer;">Calendário</button>
+      </div>
+      <div id="pdv-nicolle-content"></div>
+    </div>
+  </div>
+
+<!-- ── SCREEN: AÇÕES COMERCIAIS ── -->
   <div id="screen-acoes" class="screen">
     <div class="card" style="padding-top:12px;">
       <div class="card-title" style="margin-bottom:12px;">🎯 Ações Comerciais</div>

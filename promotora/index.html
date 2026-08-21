@@ -4235,6 +4235,199 @@ function sininhoPHTML(){
 }
 // ========= FIM NOTIFICACOES =========
 
+
+// ══════════ AGENDA PDV — VISAO NICOLLE ══════════
+var PDVN_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var PDVN_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+var _pdvnTabAtual='pendentes';
+
+function sbPdvN(path,opts){
+  return fetch(PDVN_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':PDVN_KEY,'Authorization':'Bearer '+PDVN_KEY,'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
+}
+function _pdvnFmtBr(iso){ var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function _pdvnIso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+async function renderPdvNicolle(){
+  pdvNicolleTab('pendentes');
+}
+
+function pdvNicolleTab(tab){
+  _pdvnTabAtual=tab;
+  ['pend','conf','cal'].forEach(function(t){
+    var btn=document.getElementById('pdv-tab-'+t);
+    if(!btn) return;
+    var ativo=(t==='pend'&&tab==='pendentes')||(t==='conf'&&tab==='confirmados')||(t==='cal'&&tab==='calendario');
+    btn.style.color=ativo?'#f59e0b':'#9ca3af';
+    btn.style.borderBottomColor=ativo?'#f59e0b':'transparent';
+  });
+  if(tab==='pendentes') _pdvnRenderPendentes();
+  else if(tab==='confirmados') _pdvnRenderConfirmados();
+  else if(tab==='calendario') _pdvnRenderCalendario();
+}
+
+async function _pdvnRenderPendentes(){
+  var el=document.getElementById('pdv-nicolle-content');
+  el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</p>';
+  try{
+    var pend=await sbPdvN('pdv_agenda?status=eq.pendente&order=data_pdv.asc');
+    if(!Array.isArray(pend)||!pend.length){
+      el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Nenhum pedido pendente.</p>';
+      return;
+    }
+    el.innerHTML=pend.map(function(p){
+      return '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:10px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+        +'<div><b style="font-size:14px;">'+_pdvnFmtBr(p.data_pdv)+'</b><div style="font-size:12px;color:#6b7280;">'+p.area+' · '+p.rep+'</div></div>'
+        +'</div>'
+        +'<div style="font-weight:700;font-size:13px;margin-top:6px;">'+p.cliente_nome+'</div>'
+        +'<div style="font-size:12px;color:#374151;margin-top:4px;">👤 '+p.contato_nome+(p.contato_telefone?' · '+p.contato_telefone:'')+'</div>'
+        +'<div style="font-size:12px;color:#374151;margin-top:2px;">🎯 '+p.objetivo+'</div>'
+        +'<div style="font-size:12px;color:#374151;margin-top:2px;">🧪 '+(p.laboratorio||'')+'</div>'
+        +'<div style="display:flex;gap:8px;margin-top:10px;">'
+        +'<button onclick="_pdvnConfirmar(\''+p.id+'\')" style="flex:1;background:#16a34a;color:white;border:none;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">✓ Confirmar</button>'
+        +'<button onclick="_pdvnAbrirRecusa(\''+p.id+'\')" style="flex:1;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">✗ Recusar</button>'
+        +'</div>'
+        +'</div>';
+    }).join('');
+  }catch(e){ el.innerHTML='<p style="color:#dc2626;">Erro: '+e.message+'</p>'; }
+}
+
+async function _pdvnConfirmar(id){
+  try{
+    var res=await sbPdvN('pdv_agenda?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'confirmado',atualizado_em:new Date().toISOString()})});
+    var p=Array.isArray(res)?res[0]:null;
+    if(p&&p.rep){
+      criarNotificacao(p.rep,'pdv','PDV confirmado','Sua data '+_pdvnFmtBr(p.data_pdv)+' para '+p.cliente_nome+' foi confirmada!',p.id);
+    }
+    mostrarToast('PDV confirmado!');
+    _pdvnRenderPendentes();
+  }catch(e){ mostrarToast('Erro: '+e.message); }
+}
+
+var _pdvnIdRecusando=null;
+function _pdvnAbrirRecusa(id){
+  _pdvnIdRecusando=id;
+  var motivo=prompt('Justificativa da recusa (opcional):','');
+  if(motivo===null) return; // cancelou
+  _pdvnConfirmarRecusa(motivo);
+}
+async function _pdvnConfirmarRecusa(motivo){
+  try{
+    var res=await sbPdvN('pdv_agenda?id=eq.'+_pdvnIdRecusando,{method:'PATCH',body:JSON.stringify({
+      status:'recusado',justificativa_recusa:motivo||null,atualizado_em:new Date().toISOString()
+    })});
+    var p=Array.isArray(res)?res[0]:null;
+    if(p&&p.rep){
+      criarNotificacao(p.rep,'pdv','PDV recusado','Sua data '+_pdvnFmtBr(p.data_pdv)+' para '+p.cliente_nome+' foi recusada.'+(motivo?' Motivo: '+motivo:''),p.id);
+    }
+    mostrarToast('Pedido recusado.');
+    _pdvnRenderPendentes();
+  }catch(e){ mostrarToast('Erro: '+e.message); }
+}
+
+async function _pdvnRenderConfirmados(){
+  var el=document.getElementById('pdv-nicolle-content');
+  el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</p>';
+  try{
+    var hoje=_pdvnIso(new Date());
+    var conf=await sbPdvN('pdv_agenda?status=eq.confirmado&data_pdv=gte.'+hoje+'&order=data_pdv.asc');
+    if(!Array.isArray(conf)||!conf.length){
+      el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Nenhum PDV confirmado.</p>';
+      return;
+    }
+    el.innerHTML=conf.map(function(p){
+      return '<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:10px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<b style="font-size:14px;">'+_pdvnFmtBr(p.data_pdv)+'</b>'
+        +'<span style="font-size:11px;color:#6b7280;">'+p.area+' · '+p.rep+'</span>'
+        +'</div>'
+        +'<div style="font-weight:700;font-size:13px;margin-top:4px;">'+p.cliente_nome+'</div>'
+        +'<div style="font-size:12px;color:#374151;margin-top:2px;">👤 '+p.contato_nome+(p.contato_telefone?' · '+p.contato_telefone:'')+'</div>'
+        +'<div style="font-size:12px;color:#374151;margin-top:2px;">🎯 '+p.objetivo+'</div>'
+        +'<div style="font-size:12px;color:#374151;margin-top:2px;">🧪 '+(p.laboratorio||'')+'</div>'
+        +'<button onclick="_pdvnLiberarData(\''+p.id+'\')" style="margin-top:8px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">Liberar data</button>'
+        +'</div>';
+    }).join('');
+  }catch(e){ el.innerHTML='<p style="color:#dc2626;">Erro: '+e.message+'</p>'; }
+}
+
+async function _pdvnLiberarData(id){
+  if(!confirm('Liberar esta data? O cliente será removido da agenda.')) return;
+  try{
+    var res=await sbPdvN('pdv_agenda?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'cancelado',atualizado_em:new Date().toISOString()})});
+    var p=Array.isArray(res)?res[0]:null;
+    if(p&&p.rep){
+      criarNotificacao(p.rep,'pdv','PDV cancelado','A data '+_pdvnFmtBr(p.data_pdv)+' para '+p.cliente_nome+' foi liberada pela Nicolle.',p.id);
+    }
+    mostrarToast('Data liberada.');
+    _pdvnRenderConfirmados();
+  }catch(e){ mostrarToast('Erro: '+e.message); }
+}
+
+async function _pdvnRenderCalendario(){
+  var el=document.getElementById('pdv-nicolle-content');
+  el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</p>';
+  try{
+    var hoje=new Date(); hoje.setHours(0,0,0,0);
+    var maxD=new Date(hoje); maxD.setDate(maxD.getDate()+60);
+    var todos=await sbPdvN('pdv_agenda?select=*&data_pdv=gte.'+_pdvnIso(hoje)+'&data_pdv=lte.'+_pdvnIso(maxD)+'&order=data_pdv.asc');
+    if(!Array.isArray(todos)) todos=[];
+    var ativos=todos.filter(function(p){return ['pendente','confirmado','bloqueado'].indexOf(p.status)>=0;});
+    var porData={};
+    ativos.forEach(function(p){ porData[p.data_pdv]=p; });
+
+    var datas=[]; var d=new Date(hoje);
+    while(d<=maxD){ var dow=d.getDay(); if(dow===5||dow===6) datas.push(_pdvnIso(d)); d.setDate(d.getDate()+1); }
+
+    var html='<div style="background:#eff6ff;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#1e40af;">Toque numa data livre para bloqueá-la (indisponibilidade pessoal).</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:6px;">';
+    datas.forEach(function(iso){
+      var oc=porData[iso];
+      var dow=new Date(iso+'T00:00:00').getDay();
+      var diaSemana=dow===5?'Sexta':'Sábado';
+      if(oc){
+        var label=oc.status==='bloqueado'?'Bloqueada por você':(oc.status==='confirmado'?'Confirmado — '+oc.cliente_nome:'Pendente — '+oc.cliente_nome);
+        var cor=oc.status==='bloqueado'?'#6b7280':(oc.status==='confirmado'?'#16a34a':'#f59e0b');
+        var podeDesbloquear=oc.status==='bloqueado';
+        html+='<div style="background:#f9fafb;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">'
+          +'<div><b style="font-size:13px;">'+_pdvnFmtBr(iso)+'</b> <span style="font-size:11px;color:#9ca3af;">('+diaSemana+')</span></div>'
+          +'<span style="font-size:11px;color:'+cor+';font-weight:600;">'+label+'</span>'
+          +(podeDesbloquear?'<button onclick="_pdvnDesbloquear(\''+oc.id+'\')" style="margin-left:8px;font-size:10px;background:none;border:none;color:#7c3aed;text-decoration:underline;cursor:pointer;">Desbloquear</button>':'')
+          +'</div>';
+      } else {
+        html+='<button onclick="_pdvnBloquear(\''+iso+'\')" style="background:white;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left;">'
+          +'<div><b style="font-size:13px;color:#111;">'+_pdvnFmtBr(iso)+'</b> <span style="font-size:11px;color:#9ca3af;">('+diaSemana+')</span></div>'
+          +'<span style="font-size:11px;color:#16a34a;font-weight:700;">Livre</span>'
+          +'</button>';
+      }
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  }catch(e){ el.innerHTML='<p style="color:#dc2626;">Erro: '+e.message+'</p>'; }
+}
+
+async function _pdvnBloquear(iso){
+  if(!confirm('Bloquear '+_pdvnFmtBr(iso)+' por indisponibilidade pessoal?')) return;
+  try{
+    await sbPdvN('pdv_agenda',{method:'POST',body:JSON.stringify({
+      data_pdv:iso, status:'bloqueado', rep:'NICOLLE', cliente_nome:'Indisponibilidade da Nicolle'
+    })});
+    mostrarToast('Data bloqueada.');
+    _pdvnRenderCalendario();
+  }catch(e){ mostrarToast('Erro: '+e.message); }
+}
+
+async function _pdvnDesbloquear(id){
+  try{
+    await sbPdvN('pdv_agenda?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'cancelado',atualizado_em:new Date().toISOString()})});
+    mostrarToast('Data desbloqueada.');
+    _pdvnRenderCalendario();
+  }catch(e){ mostrarToast('Erro: '+e.message); }
+}
+// ══════════ FIM AGENDA PDV NICOLLE ══════════
+
 </script>
 </body>
 </html>

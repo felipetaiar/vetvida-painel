@@ -3005,9 +3005,6 @@ function _pdvAbrirForm(iso){
       +'</div>';
   }
 
-  var labs=(typeof LABS_LIST!=='undefined'?LABS_LIST:[]);
-  var labOpts=labs.map(function(l){return '<option value="'+l+'">'+l+'</option>';}).join('');
-
   body.innerHTML = clienteHtml
     +'<div class="form-group" style="margin-bottom:12px;">'
       +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Nome do contato combinado *</label>'
@@ -3021,12 +3018,25 @@ function _pdvAbrirForm(iso){
       +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Objetivo do PDV *</label>'
       +'<textarea id="pdv-objetivo" rows="3" placeholder="O que se espera desse PDV..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>'
     +'</div>'
-    +'<div class="form-group" style="margin-bottom:12px;">'
-      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Laboratório a abordar *</label>'
-      +'<select id="pdv-lab" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
-      +'<option value="">Selecione...</option>'+labOpts+'</select>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo do PDV *</label>'
+    +'<div style="display:flex;gap:6px;margin-bottom:8px;">'
+    +'<button type="button" id="pdv-alvo-btn-prod" onclick="pdvAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #f59e0b;background:#f59e0b;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>'
+    +'<button type="button" id="pdv-alvo-btn-lab" onclick="pdvAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratório(s)</button>'
     +'</div>'
-    +'<button onclick="_pdvEnviarSolicitacao()" style="width:100%;background:#f59e0b;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Enviar solicitação</button>';
+    +'<div id="pdv-alvo-produtos">'
+    +'<div style="position:relative;"><input id="pdv-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="pdvBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'<div id="pdv-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>'
+    +'<div id="pdv-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>'
+    +'</div>'
+    +'<div id="pdv-alvo-lab" style="display:none;">'
+    +'<div id="pdv-labs-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>'
+    +'</div>'
+    +'</div>'
+    +'<button onclick="_pdvEnviarSolicitacao()" style="width:100%;background:#f59e0b;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;">Enviar solicitação</button>';
+
+  _pdvProdutosSelecionados=[];
+  _pdvLabsSelecionados=[];
+  pdvAlvoModo('produtos');
 
   document.getElementById('m-pdv').classList.remove('on');
   document.getElementById('m-pdv-form').classList.add('on');

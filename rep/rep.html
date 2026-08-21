@@ -3062,16 +3062,101 @@ function _pdvBuscarCliente(q){
   box.style.display='block';
 }
 
+
+var _pdvProdutosSelecionados=[];
+var _pdvLabsSelecionados=[];
+
+function pdvAlvoModo(modo){
+  var btnP=document.getElementById('pdv-alvo-btn-prod'), btnL=document.getElementById('pdv-alvo-btn-lab');
+  var wrapP=document.getElementById('pdv-alvo-produtos'), wrapL=document.getElementById('pdv-alvo-lab');
+  if(modo==='produtos'){
+    wrapP.style.display='block'; wrapL.style.display='none';
+    btnP.style.background='#f59e0b'; btnP.style.borderColor='#f59e0b'; btnP.style.color='white';
+    btnL.style.background='white'; btnL.style.borderColor='#e5e7eb'; btnL.style.color='#6b7280';
+  } else {
+    wrapP.style.display='none'; wrapL.style.display='block';
+    btnL.style.background='#f59e0b'; btnL.style.borderColor='#f59e0b'; btnL.style.color='white';
+    btnP.style.background='white'; btnP.style.borderColor='#e5e7eb'; btnP.style.color='#6b7280';
+    pdvPopularLabs();
+  }
+}
+
+function pdvPopularLabs(){
+  var wrap=document.getElementById('pdv-labs-chips');
+  if(!wrap||wrap.children.length) return;
+  var labs=(typeof LABS_LIST!=='undefined'?LABS_LIST:[]);
+  wrap.innerHTML=labs.map(function(l){
+    return '<span data-lab="'+l+'" class="pdv-lab-pill" style="padding:6px 12px;border-radius:14px;border:1.5px solid #e5e7eb;font-size:11px;font-weight:600;cursor:pointer;color:#374151;">'+l+'</span>';
+  }).join('');
+  wrap.querySelectorAll('.pdv-lab-pill').forEach(function(el){
+    el.addEventListener('click',function(){
+      var l=this.dataset.lab;
+      var idx=_pdvLabsSelecionados.indexOf(l);
+      if(idx>=0){
+        _pdvLabsSelecionados.splice(idx,1);
+        this.style.background='white'; this.style.color='#374151'; this.style.borderColor='#e5e7eb';
+      } else {
+        _pdvLabsSelecionados.push(l);
+        this.style.background='#f59e0b'; this.style.color='white'; this.style.borderColor='#f59e0b';
+      }
+    });
+  });
+}
+
+function pdvBuscarProduto(q){
+  var box=document.getElementById('pdv-produto-sugs');
+  if(!box) return;
+  q=(q||'').trim().toLowerCase();
+  if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
+  var res=PRECOS_VV.filter(function(p){
+    return (p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0)
+      && _pdvProdutosSelecionados.indexOf(p.nome)<0;
+  }).slice(0,6);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(p){
+    return '<div data-nome="'+p.nome.replace(/"/g,'&quot;')+'" class="pdv-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+      +'<div style="font-weight:600;">'+p.nome+'</div><div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.pdv-prod-sug').forEach(function(el){
+    el.addEventListener('click',function(){
+      var nome=this.dataset.nome;
+      if(_pdvProdutosSelecionados.indexOf(nome)<0) _pdvProdutosSelecionados.push(nome);
+      document.getElementById('pdv-produto').value='';
+      box.style.display='none';
+      pdvRenderChipsProdutos();
+    });
+  });
+  box.style.display='block';
+}
+
+function pdvRenderChipsProdutos(){
+  var wrap=document.getElementById('pdv-produtos-chips');
+  if(!wrap) return;
+  wrap.innerHTML=_pdvProdutosSelecionados.map(function(nome,i){
+    return '<span style="background:#fef3c7;color:#92400e;border-radius:14px;padding:5px 10px 5px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">'
+      +nome+'<button type="button" data-idx="'+i+'" class="pdv-chip-rm" style="background:none;border:none;color:#92400e;cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button></span>';
+  }).join('');
+  wrap.querySelectorAll('.pdv-chip-rm').forEach(function(b){
+    b.addEventListener('click',function(){
+      _pdvProdutosSelecionados.splice(parseInt(this.dataset.idx),1);
+      pdvRenderChipsProdutos();
+    });
+  });
+}
+
 async function _pdvEnviarSolicitacao(){
   var contatoNome=(document.getElementById('pdv-contato-nome').value||'').trim();
   var contatoTel=(document.getElementById('pdv-contato-tel').value||'').trim();
   var objetivo=(document.getElementById('pdv-objetivo').value||'').trim();
-  var lab=(document.getElementById('pdv-lab').value||'').trim();
+  var alvoModo=(document.getElementById('pdv-alvo-lab').style.display==='block')?'lab':'produtos';
+  var lab=alvoModo==='produtos'
+    ? (_pdvProdutosSelecionados.length?_pdvProdutosSelecionados.join(', '):'')
+    : (_pdvLabsSelecionados.length?_pdvLabsSelecionados.join(', '):'');
 
   if(!_pdvClienteCod){mostrarToast('Selecione o cliente.');return;}
   if(!contatoNome){mostrarToast('Informe o nome do contato.');return;}
   if(!objetivo){mostrarToast('Informe o objetivo do PDV.');return;}
-  if(!lab){mostrarToast('Selecione o laboratório.');return;}
+  if(!lab){mostrarToast('Selecione ao menos um produto ou laboratório.');return;}
 
   var area=(typeof AREAS_LABEL_DATA!=='undefined'?AREAS_LABEL_DATA[REP]:'')||'';
 

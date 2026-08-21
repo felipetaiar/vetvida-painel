@@ -2859,6 +2859,242 @@ async function salvarVisitaBio(){
 }
 // ══ FIM BIO ══
 
+
+// ══════════ AGENDA PDV ══════════
+var PDV_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var PDV_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+var _pdvClienteCod=null, _pdvClienteNome=null, _pdvDataEscolhida=null;
+
+function sbPdv(path,opts){
+  return fetch(PDV_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':PDV_KEY,'Authorization':'Bearer '+PDV_KEY,'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
+}
+
+// Formata Date -> "YYYY-MM-DD"
+function _pdvIso(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function _pdvFmtBr(iso){
+  var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0];
+}
+
+// Gera lista de sextas e sabados entre hoje+15d e hoje+60d
+function _pdvDatasValidas(){
+  var hoje=new Date(); hoje.setHours(0,0,0,0);
+  var minD=new Date(hoje); minD.setDate(minD.getDate()+15);
+  var maxD=new Date(hoje); maxD.setDate(maxD.getDate()+60);
+  var datas=[];
+  var d=new Date(minD);
+  while(d<=maxD){
+    var dow=d.getDay(); // 5=sexta, 6=sabado
+    if(dow===5||dow===6) datas.push(_pdvIso(d));
+    d.setDate(d.getDate()+1);
+  }
+  return datas;
+}
+
+// Abrir agenda a partir do card do cliente (ja vem com cliente pre-selecionado)
+function abrirPdvCliente(cod,nome){
+  _pdvClienteCod=cod; _pdvClienteNome=nome;
+  document.getElementById('m-pdv-t').textContent='📅 Agenda PDV — '+nome;
+  _renderCalendarioPdv();
+}
+
+// Abrir agenda pelo menu lateral (sem cliente pre-selecionado)
+function abrirPdvGlobal(){
+  _pdvClienteCod=null; _pdvClienteNome=null;
+  document.getElementById('m-pdv-t').textContent='📅 Agenda PDV';
+  _renderCalendarioPdv();
+}
+
+async function _renderCalendarioPdv(){
+  var body=document.getElementById('m-pdv-b');
+  body.innerHTML='<p style="text-align:center;padding:24px;color:#9ca3af;">Carregando agenda...</p>';
+  document.getElementById('m-pdv').classList.add('on');
+
+  var area=(typeof AREAS_LABEL_DATA!=='undefined'?AREAS_LABEL_DATA[REP]:'')||'';
+
+  try{
+    var todos=await sbPdv('pdv_agenda?select=*&order=data_pdv.asc');
+    if(!Array.isArray(todos)) todos=[];
+    // So considerar registros ATIVOS (pendente, confirmado, bloqueado) para ocupar a data
+    var ativos=todos.filter(function(p){return ['pendente','confirmado','bloqueado'].indexOf(p.status)>=0;});
+    var porData={};
+    ativos.forEach(function(p){ porData[p.data_pdv]=p; });
+
+    var meusPedidos=todos.filter(function(p){return p.rep===REP && ['pendente','confirmado'].indexOf(p.status)>=0;});
+
+    var datasValidas=_pdvDatasValidas();
+
+    var html='<div style="background:#eff6ff;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#1e40af;">';
+    html+='Datas disponíveis: sextas e sábados, com no mínimo 15 dias de antecedência.';
+    html+='</div>';
+
+    if(meusPedidos.length){
+      html+='<div style="font-weight:700;font-size:12px;color:#374151;margin-bottom:8px;">Meus pedidos</div>';
+      meusPedidos.forEach(function(p){
+        var corSt={'pendente':'#f59e0b','confirmado':'#16a34a'}[p.status]||'#6b7280';
+        var lblSt={'pendente':'Aguardando resposta','confirmado':'Confirmado'}[p.status]||p.status;
+        html+='<div style="border:1.5px solid '+corSt+';border-radius:8px;padding:10px 12px;margin-bottom:8px;">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+          +'<b style="font-size:13px;">'+_pdvFmtBr(p.data_pdv)+'</b>'
+          +'<span style="font-size:10px;font-weight:700;color:'+corSt+';">'+lblSt+'</span>'
+          +'</div>'
+          +'<div style="font-size:12px;color:#6b7280;margin-top:2px;">'+p.cliente_nome+'</div>'
+          +(p.status==='pendente'?'<button onclick="_pdvCancelarPedido(\''+p.id+'\')" style="margin-top:6px;font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer;">Cancelar pedido</button>':'')
+          +'</div>';
+      });
+    }
+
+    html+='<div style="font-weight:700;font-size:12px;color:#374151;margin:14px 0 8px;">Calendário</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:6px;">';
+    datasValidas.forEach(function(iso){
+      var ocupado=porData[iso];
+      var dow=new Date(iso+'T00:00:00').getDay();
+      var diaSemana=dow===5?'Sexta':'Sábado';
+      var jaMeuPedido=meusPedidos.some(function(p){return p.data_pdv===iso;});
+      if(ocupado){
+        var ehMinha=ocupado.rep===REP;
+        var label = ocupado.status==='bloqueado' ? 'Bloqueada (indisponibilidade da Nicolle)'
+          : (ehMinha ? (ocupado.status==='confirmado'?'Confirmado — '+ocupado.cliente_nome:'Pendente — '+ocupado.cliente_nome)
+          : 'Indisponível');
+        var corBg = ocupado.status==='bloqueado' ? '#f3f4f6' : (ehMinha ? '#f5f3ff' : '#fef2f2');
+        var corTxt = ocupado.status==='bloqueado' ? '#6b7280' : (ehMinha ? '#7c3aed' : '#dc2626');
+        html+='<div style="background:'+corBg+';border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">'
+          +'<div><b style="font-size:13px;">'+_pdvFmtBr(iso)+'</b> <span style="font-size:11px;color:#9ca3af;">('+diaSemana+')</span></div>'
+          +'<span style="font-size:11px;color:'+corTxt+';font-weight:600;">'+label+'</span>'
+          +'</div>';
+      } else {
+        html+='<button onclick="_pdvAbrirForm(\''+iso+'\')" style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left;">'
+          +'<div><b style="font-size:13px;color:#111;">'+_pdvFmtBr(iso)+'</b> <span style="font-size:11px;color:#9ca3af;">('+diaSemana+')</span></div>'
+          +'<span style="font-size:11px;color:#16a34a;font-weight:700;">Livre — solicitar</span>'
+          +'</button>';
+      }
+    });
+    html+='</div>';
+
+    body.innerHTML=html;
+  }catch(e){
+    body.innerHTML='<p style="color:#dc2626;padding:12px;">Erro ao carregar agenda: '+e.message+'</p>';
+  }
+}
+
+async function _pdvCancelarPedido(id){
+  if(!confirm('Cancelar este pedido de PDV?')) return;
+  try{
+    await sbPdv('pdv_agenda?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'cancelado',atualizado_em:new Date().toISOString()})});
+    mostrarToast('Pedido cancelado.');
+    _renderCalendarioPdv();
+  }catch(e){ mostrarToast('Erro ao cancelar: '+e.message); }
+}
+
+function _pdvAbrirForm(iso){
+  _pdvDataEscolhida=iso;
+  var body=document.getElementById('m-pdv-form-b');
+  document.getElementById('m-pdv-form-t').textContent='📅 Solicitar PDV — '+_pdvFmtBr(iso);
+
+  var clienteHtml='';
+  if(_pdvClienteCod){
+    clienteHtml='<div style="background:#f5f3ff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;color:#5b21b6;font-weight:600;">Cliente: '+_pdvClienteNome+'</div>';
+  } else {
+    clienteHtml='<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Cliente *</label>'
+      +'<div style="position:relative;"><input id="pdv-cliente" type="text" placeholder="Buscar cliente..." autocomplete="off" oninput="_pdvBuscarCliente(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+      +'<div id="pdv-cliente-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>'
+      +'</div>';
+  }
+
+  var labs=(typeof LABS_LIST!=='undefined'?LABS_LIST:[]);
+  var labOpts=labs.map(function(l){return '<option value="'+l+'">'+l+'</option>';}).join('');
+
+  body.innerHTML = clienteHtml
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Nome do contato combinado *</label>'
+      +'<input id="pdv-contato-nome" type="text" placeholder="Quem você combinou o PDV" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Telefone do contato</label>'
+      +'<input id="pdv-contato-tel" type="tel" placeholder="(11) 99999-9999" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Objetivo do PDV *</label>'
+      +'<textarea id="pdv-objetivo" rows="3" placeholder="O que se espera desse PDV..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Laboratório a abordar *</label>'
+      +'<select id="pdv-lab" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+      +'<option value="">Selecione...</option>'+labOpts+'</select>'
+    +'</div>'
+    +'<button onclick="_pdvEnviarSolicitacao()" style="width:100%;background:#f59e0b;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Enviar solicitação</button>';
+
+  document.getElementById('m-pdv').classList.remove('on');
+  document.getElementById('m-pdv-form').classList.add('on');
+}
+
+function _pdvBuscarCliente(q){
+  var box=document.getElementById('pdv-cliente-sugs');
+  q=(q||'').trim().toLowerCase();
+  if(!q){box.style.display='none';return;}
+  var res=CL.filter(function(c){return c.nome.toLowerCase().indexOf(q)>=0;}).slice(0,8);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(c){
+    return '<div class="pdv-cli-sug" data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'+c.nome+'</div>';
+  }).join('');
+  box.querySelectorAll('.pdv-cli-sug').forEach(function(el){
+    el.addEventListener('click',function(){
+      _pdvClienteCod=parseInt(this.dataset.cod);
+      _pdvClienteNome=decodeURIComponent(this.dataset.nome);
+      document.getElementById('pdv-cliente').value=_pdvClienteNome;
+      box.style.display='none';
+    });
+  });
+  box.style.display='block';
+}
+
+async function _pdvEnviarSolicitacao(){
+  var contatoNome=(document.getElementById('pdv-contato-nome').value||'').trim();
+  var contatoTel=(document.getElementById('pdv-contato-tel').value||'').trim();
+  var objetivo=(document.getElementById('pdv-objetivo').value||'').trim();
+  var lab=(document.getElementById('pdv-lab').value||'').trim();
+
+  if(!_pdvClienteCod){mostrarToast('Selecione o cliente.');return;}
+  if(!contatoNome){mostrarToast('Informe o nome do contato.');return;}
+  if(!objetivo){mostrarToast('Informe o objetivo do PDV.');return;}
+  if(!lab){mostrarToast('Selecione o laboratório.');return;}
+
+  var area=(typeof AREAS_LABEL_DATA!=='undefined'?AREAS_LABEL_DATA[REP]:'')||'';
+
+  try{
+    // Checar de novo se ainda esta livre (evitar corrida entre 2 reps)
+    var check=await sbPdv('pdv_agenda?data_pdv=eq.'+_pdvDataEscolhida+'&status=in.(pendente,confirmado,bloqueado)');
+    if(Array.isArray(check)&&check.length){
+      mostrarToast('Essa data acabou de ficar indisponível. Escolha outra.');
+      document.getElementById('m-pdv-form').classList.remove('on');
+      _renderCalendarioPdv();
+      return;
+    }
+    // Checar se o rep ja tem pedido pendente para o MESMO cliente
+    var dup=await sbPdv('pdv_agenda?rep=eq.'+encodeURIComponent(REP)+'&cliente_cod=eq.'+_pdvClienteCod+'&status=eq.pendente');
+    if(Array.isArray(dup)&&dup.length){
+      mostrarToast('Você já tem um pedido pendente para este cliente.');
+      return;
+    }
+
+    await sbPdv('pdv_agenda',{method:'POST',body:JSON.stringify({
+      data_pdv:_pdvDataEscolhida, status:'pendente',
+      rep:REP, area:area,
+      cliente_cod:_pdvClienteCod, cliente_nome:_pdvClienteNome,
+      contato_nome:contatoNome, contato_telefone:contatoTel||null,
+      objetivo:objetivo, laboratorio:lab
+    })});
+    mostrarToast('✓ Solicitação enviada! Aguarde a Nicolle confirmar.');
+    document.getElementById('m-pdv-form').classList.remove('on');
+    _renderCalendarioPdv();
+  }catch(e){ mostrarToast('Erro ao enviar: '+e.message); }
+}
+// ══════════ FIM AGENDA PDV ══════════
+
 </script>
 
 

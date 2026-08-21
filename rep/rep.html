@@ -713,9 +713,14 @@ function rnd(){
   var _lP=lista.filter(function(c){return c.tipo==='positivado';}),_lN=lista.filter(function(c){return c.tipo!=='positivado'&&!CO_MES.has(c.cod);}),_lC=lista.filter(function(c){return c.tipo!=='positivado'&&CO_MES.has(c.cod);});
   lista=_lN.concat(_lC).concat(_lP);
 
-  var h='',sa=false,sr=false,si=false,_sC=false,_sP=false;
-  var ord=document.getElementById('ord').value;
-  lista.forEach(function(c){
+  var _LISTA_FILTRADA=lista;
+  var _PAGE_SIZE=50;
+  var _PAGE_ATUAL=0;
+
+  function _buildCards(slice,sa,sr,si,_sC,_sP){
+    var h='';
+    var ord=document.getElementById('ord').value;
+    slice.forEach(function(c){
     var _ip=c.tipo==='positivado',_ic2=CO_MES.has(c.cod)&&!_ip;
     if(_ip&&!_sP){h+='<div class="sec" style="color:#15803d;margin-top:14px;">✅ Positivados este mês</div>';_sP=true;_sC=true;sa=true;sr=true;}
     if(_ic2&&!_sC){h+='<div class="sec" style="color:#888;margin-top:12px;">✓ Já contatados este mês</div>';_sC=true;sa=true;sr=true;}
@@ -814,12 +819,23 @@ function rnd(){
     h+='<button class="btn-fab-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#0ea5e9;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">🏭 Fabricantes</button>';
     h+='</div>';
     h+='</div></div>';
-  });
-  // Renderizar em chunks para evitar Invalid string length no mobile
-  var lista=document.getElementById('lista');
-  lista.innerHTML='';
-  var frag=document.createDocumentFragment();
-  // Prospects Biogenesis no topo
+    });
+    return h;
+  }
+
+  function _renderPagina(reset){
+    if(reset){
+      _PAGE_ATUAL=0;
+      var listaEl=document.getElementById('lista');
+      listaEl.innerHTML='';
+    }
+    var listaEl=document.getElementById('lista');
+    var inicio=_PAGE_ATUAL*_PAGE_SIZE;
+    var fim=inicio+_PAGE_SIZE;
+    var slice=_LISTA_FILTRADA.slice(inicio,fim);
+    var h=_buildCards(slice,false,false,false,false,false);
+    var frag=document.createDocumentFragment();
+    // Prospects Biogenesis só no topo (primeira página)
   var BIO_P=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;}):[];
   var hBio='';
   if(BIO_P.length&&FA!=='positivado'&&FA!=='ativo_recente'&&FA!=='risco'){
@@ -851,10 +867,26 @@ function rnd(){
         +'</div>';
     });
   }
-  var tmp=document.createElement('div');
-  tmp.innerHTML=hBio+h;
-  while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
-  lista.appendChild(frag);
+    var hBioStr=(_PAGE_ATUAL===0)?hBio:'';
+    var tmp=document.createElement('div');
+    tmp.innerHTML=hBioStr+h;
+    while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
+    // Remover botão anterior se existir
+    var btnAnt=document.getElementById('btn-carregar-mais');
+    if(btnAnt) btnAnt.remove();
+    listaEl.appendChild(frag);
+    // Adicionar botão Carregar Mais se houver mais clientes
+    _PAGE_ATUAL++;
+    if(_LISTA_FILTRADA.length > _PAGE_ATUAL*_PAGE_SIZE){
+      var btnMais=document.createElement('button');
+      btnMais.id='btn-carregar-mais';
+      btnMais.textContent='Carregar mais ('+(_LISTA_FILTRADA.length-_PAGE_ATUAL*_PAGE_SIZE)+' restantes)';
+      btnMais.style.cssText='display:block;width:100%;margin:16px 0 24px;padding:14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;';
+      btnMais.onclick=function(){_renderPagina(false);_bindCardEvents();};
+      listaEl.appendChild(btnMais);
+    }
+  }
+  _renderPagina(true);
   document.querySelectorAll('.bio-btn-det').forEach(function(b){
     b.addEventListener('click',function(e){
       e.stopPropagation();
@@ -899,10 +931,17 @@ function rnd(){
       window.location.href='estoque.html';
     });
   });
-  document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom),this.dataset.cod);});
-  document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});});
-  pg();
+  _bindCardEvents();
+  pg();}
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
+}
+
+function _bindCardEvents(){
+  document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom),this.dataset.cod);});});
+  document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});
+  document.querySelectorAll('.bio-btn-det').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();abrirBioDetalhes(this.dataset.bioCnpj||'',this.dataset.bioCod||null);});});
+  document.querySelectorAll('.bio-badge-base').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();abrirHistBio(this.dataset.bioCnpj,this.dataset.bioNome);});});
+  document.querySelectorAll('.bio-btn-vis').forEach(function(b){b.addEventListener('click',function(){var cnpj=this.dataset.bioCnpj||'';var nome=decodeURIComponent(this.dataset.bioNome||'');var mun=decodeURIComponent(this.dataset.bioMun||'');localStorage.setItem('reg_vis_nome',nome);localStorage.setItem('reg_vis_cnpj',cnpj);localStorage.setItem('reg_vis_mun',mun);window.location.href='../promotora/index.html';});});
 }
 
 function sF(t,b){FA=t;document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');rnd();}

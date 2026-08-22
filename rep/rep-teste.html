@@ -919,7 +919,6 @@ function rnd(){
   });
   document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom),this.dataset.cod);});
   document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});});
-  pg();
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
 }
 

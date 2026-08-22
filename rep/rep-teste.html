@@ -691,7 +691,6 @@ function ordenar(lista){
 
 var _LISTA_FILTRADA=[];
 var _PAGE_ATUAL=0;
-var _PAGE_SIZE=100;
 function rnd(){
   try{
   var b=document.getElementById('busca').value.toLowerCase();
@@ -716,11 +715,11 @@ function rnd(){
   var _lP=lista.filter(function(c){return c.tipo==='positivado';}),_lN=lista.filter(function(c){return c.tipo!=='positivado'&&!CO_MES.has(c.cod);}),_lC=lista.filter(function(c){return c.tipo!=='positivado'&&CO_MES.has(c.cod);});
   lista=_lN.concat(_lC).concat(_lP);
   _LISTA_FILTRADA=lista;
-  _PAGE_ATUAL=0;
-  var slice0=lista.slice(0,_PAGE_SIZE);
+  lista=lista.slice(_PAGE_ATUAL*100,(_PAGE_ATUAL+1)*100);
+
   var h='',sa=false,sr=false,si=false,_sC=false,_sP=false;
   var ord=document.getElementById('ord').value;
-  slice0.forEach(function(c){
+  lista.forEach(function(c){
     var _ip=c.tipo==='positivado',_ic2=CO_MES.has(c.cod)&&!_ip;
     if(_ip&&!_sP){h+='<div class="sec" style="color:#15803d;margin-top:14px;">✅ Positivados este mês</div>';_sP=true;_sC=true;sa=true;sr=true;}
     if(_ic2&&!_sC){h+='<div class="sec" style="color:#888;margin-top:12px;">✓ Já contatados este mês</div>';_sC=true;sa=true;sr=true;}
@@ -822,7 +821,7 @@ function rnd(){
   });
   // Renderizar em chunks para evitar Invalid string length no mobile
   var lista=document.getElementById('lista');
-  lista.innerHTML='';
+  if(_PAGE_ATUAL===0){lista.innerHTML='';}
   var frag=document.createDocumentFragment();
   // Prospects Biogenesis no topo
   var BIO_P=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;}):[];
@@ -860,61 +859,15 @@ function rnd(){
   tmp.innerHTML=hBio+h;
   while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
   lista.appendChild(frag);
-  (function _addBtnMais(){
+  (function(){
     var btnAnt=document.getElementById('btn-mais');
     if(btnAnt)btnAnt.remove();
-    var _pagAtual=_PAGE_ATUAL;
-    if(_LISTA_FILTRADA.length>(_pagAtual+1)*_PAGE_SIZE){
+    if(_LISTA_FILTRADA.length>(_PAGE_ATUAL+1)*100){
       var btn=document.createElement('button');
       btn.id='btn-mais';
-      var restantes=_LISTA_FILTRADA.length-(_pagAtual+1)*_PAGE_SIZE;
-      btn.textContent='Carregar mais ('+restantes+' restantes)';
+      btn.textContent='Carregar mais ('+(_LISTA_FILTRADA.length-(_PAGE_ATUAL+1)*100)+' restantes)';
       btn.style.cssText='display:block;width:100%;margin:16px 0 24px;padding:14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;';
-      btn.onclick=function(){
-        _PAGE_ATUAL++;
-        var listaEl=document.getElementById('lista');
-        var s=_LISTA_FILTRADA.slice(_PAGE_ATUAL*_PAGE_SIZE,(_PAGE_ATUAL+1)*_PAGE_SIZE);
-        var hh='',ord2=document.getElementById('ord').value;
-        s.forEach(function(c){
-          var ic=CO.has(c.cod),stSalvo=STATUS_SALVO[c.cod]||{status:'',obs:''};
-          var cor=ic&&STATUS_CORES[stSalvo.status]?STATUS_CORES[stSalvo.status]:{bg:'#eee',txt:'#555'};
-          var btnStyle=ic?'background:'+cor.bg+';color:'+cor.txt+';border-color:'+cor.txt+';font-size:11px;':'';
-          var labTagsHtml='';if(c.labs&&c.labs.length){labTagsHtml='<div class="lab-tags">';c.labs.forEach(function(l){labTagsHtml+='<span class="lab-tag">'+l+'</span>';});labTagsHtml+='</div>';}
-          var rot=ROTEIROS_REP[c.cod],rotTag='';if(rot){var diasL={'segunda':'Seg','terca':'Ter','quarta':'Qua','quinta':'Qui','sexta':'Sex'};var diaR=diasL[rot.dia_semana]||rot.dia_semana||'';var semsR=Array.isArray(rot.semanas_mes)?rot.semanas_mes:(rot.semanas_mes?JSON.parse(rot.semanas_mes):[]);var semStr=semsR.map(function(s){return s+'ª';}).join('/');if(diaR)rotTag='<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:rgba(99,102,241,.12);color:#4338ca;font-weight:600;display:inline-block;margin:4px 0;">'+diaR+(semStr?' · '+semStr:'')+'</span>';}
-          var histVals=Object.keys(c.hist||{}).map(function(m){return{m:m,v:c.hist[m]};});var maxFat=Math.max.apply(null,histVals.map(function(x){return x.v;}).concat([1]));
-          var histH='<div class="hist-bars">';histVals.forEach(function(x){var pct=Math.round(x.v/maxFat*100);histH+='<div class="hist-bar-wrap"><div class="hist-val">'+(x.v>0?'R$'+Math.round(x.v/1000)+'k':'')+'</div><div class="hist-bar '+(x.v>0?'tem':'sem')+'" style="height:'+Math.max(pct,x.v>0?8:4)+'%"></div><div class="hist-mes">'+(MESES_LABEL[x.m]||x.m)+'</div></div>';});histH+='</div>';
-          var prodsH='';if(c.prods&&c.prods.length){prodsH='<div class="prod-section"><div class="hist-label">Produtos mais comprados</div>';c.prods.forEach(function(p){var lt=p.lab&&p.lab!=='OUTRO'?'<span class="prod-lab">'+p.lab+'</span>':'';prodsH+='<div class="prod-item"><span class="prod-nome">'+p.nome+lt+'</span><span class="prod-qtd">'+p.qtd+' un/mês</span></div>';});prodsH+='</div>';}
-          var bw=c.wa_link?'<a href="'+c.wa_link+'" target="_blank" class="btn bw" onclick="regWa('+c.cod+')">WhatsApp</a>':'';
-          var fn=c.fone?'<div class="ii"><span class="lb">Telefone</span>'+c.fone+'</div>':'';
-          var stTagHtml='';if(ic&&stSalvo.status){stTagHtml='<div class="status-tag" style="background:'+cor.bg+';color:'+cor.txt+'">'+stSalvo.status+'</div>';}
-          hh+='<div class="card'+(ic?' con':'')+'" id="cd-'+c.cod+'"><div class="ch '+c.tipo+'" onclick="tog('+c.cod+')">';
-          hh+='<div class="ct"><span class="nm">'+c.nome+'</span>';
-          if(typeof BIO_NA_BASE!=='undefined'&&BIO_NA_BASE[c.cod]){hh+='<span data-bio-cod="'+c.cod+'" class="bio-badge-base" style="background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;cursor:pointer;margin-left:4px;">🔵 Bio</span>';}
-          hh+='<div class="card-right"><span class="bg '+c.tipo+'">'+(c.tipo==='ativo_recente'?'ATIVO RECENTE':c.tipo==='risco'?'RISCO INATIVAÇÃO':c.tipo==='inativo'?'INATIVO':'POSITIVADO')+'</span><span class="fat-badge">'+fmtFat(c.fat)+'</span></div></div>';
-          hh+=labTagsHtml;if(rotTag)hh+=rotTag;
-          hh+='<div class="cs">'+c.segmento+' - '+c.municipio+' - <span class="stx">'+c.status_label+'</span></div>';
-          hh+=stTagHtml+'<div class="expand-hint">▼ ver historico e mensagem</div></div>';
-          hh+='<div class="cb" id="cb-'+c.cod+'"><div class="hist-section"><div class="hist-label">Faturamento mensal '+ANO_REF+'</div>'+histH+'</div>'+prodsH;
-          hh+='<div class="ig">'+fn+'<div class="ii"><span class="lb">Faturado no ano</span><strong style="color:#111">'+fmtFat(c.fat)+'</strong></div></div>';
-          hh+='<div class="mb"><div class="ml">Mensagem sugerida</div><div class="mt" id="m-'+c.cod+'">'+c.msg+'</div></div>';
-          hh+='<div class="acs"><button class="btn bc" onclick="cop('+c.cod+')">Copiar</button>'+bw+'<button class="btn bco" id="b-'+c.cod+'" style="'+btnStyle+'" onclick="abrirStatus('+c.cod+')">'+( ic?(stSalvo.status||'Contatado'):'Marcar como contatado')+'</button></div></div>';
-          hh+='<div style="text-align:right;margin-top:8px;display:flex;gap:6px;justify-content:flex-end">';
-          hh+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" data-mun="'+encodeURIComponent(c.municipio||'')+'" onclick="localStorage.setItem('estoque_mun',decodeURIComponent(this.dataset.mun));window.location.href='estoque.html'" style="background:#f59e0b;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">📦 Ver estoque</button>';
-          hh+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="abrirAcoes(this.dataset.cod,decodeURIComponent(this.dataset.nome))" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">🎯 Ações</button></div>';
-          hh+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">';
-          hh+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="abrirHist(this.dataset.cod,decodeURIComponent(this.dataset.nome))" style="background:#0f766e;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">📋 Histórico</button>';
-          hh+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'">🌸 Promotora</button>';
-          hh+='<button class="btn-fab-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#0ea5e9;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">🏭 Fabricantes</button>';
-          hh+='</div></div></div>';
-        });
-        var fr=document.createDocumentFragment(),tmp2=document.createElement('div');
-        tmp2.innerHTML=hh;while(tmp2.firstChild){fr.appendChild(tmp2.firstChild);}
-        var btnAtual=document.getElementById('btn-mais');if(btnAtual)btnAtual.remove();
-        listaEl.appendChild(fr);
-        document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom),this.dataset.cod);});});
-        document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});
-        _addBtnMais();
-      };
+      btn.onclick=function(){_PAGE_ATUAL++;rnd();};
       lista.appendChild(btn);
     }
   })();
@@ -968,7 +921,7 @@ function rnd(){
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
 }
 
-function sF(t,b){FA=t;document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');rnd();}
+function sF(t,b){FA=t;_PAGE_ATUAL=0;document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');rnd();}
 function fil(){rnd();}
 function tog(cod){var cb=document.getElementById('cb-'+cod);cb.classList.toggle('open');}
 function cop(c){navigator.clipboard.writeText(document.getElementById('m-'+c).innerText).then(function(){var t=document.getElementById('tst');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);});}

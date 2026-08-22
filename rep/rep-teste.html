@@ -689,8 +689,10 @@ function ordenar(lista){
   return lista;
 }
 
+var _LISTA_FILTRADA=[];
+var _PAGE_ATUAL=0;
+var _PAGE_SIZE=100;
 function rnd(){
-  try{
   var b=document.getElementById('busca').value.toLowerCase();
   // Injetar prospects Biogenesis no topo
   var BIO_P = (typeof BIO_PROSPECTS!=='undefined')
@@ -713,9 +715,19 @@ function rnd(){
   var _lP=lista.filter(function(c){return c.tipo==='positivado';}),_lN=lista.filter(function(c){return c.tipo!=='positivado'&&!CO_MES.has(c.cod);}),_lC=lista.filter(function(c){return c.tipo!=='positivado'&&CO_MES.has(c.cod);});
   lista=_lN.concat(_lC).concat(_lP);
 
-  var h='',sa=false,sr=false,si=false,_sC=false,_sP=false;
+  _LISTA_FILTRADA=lista;
+  _renderPagina(true);
+}catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error(err);}
+}
+
+function _renderPagina(reset){
+  if(reset){_PAGE_ATUAL=0;document.getElementById('lista').innerHTML='';}
+  var listaEl=document.getElementById('lista');
+  var slice=_LISTA_FILTRADA.slice(_PAGE_ATUAL*_PAGE_SIZE,(_PAGE_ATUAL+1)*_PAGE_SIZE);
+  if(!slice.length)return;
+  var h='',sa=(_PAGE_ATUAL>0),sr=(_PAGE_ATUAL>0),si=(_PAGE_ATUAL>0),_sC=(_PAGE_ATUAL>0),_sP=(_PAGE_ATUAL>0);
   var ord=document.getElementById('ord').value;
-  lista.forEach(function(c){
+  slice.forEach(function(c){
     var _ip=c.tipo==='positivado',_ic2=CO_MES.has(c.cod)&&!_ip;
     if(_ip&&!_sP){h+='<div class="sec" style="color:#15803d;margin-top:14px;">✅ Positivados este mês</div>';_sP=true;_sC=true;sa=true;sr=true;}
     if(_ic2&&!_sC){h+='<div class="sec" style="color:#888;margin-top:12px;">✓ Já contatados este mês</div>';_sC=true;sa=true;sr=true;}
@@ -815,11 +827,7 @@ function rnd(){
     h+='</div>';
     h+='</div></div>';
   });
-  // Renderizar em chunks para evitar Invalid string length no mobile
-  var lista=document.getElementById('lista');
-  lista.innerHTML='';
   var frag=document.createDocumentFragment();
-  // Prospects Biogenesis no topo
   var BIO_P=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;}):[];
   var hBio='';
   if(BIO_P.length&&FA!=='positivado'&&FA!=='ativo_recente'&&FA!=='risco'){
@@ -851,10 +859,26 @@ function rnd(){
         +'</div>';
     });
   }
+  var hBioStr=(_PAGE_ATUAL===0)?hBio:'';
   var tmp=document.createElement('div');
-  tmp.innerHTML=hBio+h;
+  tmp.innerHTML=hBioStr+h;
   while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
-  lista.appendChild(frag);
+  var btnAnt=document.getElementById('btn-mais');
+  if(btnAnt)btnAnt.remove();
+  listaEl.appendChild(frag);
+  _PAGE_ATUAL++;
+  if(_LISTA_FILTRADA.length>_PAGE_ATUAL*_PAGE_SIZE){
+    var btnMais=document.createElement('button');
+    btnMais.id='btn-mais';
+    btnMais.textContent='Carregar mais ('+(_LISTA_FILTRADA.length-_PAGE_ATUAL*_PAGE_SIZE)+' restantes)';
+    btnMais.style.cssText='display:block;width:100%;margin:16px 0 24px;padding:14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;';
+    btnMais.onclick=function(){_renderPagina(false);_bindCardEvents();};
+    listaEl.appendChild(btnMais);
+  }
+  _bindCardEvents();
+}
+
+function _bindCardEvents(){
   document.querySelectorAll('.bio-btn-det').forEach(function(b){
     b.addEventListener('click',function(e){
       e.stopPropagation();
@@ -902,9 +926,7 @@ function rnd(){
   document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom),this.dataset.cod);});
   document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});});
   pg();
-  }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
-}
-
+  
 function sF(t,b){FA=t;document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');rnd();}
 function fil(){rnd();}
 function tog(cod){var cb=document.getElementById('cb-'+cod);cb.classList.toggle('open');}

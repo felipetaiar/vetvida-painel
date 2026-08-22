@@ -677,6 +677,7 @@ function init(){
 
 function setLab(lab,btn){
   LAB_FILTRO=lab;
+  _PAGE_ATUAL=0;
   document.querySelectorAll('.lab-btn').forEach(function(b){b.classList.remove('ativo');});
   btn.classList.add('ativo');
   rnd();
@@ -715,6 +716,7 @@ function rnd(){
   var _lP=lista.filter(function(c){return c.tipo==='positivado';}),_lN=lista.filter(function(c){return c.tipo!=='positivado'&&!CO_MES.has(c.cod);}),_lC=lista.filter(function(c){return c.tipo!=='positivado'&&CO_MES.has(c.cod);});
   lista=_lN.concat(_lC).concat(_lP);
   _LISTA_FILTRADA=lista;
+  if(_PAGE_ATUAL===0){pg();}
   lista=lista.slice(_PAGE_ATUAL*100,(_PAGE_ATUAL+1)*100);
 
   var h='',sa=false,sr=false,si=false,_sC=false,_sP=false;
@@ -821,7 +823,7 @@ function rnd(){
   });
   // Renderizar em chunks para evitar Invalid string length no mobile
   var lista=document.getElementById('lista');
-  if(_PAGE_ATUAL===0){lista.innerHTML='';}
+  if(_PAGE_ATUAL===0){lista.innerHTML='';window.scrollTo(0,0);}
   var frag=document.createDocumentFragment();
   // Prospects Biogenesis no topo
   var BIO_P=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;}):[];

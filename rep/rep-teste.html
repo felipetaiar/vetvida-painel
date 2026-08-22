@@ -319,8 +319,8 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   </div>
   <div style="padding:10px;">
     <a href="rep.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#CC0000;text-decoration:none;font-weight:700;font-size:14px;background:#fdf2f2;margin-bottom:4px;">🏠 Reativação</a>
-    <a href="estoque.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">📦 Estoque</a>
-    <a href="roteiro.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">🗓 Roteiro</a>
+    <a href="estoque-teste.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">📦 Estoque</a>
+    <a href="roteiro-teste.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">🗓 Roteiro</a>
     <button onclick="fecharMenuLateral();abrirCalculadora();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🧮 Calculadora</button>
     <button onclick="fecharMenuLateral();abrirAcoesGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🎯 Ações Comerciais</button>
     <button onclick="fecharMenuLateral();abrirTelaPromo();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🌸 Leads da promotora</button>
@@ -914,7 +914,7 @@ function rnd(){
       sessionStorage.setItem('estoque_nome',nome);
       sessionStorage.setItem('estoque_mun',mun);
       
-      window.location.href='estoque.html';
+      window.location.href='estoque-teste.html';
     });
   });
   document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom),this.dataset.cod);});
@@ -1251,13 +1251,13 @@ function irParaEstoqueBusca(cod,nomeEnc,munEnc){
   sessionStorage.setItem('estoque_cod',cod);
   sessionStorage.setItem('estoque_nome',decodeURIComponent(nomeEnc));
   sessionStorage.setItem('estoque_mun',decodeURIComponent(munEnc));
-  window.location.href='estoque.html';
+  window.location.href='estoque-teste.html';
 }
 function irParaRoteiroBusca(cod,nomeEnc,munEnc){
   sessionStorage.setItem('roteiro_cod',cod);
   sessionStorage.setItem('roteiro_nome',decodeURIComponent(nomeEnc));
   sessionStorage.setItem('roteiro_mun',decodeURIComponent(munEnc));
-  window.location.href='roteiro.html';
+  window.location.href='roteiro-teste.html';
 }
 
 function abrirClienteDaBusca(cod){

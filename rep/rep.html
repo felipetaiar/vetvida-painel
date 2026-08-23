@@ -821,7 +821,7 @@ function rnd(){
   // Prospects Biogenesis no topo
   var BIO_P=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;}):[];
   var hBio='';
-  if(BIO_P.length&&FA!=='positivado'&&FA!=='ativo_recente'&&FA!=='risco'){
+  if(BIO_P.length&&FA!=='positivado'&&FA!=='ativo_recente'&&FA!=='risco'&&(LAB_FILTRO==='todos'||(LAB_FILTRO||'').toUpperCase().indexOf('BIOG')>=0)){
     hBio+='<div style="background:#eff6ff;border-left:4px solid #1d4ed8;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;font-weight:700;color:#1d4ed8;">🔵 '+BIO_P.length+' Prospect'+(BIO_P.length>1?'s':'')+' Biogênesis — nunca compraram pela VetVida</div>';
     // Ordenar por ultima_compra mais antiga = mais urgente
     var _bioFiltrado=BIO_P.filter(function(p){

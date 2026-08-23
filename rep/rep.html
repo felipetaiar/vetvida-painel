@@ -2712,7 +2712,7 @@ function _montarBioDetalhes(cnpj, cod){
         if(!ehBio) return;
         var nm=(it.prod||it.nome||'').trim();
         if(!nm) return;
-        var k=_normProd(nm);
+        var k=nm.toUpperCase(); // chave exata — sem normalizar para não colapsar produtos similares
         if(!_bioComprados[k]) _bioComprados[k]={nome:nm, qtd:0, ultima:ped.data||''};
         _bioComprados[k].qtd+=(parseInt(it.qtde||it.qtd)||0);
         var _d1=(_bioComprados[k].ultima||'').split('/').reverse().join('');

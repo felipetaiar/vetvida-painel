@@ -559,6 +559,7 @@ function init(){
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
   if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
   REP=pf; CL=(TODOS_DADOS[REP]||[]).slice(); TG=CL.length;
+  fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/visitas_prospects_bio?rep=eq.'+encodeURIComponent(REP)+'&select=cnpj_prospect',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}}).then(function(r){return r.json();}).then(function(rows){_BIO_VISITADOS=new Set((Array.isArray(rows)?rows:[]).map(function(r){return (r.cnpj_prospect||'').replace(/[^0-9]/g,'');}));}).catch(function(){_BIO_VISITADOS=new Set();});
   // Enriquecer CL com razao_social, cnpj e endereco do BASE_CLIENTES
   function _enriquecerCL(){
     if(typeof BASE_CLIENTES==='undefined'){setTimeout(_enriquecerCL,100);return;}
@@ -637,13 +638,25 @@ function ordenar(lista){
 var _LISTA_FILTRADA=[];
 var _PAGE_ATUAL=0;
 var _PAGE_SIZE=100;
+var _BIO_VISITADOS=null;
+var _BIO_FILTRO='todos';
 function rnd(){
   try{
   var b=document.getElementById('busca').value.toLowerCase();
   // Injetar prospects Biogenesis no topo
   var BIO_P = [];
   if(typeof BIO_PROSPECTS!=='undefined'){
-    BIO_P=BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;});
+    var _bcCnpjMap={};
+    if(typeof BASE_CLIENTES!=='undefined'){BASE_CLIENTES.forEach(function(bc){if(bc.cnpj)_bcCnpjMap[bc.cnpj.replace(/[^0-9]/g,'')]=bc.cod;});}
+    var _clBioSet=new Set();
+    (CL||[]).forEach(function(c){if((c.labs||[]).some(function(l){return (l||'').toUpperCase().indexOf('BIOG')>=0;})){_clBioSet.add(c.cod);}});
+    BIO_P=BIO_PROSPECTS.filter(function(p){
+      if(p.vendedor!==REP) return false;
+      var cnpjLimpo=(p.cnpj||'').replace(/[^0-9]/g,'');
+      var codVV=cnpjLimpo?_bcCnpjMap[cnpjLimpo]:null;
+      if(codVV&&_clBioSet.has(codVV)) return false;
+      return true;
+    });
   } else {
     setTimeout(rnd,800);
   }
@@ -780,14 +793,29 @@ function rnd(){
   if(BIO_P.length&&FA!=='positivado'&&FA!=='ativo_recente'&&FA!=='risco'){
     hBio+='<div style="background:#eff6ff;border-left:4px solid #1d4ed8;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;font-weight:700;color:#1d4ed8;">🔵 '+BIO_P.length+' Prospect'+(BIO_P.length>1?'s':'')+' Biogênesis — nunca compraram pela VetVida</div>';
     // Ordenar por ultima_compra mais antiga = mais urgente
-    var BIO_P_ORD = BIO_P.slice().sort(function(a,b){
+    var _bioFiltrado=BIO_P.filter(function(p){
+      if(_BIO_FILTRO==='todos') return true;
+      var cnpjL=(p.cnpj||'').replace(/[^0-9]/g,'');
+      var visitado=_BIO_VISITADOS&&_BIO_VISITADOS.has(cnpjL);
+      return _BIO_FILTRO==='visitado'?visitado:!visitado;
+    });
+    var _bfA='display:inline-flex;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;border:none;cursor:pointer;background:#1d4ed8;color:white;margin-bottom:8px;';
+    var _bfI='display:inline-flex;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;border:1.5px solid #1d4ed8;cursor:pointer;background:white;color:#1d4ed8;margin-bottom:8px;';
+    hBio+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">'
+      +'<button onclick="_BIO_FILTRO=\'todos\';rnd();" style="'+(_BIO_FILTRO==='todos'?_bfA:_bfI)+'">Todos ('+BIO_P.length+')</button>'
+      +'<button onclick="_BIO_FILTRO=\'nao_visitado\';rnd();" style="'+(_BIO_FILTRO==='nao_visitado'?_bfA:_bfI)+'">Não visitados</button>'
+      +'<button onclick="_BIO_FILTRO=\'visitado\';rnd();" style="'+(_BIO_FILTRO==='visitado'?_bfA:_bfI)+'">Visitados</button>'
+      +'</div>';
+    var BIO_P_ORD = _bioFiltrado.slice().sort(function(a,b){
       var da = a.ultima_compra||'0000-00'; var db = b.ultima_compra||'0000-00';
-      return da > db ? -1 : da < db ? 1 : 0; // mais recente no topo
+      return da > db ? -1 : da < db ? 1 : 0;
     });
     BIO_P_ORD.forEach(function(p){
       var prods=(p.produtos||[]).slice(0,3).join(' · ');
       var ult=p.ultima_compra?p.ultima_compra.split('-').reverse().join('/'):'';
-      hBio+='<div class="card bio-prospect-card" style="border:2px solid #1d4ed8;border-radius:10px;padding:12px;margin-bottom:8px;">'
+      var _cnpjPL=(p.cnpj||'').replace(/[^0-9]/g,'');
+      var _foiVisitado=_BIO_VISITADOS&&_BIO_VISITADOS.has(_cnpjPL);
+      hBio+='<div class="card bio-prospect-card" style="border:2px solid '+(_foiVisitado?'#16a34a':'#1d4ed8')+';border-radius:10px;padding:12px;margin-bottom:8px;">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
         +'<div style="flex:1;">'
         +'<span style="background:#1d4ed8;color:white;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;">🔵 PROSPECT BIOGÊGENESIS</span>'

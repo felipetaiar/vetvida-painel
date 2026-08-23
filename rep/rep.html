@@ -1431,8 +1431,15 @@ async function verPromotor(nomeCli, codCli){
 }
 
 carregarMesAnt();
-init();
-restManuais();
+(function(){
+  var _rep=(new URLSearchParams(window.location.search)).get('rep')||'';
+  if(!_rep){ init(); restManuais(); return; }
+  var s=document.createElement('script');
+  s.src='hist_'+_rep.toLowerCase()+'.js';
+  s.onload=function(){ init(); restManuais(); };
+  s.onerror=function(){ console.warn('hist nao carregou'); init(); restManuais(); };
+  document.head.appendChild(s);
+})();
 
 // Se veio de outra tela pedindo para abrir os leads da promotora
 if (sessionStorage.getItem('abrir_promo_ao_carregar')) {

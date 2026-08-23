@@ -128,7 +128,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 
 /* CARD BODY */
 .cb { padding: 0 16px; max-height: 0; overflow: hidden; transition: max-height 0.35s ease, padding 0.35s; }
-.cb.open { max-height: 900px; padding: 14px 16px 18px; border-top: 1px solid var(--border); }
+.cb.open { max-height: 9999px; padding: 14px 16px 18px; border-top: 1px solid var(--border); }
 .hist-section { margin-bottom: 14px; }
 .hist-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
 .hist-bars { display: flex; gap: 5px; align-items: flex-end; height: 64px; }
@@ -297,6 +297,11 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 .cross-cuidado{font-size:11px;color:#92400e;background:#fffbeb;border-radius:8px;padding:6px 10px;margin-top:6px;line-height:1.4;}
 
 </style></head><body>
+<div style="position:fixed;top:0;left:0;right:0;background:#f59e0b;color:#000;text-align:center;padding:8px;font-weight:700;font-size:13px;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.2);">
+  ⚠️ AMBIENTE DE TESTE — dados vindos do ERP Target (nao afeta producao) ⚠️
+</div>
+<div style="height:36px;"></div>
+
 
 <div class="hdr">
   <button onclick="abrirMenuLateral()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">☰</button>
@@ -314,11 +319,10 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   </div>
   <div style="padding:10px;">
     <a href="rep.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#CC0000;text-decoration:none;font-weight:700;font-size:14px;background:#fdf2f2;margin-bottom:4px;">🏠 Reativação</a>
-    <a href="estoque.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">📦 Estoque</a>
-    <a href="roteiro.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">🗓 Roteiro</a>
+    <a href="estoque-teste.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">📦 Estoque</a>
+    <a href="roteiro-teste.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">🗓 Roteiro</a>
     <button onclick="fecharMenuLateral();abrirCalculadora();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🧮 Calculadora</button>
     <button onclick="fecharMenuLateral();abrirAcoesGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🎯 Ações Comerciais</button>
-    <button onclick="fecharMenuLateral();abrirPdvGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">📅 Agenda PDV</button>
     <button onclick="fecharMenuLateral();abrirTelaPromo();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🌸 Leads da promotora</button>
     <a href="radar.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">📡 Radar Comercial</a>
     <button onclick="fecharMenuLateral();abrirBuscaGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🔍 Buscar cliente</button>
@@ -418,7 +422,57 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   </div>
 </div>
 
-<script src="api.js"></script>
+<script>
+// api.js inline — usa Supabase direto (substitui /api/sheets que não existe no staging)
+var _SB_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
+var _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+function _sbH(){ return {'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY}; }
+
+function registrarContato(rep, cod, nome, status, obs) {
+  return fetch(_SB_URL+'/rest/v1/contatos', {
+    method: 'POST',
+    headers: Object.assign({}, _sbH(), {'Content-Type':'application/json','Prefer':'return=minimal'}),
+    body: JSON.stringify({rep:rep, cod_cliente:cod, nome_cliente:nome, status:status, obs:obs||''})
+  });
+}
+
+function buscarContatosRep(rep) {
+  return fetch(_SB_URL+'/rest/v1/contatos?select=cod_cliente,status,obs,data_hora&rep=eq.'+encodeURIComponent(rep)+'&order=data_hora.desc', {
+    headers: _sbH()
+  }).then(function(r){return r.json();}).then(function(rows){
+    var resultado = {};
+    var lista = Array.isArray(rows) ? rows : [];
+    lista.forEach(function(r) {
+      if (!r || !r.cod_cliente) return;
+      if (!resultado[r.cod_cliente]) {
+        resultado[r.cod_cliente] = { status: r.status||'Contatado', obs: r.obs||'', data: r.data_hora||'' };
+      }
+    });
+    return resultado;
+  });
+}
+
+function buscarResumoGestor() {
+  return fetch(_SB_URL+'/rest/v1/contatos?select=*&order=data_hora.desc', {
+    headers: _sbH()
+  }).then(function(r){return r.json();}).then(function(rows){
+    var hoje = new Date().toLocaleDateString('pt-BR');
+    var resumo = {};
+    var lista = Array.isArray(rows) ? rows : [];
+    lista.forEach(function(r) {
+      if (!r || !r.rep) return;
+      if (!resumo[r.rep]) resumo[r.rep] = {total:0,hoje:0,ultima:'',cods:{},detalhes:[]};
+      resumo[r.rep].cods[r.cod_cliente] = { status: r.status, obs: r.obs };
+      resumo[r.rep].total++;
+      var dt = r.data_hora ? new Date(r.data_hora).toLocaleDateString('pt-BR') : '';
+      if (dt === hoje) resumo[r.rep].hoje++;
+      if (!resumo[r.rep].ultima) resumo[r.rep].ultima = r.data_hora;
+      resumo[r.rep].detalhes.push({ data: r.data_hora, nome: r.nome_cliente, status: r.status, obs: r.obs });
+    });
+    return resumo;
+  });
+}
+</script>
 <style>
 .leads-btn{display:flex;align-items:center;gap:8px;background:#fffbeb;border:1px solid #fde68a;color:#b45309;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;margin:10px 16px 0;}
 .leads-badge{background:#d97706;color:white;font-size:11px;padding:2px 7px;border-radius:20px;}
@@ -509,11 +563,11 @@ tr:hover td{background:#f8fafc!important;}
 .filtro-label{color:#64748b!important;}
 
 </style>
-<script src="dados.js"></script>
-<script src="base_clientes.js"></script>
+<script src="teste_dados.js"></script>
+<script src="teste_base_clientes.js"></script>
 <script src="radar_db.js" async></script>
-<script src="precos_vv.js" async></script>
-<script src="bio_prospects.js"></script>
+<script src="teste_precos_vv.js" async></script>
+<!-- bio_prospects.js desativado no ambiente de teste (bases de codigo diferentes) -->
 <script>
 // Carregar contagem de leads abertos (Supabase direto, substitui API antiga /api/sheets)
 (function(){
@@ -623,6 +677,7 @@ function init(){
 
 function setLab(lab,btn){
   LAB_FILTRO=lab;
+  _PAGE_ATUAL=0;
   document.querySelectorAll('.lab-btn').forEach(function(b){b.classList.remove('ativo');});
   btn.classList.add('ativo');
   rnd();
@@ -635,16 +690,16 @@ function ordenar(lista){
   return lista;
 }
 
+var _LISTA_FILTRADA=[];
+var _PAGE_ATUAL=0;
+var _PAGE_SIZE=100;
 function rnd(){
   try{
   var b=document.getElementById('busca').value.toLowerCase();
   // Injetar prospects Biogenesis no topo
-  var BIO_P = [];
-  if(typeof BIO_PROSPECTS!=='undefined'){
-    BIO_P=BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;});
-  } else {
-    setTimeout(rnd,800);
-  }
+  var BIO_P = (typeof BIO_PROSPECTS!=='undefined')
+    ? BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;})
+    : [];  // bio_prospects.js desativado no ambiente de teste (bases incompativeis) -- sem retry infinito
   var lista=CL.filter(function(c){
     var matchFiltro=(FA==='todos'||c.tipo===FA);
     var prods_str=(c.prods||[]).map(function(p){return p.nome;}).join(' ').toLowerCase();
@@ -661,6 +716,9 @@ function rnd(){
   if(!lista.length){document.getElementById('lista').innerHTML='<p style="text-align:center;padding:60px;color:#bbb">Nenhum cliente encontrado.</p>';return;}
   var _lP=lista.filter(function(c){return c.tipo==='positivado';}),_lN=lista.filter(function(c){return c.tipo!=='positivado'&&!CO_MES.has(c.cod);}),_lC=lista.filter(function(c){return c.tipo!=='positivado'&&CO_MES.has(c.cod);});
   lista=_lN.concat(_lC).concat(_lP);
+  _LISTA_FILTRADA=lista;
+  if(_PAGE_ATUAL===0){pg();}
+  lista=lista.slice(_PAGE_ATUAL*_PAGE_SIZE,(_PAGE_ATUAL+1)*_PAGE_SIZE);
 
   var h='',sa=false,sr=false,si=false,_sC=false,_sP=false;
   var ord=document.getElementById('ord').value;
@@ -759,15 +817,14 @@ function rnd(){
     h+='</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirAcoes(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;" id="btn-acoes-'+c.cod+'">🎯 Ações</button>';
-    h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'">🌸 Promotora</button>';
+    h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'">🌸 Promotora</button>';
     h+='<button class="btn-fab-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#0ea5e9;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">🏭 Fabricantes</button>';
-    h+='<button class="btn-pdv-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#f59e0b;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">📅 PDV</button>';
     h+='</div>';
     h+='</div></div>';
   });
   // Renderizar em chunks para evitar Invalid string length no mobile
   var lista=document.getElementById('lista');
-  lista.innerHTML='';
+  if(_PAGE_ATUAL===0){lista.innerHTML='';window.scrollTo(0,0);}
   var frag=document.createDocumentFragment();
   // Prospects Biogenesis no topo
   var BIO_P=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;}):[];
@@ -805,14 +862,23 @@ function rnd(){
   tmp.innerHTML=hBio+h;
   while(tmp.firstChild){frag.appendChild(tmp.firstChild);}
   lista.appendChild(frag);
+  (function(){
+    var btnAnt=document.getElementById('btn-mais');
+    if(btnAnt)btnAnt.remove();
+    if(_LISTA_FILTRADA.length>(_PAGE_ATUAL+1)*_PAGE_SIZE){
+      var btn=document.createElement('button');
+      btn.id='btn-mais';
+      btn.textContent='Carregar mais ('+(_LISTA_FILTRADA.length-(_PAGE_ATUAL+1)*_PAGE_SIZE)+' restantes)';
+      btn.style.cssText='display:block;width:100%;margin:16px 0 24px;padding:14px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;';
+      btn.onclick=function(){_PAGE_ATUAL++;rnd();};
+      lista.appendChild(btn);
+    }
+  })();
   document.querySelectorAll('.bio-btn-det').forEach(function(b){
     b.addEventListener('click',function(e){
       e.stopPropagation();
       abrirBioDetalhes(this.dataset.bioCnpj||'', this.dataset.bioCod||null);
     });
-  });
-  document.querySelectorAll('.btn-pdv-c').forEach(function(b){
-    b.addEventListener('click',function(){abrirPdvCliente(parseInt(this.dataset.cod),decodeURIComponent(this.dataset.nom));});
   });
   // Badge Bio clicável nos clientes da base — abrir hist
   document.querySelectorAll('.bio-badge-base').forEach(function(b){
@@ -849,24 +915,16 @@ function rnd(){
       sessionStorage.setItem('estoque_nome',nome);
       sessionStorage.setItem('estoque_mun',mun);
       
-      window.location.href='estoque.html';
+      window.location.href='estoque-teste.html';
     });
   });
-  document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom));});
+  document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom),this.dataset.cod);});
   document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});});
-  pg();
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
 }
 
-function sF(t,b){FA=t;document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');rnd();}
+function sF(t,b){FA=t;_PAGE_ATUAL=0;document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');rnd();}
 function fil(){rnd();}
-function mostrarToast(msg){
-  var t=document.getElementById('tst');
-  if(!t) return;
-  t.textContent=msg;
-  t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},2500);
-}
 function tog(cod){var cb=document.getElementById('cb-'+cod);cb.classList.toggle('open');}
 function cop(c){navigator.clipboard.writeText(document.getElementById('m-'+c).innerText).then(function(){var t=document.getElementById('tst');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);});}
 function regWa(c){var cl=CL.find(function(x){return x.cod===c;});if(cl)registrarContato(REP,c,cl.nome,'whatsapp','').catch(function(e){console.warn(e);});}
@@ -917,7 +975,7 @@ var _histCod=0, _histData=null;
 function carregarHistorico(cb){
   if(HIST_CARREGADO){cb();return;}
   var s=document.createElement('script');
-  s.src='hist_'+REP.toLowerCase()+'.js';
+  s.src='teste_hist_'+REP.toLowerCase()+'.js';
   s.onload=function(){HIST_CARREGADO=true;cb();};
   s.onerror=function(){HIST_CARREGADO=true;cb();};
   document.head.appendChild(s);
@@ -1044,7 +1102,7 @@ function irEstoque(cod, nomeEnc, munEnc){
   sessionStorage.setItem('estoque_cod', cod);
   sessionStorage.setItem('estoque_nome', decodeURIComponent(nomeEnc));
   sessionStorage.setItem('estoque_mun', decodeURIComponent(munEnc));
-  window.location.href = 'estoque.html';
+  window.location.href = 'estoque-teste.html';
 }
 
 // ── TOGGLE MÊS ANTERIOR ──────────────────────────────────────
@@ -1194,25 +1252,43 @@ function irParaEstoqueBusca(cod,nomeEnc,munEnc){
   sessionStorage.setItem('estoque_cod',cod);
   sessionStorage.setItem('estoque_nome',decodeURIComponent(nomeEnc));
   sessionStorage.setItem('estoque_mun',decodeURIComponent(munEnc));
-  window.location.href='estoque.html';
+  window.location.href='estoque-teste.html';
 }
 function irParaRoteiroBusca(cod,nomeEnc,munEnc){
   sessionStorage.setItem('roteiro_cod',cod);
   sessionStorage.setItem('roteiro_nome',decodeURIComponent(nomeEnc));
   sessionStorage.setItem('roteiro_mun',decodeURIComponent(munEnc));
-  window.location.href='roteiro.html';
+  window.location.href='roteiro-teste.html';
 }
 
 function abrirClienteDaBusca(cod){
   fecharBuscaGlobal();
-  var el=document.getElementById('cd-'+cod);
-  if(el){
-    el.scrollIntoView({behavior:'smooth',block:'center'});
-    el.style.transition='background 0.3s';
-    el.style.background='#fff7ed';
-    setTimeout(function(){el.style.background='';},1500);
-    tog(cod);
-  }
+  // Resetar filtros
+  FA='todos';
+  LAB_FILTRO='todos';
+  _PAGE_ATUAL=0;
+  document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});
+  var btnTodos=document.querySelector('.bf');
+  if(btnTodos) btnTodos.classList.add('ativo');
+  document.querySelectorAll('.lab-btn').forEach(function(b){b.classList.remove('ativo');});
+  var btnLabTodos=document.querySelector('.lab-btn');
+  if(btnLabTodos) btnLabTodos.classList.add('ativo');
+  // Renderizar tudo de uma vez e aguardar DOM atualizar
+  _PAGE_SIZE=9999;
+  rnd();
+  _PAGE_SIZE=100;
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      var el=document.getElementById('cd-'+cod);
+      if(el){
+        el.scrollIntoView({behavior:'smooth',block:'center'});
+        el.style.transition='background 0.3s';
+        el.style.background='#fff7ed';
+        setTimeout(function(){el.style.background='';},1500);
+        tog(cod);
+      }
+    });
+  });
 }
 
 // ── PROMOTORA ────────────────────────────────────────────────
@@ -1223,13 +1299,10 @@ async function _carregarPromo(){
     var hq={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4'};
     // Pegar área do rep logado (ex: "GUARULHOS 1")
     var areaRep = (AREAS_LABEL_DATA[REP]||'').toUpperCase();
-    // Carregar todas as visitas — filtrar por rep_responsavel no cliente via CL
+    // Buscar todas as visitas — filtro por cod (vv-XXXX) feito no cliente
     var urlVisitas = 'https://waiujqbzncemkpznvnct.supabase.co/rest/v1/visitas?select=*&order=created_at.desc&limit=500';
     var rv=await fetch(urlVisitas,{headers:hp});
     _VP=await rv.json(); if(!Array.isArray(_VP))_VP=[];
-    // Filtrar visitas pelos clientes da área do rep
-    var _nomesCL=CL.map(function(c){return c.nome.toLowerCase();});
-    _VP=_VP.filter(function(v){return _nomesCL.indexOf((v.estabelecimento||'').toLowerCase())>=0;});
     var ra=await fetch('https://waiujqbzncemkpznvnct.supabase.co/rest/v1/amostras?select=*&order=created_at.desc',{headers:hp});
     _AP=await ra.json(); if(!Array.isArray(_AP))_AP=[];
     var rl=await fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/leads?select=*&rep_responsavel=eq.'+REP+'&order=created_at.desc',{headers:hq});
@@ -1245,19 +1318,34 @@ async function abrirTelaPromo(){
 }
 function _filtrarPR(){
   var q=(document.getElementById('q-pr').value||'').toLowerCase();
+  // Filtrar visitas/leads apenas dos clientes do rep (via estabelecimento_id=vv-COD ou nome)
+  function _norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();}
+  var _codsRep=new Set((CL||[]).map(function(c){return 'vv-'+String(c.cod);}));
+  var _nomesRep=new Set((CL||[]).map(function(c){return _norm(c.nome);}));
+  function _doRep(v){
+    var eid=v.estabelecimento_id||'';
+    if(eid.indexOf('vv-')===0) return _codsRep.has(eid);
+    return _nomesRep.has(_norm(v.estabelecimento));
+  }
+  var _VP_REP=_VP.filter(_doRep);
+  var _LP_REP=_LP.filter(function(l){
+    var eid=l.estabelecimento_id||'';
+    if(eid.indexOf('vv-')===0) return _codsRep.has(eid);
+    return _nomesRep.has(_norm(l.estabelecimento));
+  });
   // Clientes únicos que têm visita ou lead
-  var estabsComVisita=_VP.filter(function(v){return !q||(v.estabelecimento||'').toLowerCase().indexOf(q)>=0;})
+  var estabsComVisita=_VP_REP.filter(function(v){return !q||(v.estabelecimento||'').toLowerCase().indexOf(q)>=0;})
     .map(function(v){return v.estabelecimento||'';});
-  var estabsComLead=_LP.filter(function(l){return !q||(l.estabelecimento||'').toLowerCase().indexOf(q)>=0;})
+  var estabsComLead=_LP_REP.filter(function(l){return !q||(l.estabelecimento||'').toLowerCase().indexOf(q)>=0;})
     .map(function(l){return l.estabelecimento||'';});
   // Unir e deduplicar
   var todosEstabs=[...new Set([...estabsComVisita,...estabsComLead])].filter(Boolean).sort();
-  var lista=_VP.filter(function(v){return !q||(v.estabelecimento||'').toLowerCase().indexOf(q)>=0;});
+  var lista=_VP_REP.filter(function(v){return !q||(v.estabelecimento||'').toLowerCase().indexOf(q)>=0;});
   var el=document.getElementById('lista-pr');
   if(!todosEstabs.length){el.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Nenhuma atividade.</p>';return;}
   // Mostrar cards por estabelecimento com indicadores de visita e lead
   el.innerHTML=todosEstabs.map(function(estab){
-    var temLead=_LP.some(function(l){return (l.estabelecimento||'').toLowerCase()===estab.toLowerCase();});
+    var temLead=_LP_REP.some(function(l){return (l.estabelecimento||'').toLowerCase()===estab.toLowerCase();});
     var qtdVisitas=_VP.filter(function(v){return (v.estabelecimento||'').toLowerCase()===estab.toLowerCase();}).length;
     var ul=_VP.filter(function(v){return (v.estabelecimento||'').toLowerCase()===estab.toLowerCase();}).slice(-1)[0];
     return '<div class="card-pr-item" data-estab="'+encodeURIComponent(estab)+'" style="background:white;border-radius:10px;padding:10px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:3px solid '+(temLead?'#d97706':'#e5e7eb')+';cursor:pointer;">'
@@ -1275,14 +1363,25 @@ function _filtrarPR(){
   });
 }
 
-async function verPromotor(nomeCli){
+async function verPromotor(nomeCli, codCli){
   document.getElementById('m-prc-t').textContent='🌸 '+nomeCli;
   document.getElementById('m-prc-b').innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</p>';
   document.getElementById('m-prc').classList.add('on');
   await _carregarPromo();
-  var vC=_VP.filter(function(v){return (v.estabelecimento||'').toLowerCase().indexOf(nomeCli.toLowerCase())>=0;});
-  var aC=_AP.filter(function(a){return (a.estabelecimento_nome||'').toLowerCase().indexOf(nomeCli.toLowerCase())>=0;});
-  var lC=_LP.filter(function(l){return (l.estabelecimento||'').toLowerCase().indexOf(nomeCli.toLowerCase())>=0;});
+  function _norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+  var _idVV = codCli ? 'vv-'+String(codCli) : null;
+  var _nomN = _norm(nomeCli);
+  var vC=_VP.filter(function(v){
+    if(_idVV && v.estabelecimento_id && v.estabelecimento_id===_idVV) return true;
+    if(!_idVV || !v.estabelecimento_id || v.estabelecimento_id.indexOf('vv-')!==0)
+      return _norm(v.estabelecimento).indexOf(_nomN)>=0||_norm(_nomN).indexOf(_norm(v.estabelecimento))>=0;
+    return false;
+  });
+  var aC=_AP.filter(function(a){return _norm(a.estabelecimento_nome).indexOf(_nomN)>=0;});
+  var lC=_LP.filter(function(l){
+    if(_idVV && l.estabelecimento_id && l.estabelecimento_id===_idVV) return true;
+    return _norm(l.estabelecimento).indexOf(_nomN)>=0;
+  });
   var h='';
   if(!vC.length&&!aC.length&&!lC.length){
     h='<p style="color:#9ca3af;text-align:center;padding:20px;">Nenhuma atividade da Nicolle aqui.</p>';
@@ -1377,34 +1476,12 @@ if (sessionStorage.getItem('abrir_promo_ao_carregar')) {
   </div>
 </div>
 
-<!-- MODAL PDV -->
-<div class="mfvv" id="m-pdv">
-  <div class="msvv">
-    <div class="msvv-h"></div>
-    <div class="msvv-t" id="m-pdv-t">📅 Agenda PDV</div>
-    <div id="m-pdv-b" style="max-height:70vh;overflow-y:auto;padding:12px;"></div>
-    <button class="msvv-f" id="btn-f-pdv">Fechar</button>
-  </div>
-</div>
-
-<!-- MODAL PDV - FORM SOLICITACAO -->
-<div class="mfvv" id="m-pdv-form">
-  <div class="msvv">
-    <div class="msvv-h"></div>
-    <div class="msvv-t" id="m-pdv-form-t">📅 Solicitar PDV</div>
-    <div id="m-pdv-form-b" style="max-height:70vh;overflow-y:auto;padding:12px;"></div>
-    <button class="msvv-f" id="btn-f-pdv-form">Fechar</button>
-  </div>
-</div>
-
 <script>
 // Eventos dos botões fechar — sem inline onclick para evitar problema de aspas
 document.getElementById('btn-f-ac').addEventListener('click',function(){document.getElementById('m-ac').classList.remove('on');});
 document.getElementById('btn-f-pr').addEventListener('click',function(){document.getElementById('m-pr').classList.remove('on');});
 document.getElementById('btn-f-prc').addEventListener('click',function(){document.getElementById('m-prc').classList.remove('on');});
 document.getElementById('btn-f-fab').addEventListener('click',function(){document.getElementById('m-fab').classList.remove('on');});
-document.getElementById('btn-f-pdv').addEventListener('click',function(){document.getElementById('m-pdv').classList.remove('on');});
-document.getElementById('btn-f-pdv-form').addEventListener('click',function(){document.getElementById('m-pdv-form').classList.remove('on');});
 </script>
 
 
@@ -1831,10 +1908,9 @@ function renderCardAcao(a){
       }).catch(function(){});
     }.bind(null,a.id),0);
   }
-  var clienteH=a.cliente_nome?'<div style="font-size:12px;font-weight:600;color:#7c3aed;margin-top:2px;">👤 '+a.cliente_nome+'</div>':'<div style="font-size:12px;font-weight:600;color:#9ca3af;margin-top:2px;">👥 Todos os clientes</div>';
   var html='<div style="background:white;border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
-    +'<div style="flex:1;"><div style="font-weight:700;font-size:14px;color:#111;">'+a.titulo+'</div>'+clienteH+'</div>'
+    +'<div style="font-weight:700;font-size:14px;color:#111;flex:1;">'+a.titulo+'</div>'
     +'<span style="font-size:10px;padding:3px 8px;border-radius:10px;white-space:nowrap;background:'+cor+';">'+a.status.toUpperCase()+'</span>'
     +'</div>'
     +'<div style="font-size:11px;color:#6b7280;margin:4px 0;">'+(tipos[a.tipo]||a.tipo)+' · '+d1+' a '+d2+' · por '+a.criado_por+'</div>'
@@ -1855,23 +1931,9 @@ function renderFormNovaAcao(){
   html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
   html+='<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
   html+='<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
-  html+='</div></div>';
-  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo da acao</label>';
-  html+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
-  html+='<button type="button" id="ac-alvo-btn-prod" onclick="acAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #7c3aed;background:#7c3aed;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>';
-  html+='<button type="button" id="ac-alvo-btn-lab" onclick="acAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratorio inteiro</button>';
-  html+='</div>';
-  html+='<div id="ac-alvo-produtos">';
-  html+='<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  html+='<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>';
-  html+='<div id="ac-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>';
-  html+='</div>';
-  html+='<div id="ac-alvo-lab" style="display:none;">';
-  html+='<select id="ac-lab-select" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  html+='<option value="">Selecione o laboratorio...</option>';
-  html+='</select>';
-  html+='</div>';
-  html+='</div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
+  html+='<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div></div></div>';
   html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
   html+='<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
@@ -1891,59 +1953,21 @@ function renderFormNovaAcao(){
   html+='<button onclick="salvarNovaAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">Criar Acao</button>';
   html+='</div>';
   el.innerHTML=html;
-  acAbrirNova();
 }
-function acAbrirNova(){
-  _acProdutosSelecionados=[];
-  var chips=document.getElementById('ac-produtos-chips'); if(chips) chips.innerHTML='';
-  var labSel=document.getElementById('ac-lab-select'); if(labSel) labSel.value='';
-  acAlvoModo('produtos');
-}
-
 function acTipoMudou(){
   var tipo=document.getElementById('ac-tipo').value;
   var wrap=document.getElementById('ac-link-receita-wrap');
   if(wrap) wrap.style.display=(tipo==='premio_vet')?'block':'none';
 }
-var _acProdutosSelecionados=[];
-
-function acAlvoModo(modo){
-  var btnP=document.getElementById('ac-alvo-btn-prod'), btnL=document.getElementById('ac-alvo-btn-lab');
-  var wrapP=document.getElementById('ac-alvo-produtos'), wrapL=document.getElementById('ac-alvo-lab');
-  if(modo==='produtos'){
-    wrapP.style.display='block'; wrapL.style.display='none';
-    btnP.style.background='#7c3aed'; btnP.style.borderColor='#7c3aed'; btnP.style.color='white';
-    btnL.style.background='white'; btnL.style.borderColor='#e5e7eb'; btnL.style.color='#6b7280';
-  } else {
-    wrapP.style.display='none'; wrapL.style.display='block';
-    btnL.style.background='#7c3aed'; btnL.style.borderColor='#7c3aed'; btnL.style.color='white';
-    btnP.style.background='white'; btnP.style.borderColor='#e5e7eb'; btnP.style.color='#6b7280';
-    acPopularLabs();
-  }
-}
-
-function acPopularLabs(){
-  var sel=document.getElementById('ac-lab-select');
-  if(!sel||sel.options.length>1) return;
-  if(typeof PRECOS_VV==='undefined') return;
-  var labs=Array.from(new Set(PRECOS_VV.map(function(p){return p.lab;}).filter(Boolean))).sort();
-  labs.forEach(function(l){
-    var opt=document.createElement('option'); opt.value=l; opt.textContent=l; sel.appendChild(opt);
-  });
-}
-
 function acBuscarProduto(q){
   var box=document.getElementById('ac-produto-sugs');
   if(!box) return;
   q=(q||'').trim().toLowerCase();
   if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
-  var res=PRECOS_VV.filter(function(p){
-    return (p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0)
-      && _acProdutosSelecionados.indexOf(p.nome)<0;
-  }).slice(0,6);
+  var res=PRECOS_VV.filter(function(p){return p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0;}).slice(0,6);
   if(!res.length){box.style.display='none';return;}
   box.innerHTML=res.map(function(p){
-    return '<div data-nome="'+p.nome.replace(/"/g,'&quot;')+'" class="ac-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+    return '<div data-nome="'+p.nome+'" class="ac-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
       +'<div style="font-weight:600;">'+p.nome+'</div>'
       +'<div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
   }).join('');
@@ -1951,31 +1975,11 @@ function acBuscarProduto(q){
     el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
     el.addEventListener('mouseleave',function(){this.style.background='white';});
     el.addEventListener('click',function(){
-      var nome=this.getAttribute('data-nome');
-      if(_acProdutosSelecionados.indexOf(nome)<0) _acProdutosSelecionados.push(nome);
-      document.getElementById('ac-produto').value='';
+      document.getElementById('ac-produto').value=this.getAttribute('data-nome');
       box.style.display='none';
-      acRenderChips();
     });
   });
   box.style.display='block';
-}
-
-function acRenderChips(){
-  var wrap=document.getElementById('ac-produtos-chips');
-  if(!wrap) return;
-  wrap.innerHTML=_acProdutosSelecionados.map(function(nome,i){
-    return '<span style="background:#ede9fe;color:#5b21b6;border-radius:14px;padding:5px 10px 5px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">'
-      +nome
-      +'<button type="button" data-idx="'+i+'" class="ac-chip-rm" style="background:none;border:none;color:#5b21b6;cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button>'
-      +'</span>';
-  }).join('');
-  wrap.querySelectorAll('.ac-chip-rm').forEach(function(b){
-    b.addEventListener('click',function(){
-      _acProdutosSelecionados.splice(parseInt(this.dataset.idx),1);
-      acRenderChips();
-    });
-  });
 }
 
 async function salvarNovaAcao(){
@@ -1988,14 +1992,10 @@ async function salvarNovaAcao(){
   if(!titulo||!tipo||!inicio||!fim){alert('Preencha titulo, tipo e datas.');return;}
   if(!metaTipo){alert('Selecione o tipo de meta.');return;}
   if(!metaValor||metaValor<=0){alert('Informe o valor da meta.');return;}
-  var alvoModo=(document.getElementById('ac-alvo-lab').style.display==='block')?'lab':'produtos';
-  var labSelecionado=(document.getElementById('ac-lab-select').value||'').trim();
   var payload={
     cliente_cod:_acoesCod, cliente_nome:_acoesNome,
     titulo:titulo, tipo:tipo,
-    produto_alvo:_acProdutosSelecionados.length?_acProdutosSelecionados.join(', '):(labSelecionado?('Todos os produtos '+labSelecionado):null),
-    produtos_alvo:(alvoModo==='produtos'&&_acProdutosSelecionados.length)?_acProdutosSelecionados:null,
-    lab_alvo:(alvoModo==='lab'&&labSelecionado)?labSelecionado:null,
+    produto_alvo:(document.getElementById('ac-produto').value||'').trim()||null,
     premio_descricao:(document.getElementById('ac-premio').value||'').trim()||null,
     meta_tipo:metaTipo, meta_valor:metaValor,
     data_inicio:inicio, data_fim:fim,
@@ -2223,7 +2223,6 @@ function acBuscarCliente(q){
         extra.id = 'ac-form-resto';
         wrap.appendChild(extra);
         extra.innerHTML = _buildFormResto();
-        acAbrirNova();
       }
     });
   });
@@ -2239,23 +2238,9 @@ function _buildFormResto(){
   html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
   html += '<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
   html += '<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
-  html += '</div></div>';
-  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo da acao</label>';
-  html += '<div style="display:flex;gap:6px;margin-bottom:8px;">';
-  html += '<button type="button" id="ac-alvo-btn-prod" onclick="acAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #7c3aed;background:#7c3aed;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>';
-  html += '<button type="button" id="ac-alvo-btn-lab" onclick="acAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratorio inteiro</button>';
-  html += '</div>';
-  html += '<div id="ac-alvo-produtos">';
-  html += '<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  html += '<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>';
-  html += '<div id="ac-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>';
-  html += '</div>';
-  html += '<div id="ac-alvo-lab" style="display:none;">';
-  html += '<select id="ac-lab-select" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
-  html += '<option value="">Selecione o laboratorio...</option>';
-  html += '</select>';
-  html += '</div>';
-  html += '</div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Produto alvo</label>';
+  html += '<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div></div></div>';
   html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
   html += '<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
@@ -2603,16 +2588,6 @@ function _montarComparativoBio(prodsAnteriores, bioComprados){
   return h;
 }
 
-
-// Função de notificação toast -- reaproveita o elemento #tst já existente no HTML
-function mostrarToast(msg){
-  var t=document.getElementById('tst');
-  if(!t) return;
-  t.textContent=msg;
-  t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},2500);
-}
-
 function abrirBioDetalhes(cnpj, cod){
   // Carregar histórico (hist_REP.js) antes de montar — traz itens com lab por pedido
   if(typeof carregarHistorico==='function' && typeof HIST_CARREGADO!=='undefined' && !HIST_CARREGADO){
@@ -2835,360 +2810,23 @@ async function salvarVisitaBio(){
   try{
     var SB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
     var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
-    var _resp=await fetch(SB_URL+'/rest/v1/visitas_prospects_bio',{
+    await fetch(SB_URL+'/rest/v1/visitas_fabricantes',{
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
       body:JSON.stringify({
-        rep:REP,
-        cliente_cnpj:_bioVisitaCnpj||null,
-        cliente_nome:_bioVisitaNome,
-        contato:contato,
-        telefone:fone||null,
-        resultado:resultado,
-        obs:obs||null,
-        data_visita:data
+        fabricante:'VetVida Rep',fabricante_id:'rep',
+        promotor_nome:REP,
+        cliente_cnpj:_bioVisitaCnpj,cliente_nome:_bioVisitaNome,
+        contato:contato,telefone:fone,
+        resultado:resultado,obs:obs,
+        tipo:'visita_prospect_bio'
       })
     });
-    if(!_resp.ok){
-      mostrarToast('Erro ao salvar visita. Tente novamente.');
-      return;
-    }
     mostrarToast('✓ Visita registrada!');
     document.getElementById('m-bio-visita').classList.remove('on');
   }catch(e){mostrarToast('Erro ao salvar: '+e.message);}
 }
 // ══ FIM BIO ══
-
-
-// ══════════ AGENDA PDV ══════════
-var PDV_URL='https://wpmvczohuhywwnefwumf.supabase.co';
-var PDV_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
-var _pdvClienteCod=null, _pdvClienteNome=null, _pdvDataEscolhida=null;
-
-function sbPdv(path,opts){
-  return fetch(PDV_URL+'/rest/v1/'+path,Object.assign({
-    headers:{'apikey':PDV_KEY,'Authorization':'Bearer '+PDV_KEY,'Content-Type':'application/json','Prefer':'return=representation'}
-  },opts||{})).then(function(r){return r.json();});
-}
-
-// Formata Date -> "YYYY-MM-DD"
-function _pdvIso(d){
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-function _pdvFmtBr(iso){
-  var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0];
-}
-
-// Gera lista de sextas e sabados entre hoje+15d e hoje+60d
-function _pdvDatasValidas(){
-  var hoje=new Date(); hoje.setHours(0,0,0,0);
-  var minD=new Date(hoje); minD.setDate(minD.getDate()+15);
-  var maxD=new Date(hoje); maxD.setDate(maxD.getDate()+60);
-  var datas=[];
-  var d=new Date(minD);
-  while(d<=maxD){
-    var dow=d.getDay(); // 5=sexta, 6=sabado
-    if(dow===5||dow===6) datas.push(_pdvIso(d));
-    d.setDate(d.getDate()+1);
-  }
-  return datas;
-}
-
-// Abrir agenda a partir do card do cliente (ja vem com cliente pre-selecionado)
-function abrirPdvCliente(cod,nome){
-  _pdvClienteCod=cod; _pdvClienteNome=nome;
-  document.getElementById('m-pdv-t').textContent='📅 Agenda PDV — '+nome;
-  _renderCalendarioPdv();
-}
-
-// Abrir agenda pelo menu lateral (sem cliente pre-selecionado)
-function abrirPdvGlobal(){
-  _pdvClienteCod=null; _pdvClienteNome=null;
-  document.getElementById('m-pdv-t').textContent='📅 Agenda PDV';
-  _renderCalendarioPdv();
-}
-
-async function _renderCalendarioPdv(){
-  var body=document.getElementById('m-pdv-b');
-  body.innerHTML='<p style="text-align:center;padding:24px;color:#9ca3af;">Carregando agenda...</p>';
-  document.getElementById('m-pdv').classList.add('on');
-
-  var area=(typeof AREAS_LABEL_DATA!=='undefined'?AREAS_LABEL_DATA[REP]:'')||'';
-
-  try{
-    var todos=await sbPdv('pdv_agenda?select=*&order=data_pdv.asc');
-    if(!Array.isArray(todos)) todos=[];
-    // So considerar registros ATIVOS (pendente, confirmado, bloqueado) para ocupar a data
-    var ativos=todos.filter(function(p){return ['pendente','confirmado','bloqueado'].indexOf(p.status)>=0;});
-    var porData={};
-    ativos.forEach(function(p){ porData[p.data_pdv]=p; });
-
-    var meusPedidos=todos.filter(function(p){return p.rep===REP && ['pendente','confirmado'].indexOf(p.status)>=0;});
-
-    var datasValidas=_pdvDatasValidas();
-
-    var html='<div style="background:#eff6ff;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#1e40af;">';
-    html+='Datas disponíveis: sextas e sábados, com no mínimo 15 dias de antecedência.';
-    html+='</div>';
-
-    if(meusPedidos.length){
-      html+='<div style="font-weight:700;font-size:12px;color:#374151;margin-bottom:8px;">Meus pedidos</div>';
-      meusPedidos.forEach(function(p){
-        var corSt={'pendente':'#f59e0b','confirmado':'#16a34a'}[p.status]||'#6b7280';
-        var lblSt={'pendente':'Aguardando resposta','confirmado':'Confirmado'}[p.status]||p.status;
-        html+='<div style="border:1.5px solid '+corSt+';border-radius:8px;padding:10px 12px;margin-bottom:8px;">'
-          +'<div style="display:flex;justify-content:space-between;align-items:center;">'
-          +'<b style="font-size:13px;">'+_pdvFmtBr(p.data_pdv)+'</b>'
-          +'<span style="font-size:10px;font-weight:700;color:'+corSt+';">'+lblSt+'</span>'
-          +'</div>'
-          +'<div style="font-size:12px;color:#6b7280;margin-top:2px;">'+p.cliente_nome+'</div>'
-          +(p.status==='pendente'?'<button onclick="_pdvCancelarPedido(\''+p.id+'\')" style="margin-top:6px;font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer;">Cancelar pedido</button>':'')
-          +'</div>';
-      });
-    }
-
-    html+='<div style="font-weight:700;font-size:12px;color:#374151;margin:14px 0 8px;">Calendário</div>';
-    html+='<div style="display:flex;flex-direction:column;gap:6px;">';
-    datasValidas.forEach(function(iso){
-      var ocupado=porData[iso];
-      var dow=new Date(iso+'T00:00:00').getDay();
-      var diaSemana=dow===5?'Sexta':'Sábado';
-      var jaMeuPedido=meusPedidos.some(function(p){return p.data_pdv===iso;});
-      if(ocupado){
-        var ehMinha=ocupado.rep===REP;
-        var label = ocupado.status==='bloqueado' ? 'Bloqueada (indisponibilidade da Nicolle)'
-          : (ehMinha ? (ocupado.status==='confirmado'?'Confirmado — '+ocupado.cliente_nome:'Pendente — '+ocupado.cliente_nome)
-          : 'Indisponível');
-        var corBg = ocupado.status==='bloqueado' ? '#f3f4f6' : (ehMinha ? '#f5f3ff' : '#fef2f2');
-        var corTxt = ocupado.status==='bloqueado' ? '#6b7280' : (ehMinha ? '#7c3aed' : '#dc2626');
-        html+='<div style="background:'+corBg+';border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">'
-          +'<div><b style="font-size:13px;">'+_pdvFmtBr(iso)+'</b> <span style="font-size:11px;color:#9ca3af;">('+diaSemana+')</span></div>'
-          +'<span style="font-size:11px;color:'+corTxt+';font-weight:600;">'+label+'</span>'
-          +'</div>';
-      } else {
-        html+='<button onclick="_pdvAbrirForm(\''+iso+'\')" style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left;">'
-          +'<div><b style="font-size:13px;color:#111;">'+_pdvFmtBr(iso)+'</b> <span style="font-size:11px;color:#9ca3af;">('+diaSemana+')</span></div>'
-          +'<span style="font-size:11px;color:#16a34a;font-weight:700;">Livre — solicitar</span>'
-          +'</button>';
-      }
-    });
-    html+='</div>';
-
-    body.innerHTML=html;
-  }catch(e){
-    body.innerHTML='<p style="color:#dc2626;padding:12px;">Erro ao carregar agenda: '+e.message+'</p>';
-  }
-}
-
-async function _pdvCancelarPedido(id){
-  if(!confirm('Cancelar este pedido de PDV?')) return;
-  try{
-    await sbPdv('pdv_agenda?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'cancelado',atualizado_em:new Date().toISOString()})});
-    mostrarToast('Pedido cancelado.');
-    _renderCalendarioPdv();
-  }catch(e){ mostrarToast('Erro ao cancelar: '+e.message); }
-}
-
-function _pdvAbrirForm(iso){
-  _pdvDataEscolhida=iso;
-  var body=document.getElementById('m-pdv-form-b');
-  document.getElementById('m-pdv-form-t').textContent='📅 Solicitar PDV — '+_pdvFmtBr(iso);
-
-  var clienteHtml='';
-  if(_pdvClienteCod){
-    clienteHtml='<div style="background:#f5f3ff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;color:#5b21b6;font-weight:600;">Cliente: '+_pdvClienteNome+'</div>';
-  } else {
-    clienteHtml='<div class="form-group" style="margin-bottom:12px;">'
-      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Cliente *</label>'
-      +'<div style="position:relative;"><input id="pdv-cliente" type="text" placeholder="Buscar cliente..." autocomplete="off" oninput="_pdvBuscarCliente(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
-      +'<div id="pdv-cliente-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>'
-      +'</div>';
-  }
-
-  body.innerHTML = clienteHtml
-    +'<div class="form-group" style="margin-bottom:12px;">'
-      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Nome do contato combinado *</label>'
-      +'<input id="pdv-contato-nome" type="text" placeholder="Quem você combinou o PDV" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
-    +'</div>'
-    +'<div class="form-group" style="margin-bottom:12px;">'
-      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Telefone do contato</label>'
-      +'<input id="pdv-contato-tel" type="tel" placeholder="(11) 99999-9999" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
-    +'</div>'
-    +'<div class="form-group" style="margin-bottom:12px;">'
-      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Objetivo do PDV *</label>'
-      +'<textarea id="pdv-objetivo" rows="3" placeholder="O que se espera desse PDV..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>'
-    +'</div>'
-    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo do PDV *</label>'
-    +'<div style="display:flex;gap:6px;margin-bottom:8px;">'
-    +'<button type="button" id="pdv-alvo-btn-prod" onclick="pdvAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #f59e0b;background:#f59e0b;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>'
-    +'<button type="button" id="pdv-alvo-btn-lab" onclick="pdvAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratório(s)</button>'
-    +'</div>'
-    +'<div id="pdv-alvo-produtos">'
-    +'<div style="position:relative;"><input id="pdv-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="pdvBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
-    +'<div id="pdv-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>'
-    +'<div id="pdv-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>'
-    +'</div>'
-    +'<div id="pdv-alvo-lab" style="display:none;">'
-    +'<div id="pdv-labs-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>'
-    +'</div>'
-    +'</div>'
-    +'<button onclick="_pdvEnviarSolicitacao()" style="width:100%;background:#f59e0b;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;">Enviar solicitação</button>';
-
-  _pdvProdutosSelecionados=[];
-  _pdvLabsSelecionados=[];
-  pdvAlvoModo('produtos');
-
-  document.getElementById('m-pdv').classList.remove('on');
-  document.getElementById('m-pdv-form').classList.add('on');
-}
-
-function _pdvBuscarCliente(q){
-  var box=document.getElementById('pdv-cliente-sugs');
-  q=(q||'').trim().toLowerCase();
-  if(!q){box.style.display='none';return;}
-  var res=CL.filter(function(c){return c.nome.toLowerCase().indexOf(q)>=0;}).slice(0,8);
-  if(!res.length){box.style.display='none';return;}
-  box.innerHTML=res.map(function(c){
-    return '<div class="pdv-cli-sug" data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'+c.nome+'</div>';
-  }).join('');
-  box.querySelectorAll('.pdv-cli-sug').forEach(function(el){
-    el.addEventListener('click',function(){
-      _pdvClienteCod=parseInt(this.dataset.cod);
-      _pdvClienteNome=decodeURIComponent(this.dataset.nome);
-      document.getElementById('pdv-cliente').value=_pdvClienteNome;
-      box.style.display='none';
-    });
-  });
-  box.style.display='block';
-}
-
-
-var _pdvProdutosSelecionados=[];
-var _pdvLabsSelecionados=[];
-
-function pdvAlvoModo(modo){
-  var btnP=document.getElementById('pdv-alvo-btn-prod'), btnL=document.getElementById('pdv-alvo-btn-lab');
-  var wrapP=document.getElementById('pdv-alvo-produtos'), wrapL=document.getElementById('pdv-alvo-lab');
-  if(modo==='produtos'){
-    wrapP.style.display='block'; wrapL.style.display='none';
-    btnP.style.background='#f59e0b'; btnP.style.borderColor='#f59e0b'; btnP.style.color='white';
-    btnL.style.background='white'; btnL.style.borderColor='#e5e7eb'; btnL.style.color='#6b7280';
-  } else {
-    wrapP.style.display='none'; wrapL.style.display='block';
-    btnL.style.background='#f59e0b'; btnL.style.borderColor='#f59e0b'; btnL.style.color='white';
-    btnP.style.background='white'; btnP.style.borderColor='#e5e7eb'; btnP.style.color='#6b7280';
-    pdvPopularLabs();
-  }
-}
-
-function pdvPopularLabs(){
-  var wrap=document.getElementById('pdv-labs-chips');
-  if(!wrap||wrap.children.length) return;
-  var labs=(typeof LABS_LIST!=='undefined'?LABS_LIST:[]);
-  wrap.innerHTML=labs.map(function(l){
-    return '<span data-lab="'+l+'" class="pdv-lab-pill" style="padding:6px 12px;border-radius:14px;border:1.5px solid #e5e7eb;font-size:11px;font-weight:600;cursor:pointer;color:#374151;">'+l+'</span>';
-  }).join('');
-  wrap.querySelectorAll('.pdv-lab-pill').forEach(function(el){
-    el.addEventListener('click',function(){
-      var l=this.dataset.lab;
-      var idx=_pdvLabsSelecionados.indexOf(l);
-      if(idx>=0){
-        _pdvLabsSelecionados.splice(idx,1);
-        this.style.background='white'; this.style.color='#374151'; this.style.borderColor='#e5e7eb';
-      } else {
-        _pdvLabsSelecionados.push(l);
-        this.style.background='#f59e0b'; this.style.color='white'; this.style.borderColor='#f59e0b';
-      }
-    });
-  });
-}
-
-function pdvBuscarProduto(q){
-  var box=document.getElementById('pdv-produto-sugs');
-  if(!box) return;
-  q=(q||'').trim().toLowerCase();
-  if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
-  var res=PRECOS_VV.filter(function(p){
-    return (p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0)
-      && _pdvProdutosSelecionados.indexOf(p.nome)<0;
-  }).slice(0,6);
-  if(!res.length){box.style.display='none';return;}
-  box.innerHTML=res.map(function(p){
-    return '<div data-nome="'+p.nome.replace(/"/g,'&quot;')+'" class="pdv-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
-      +'<div style="font-weight:600;">'+p.nome+'</div><div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
-  }).join('');
-  box.querySelectorAll('.pdv-prod-sug').forEach(function(el){
-    el.addEventListener('click',function(){
-      var nome=this.dataset.nome;
-      if(_pdvProdutosSelecionados.indexOf(nome)<0) _pdvProdutosSelecionados.push(nome);
-      document.getElementById('pdv-produto').value='';
-      box.style.display='none';
-      pdvRenderChipsProdutos();
-    });
-  });
-  box.style.display='block';
-}
-
-function pdvRenderChipsProdutos(){
-  var wrap=document.getElementById('pdv-produtos-chips');
-  if(!wrap) return;
-  wrap.innerHTML=_pdvProdutosSelecionados.map(function(nome,i){
-    return '<span style="background:#fef3c7;color:#92400e;border-radius:14px;padding:5px 10px 5px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">'
-      +nome+'<button type="button" data-idx="'+i+'" class="pdv-chip-rm" style="background:none;border:none;color:#92400e;cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button></span>';
-  }).join('');
-  wrap.querySelectorAll('.pdv-chip-rm').forEach(function(b){
-    b.addEventListener('click',function(){
-      _pdvProdutosSelecionados.splice(parseInt(this.dataset.idx),1);
-      pdvRenderChipsProdutos();
-    });
-  });
-}
-
-async function _pdvEnviarSolicitacao(){
-  var contatoNome=(document.getElementById('pdv-contato-nome').value||'').trim();
-  var contatoTel=(document.getElementById('pdv-contato-tel').value||'').trim();
-  var objetivo=(document.getElementById('pdv-objetivo').value||'').trim();
-  var alvoModo=(document.getElementById('pdv-alvo-lab').style.display==='block')?'lab':'produtos';
-  var lab=alvoModo==='produtos'
-    ? (_pdvProdutosSelecionados.length?_pdvProdutosSelecionados.join(', '):'')
-    : (_pdvLabsSelecionados.length?_pdvLabsSelecionados.join(', '):'');
-
-  if(!_pdvClienteCod){mostrarToast('Selecione o cliente.');return;}
-  if(!contatoNome){mostrarToast('Informe o nome do contato.');return;}
-  if(!objetivo){mostrarToast('Informe o objetivo do PDV.');return;}
-  if(!lab){mostrarToast('Selecione ao menos um produto ou laboratório.');return;}
-
-  var area=(typeof AREAS_LABEL_DATA!=='undefined'?AREAS_LABEL_DATA[REP]:'')||'';
-
-  try{
-    // Checar de novo se ainda esta livre (evitar corrida entre 2 reps)
-    var check=await sbPdv('pdv_agenda?data_pdv=eq.'+_pdvDataEscolhida+'&status=in.(pendente,confirmado,bloqueado)');
-    if(Array.isArray(check)&&check.length){
-      mostrarToast('Essa data acabou de ficar indisponível. Escolha outra.');
-      document.getElementById('m-pdv-form').classList.remove('on');
-      _renderCalendarioPdv();
-      return;
-    }
-    // Checar se o rep ja tem pedido pendente para o MESMO cliente
-    var dup=await sbPdv('pdv_agenda?rep=eq.'+encodeURIComponent(REP)+'&cliente_cod=eq.'+_pdvClienteCod+'&status=eq.pendente');
-    if(Array.isArray(dup)&&dup.length){
-      mostrarToast('Você já tem um pedido pendente para este cliente.');
-      return;
-    }
-
-    await sbPdv('pdv_agenda',{method:'POST',body:JSON.stringify({
-      data_pdv:_pdvDataEscolhida, status:'pendente',
-      rep:REP, area:area,
-      cliente_cod:_pdvClienteCod, cliente_nome:_pdvClienteNome,
-      contato_nome:contatoNome, contato_telefone:contatoTel||null,
-      objetivo:objetivo, laboratorio:lab
-    })});
-    mostrarToast('✓ Solicitação enviada! Aguarde a Nicolle confirmar.');
-    document.getElementById('m-pdv-form').classList.remove('on');
-    _renderCalendarioPdv();
-  }catch(e){ mostrarToast('Erro ao enviar: '+e.message); }
-}
-// ══════════ FIM AGENDA PDV ══════════
 
 </script>
 

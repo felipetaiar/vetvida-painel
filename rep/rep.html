@@ -942,6 +942,101 @@ function rnd(){
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
 }
 
+function _renderVendas(){
+  var mesStr = '/' + String(MES_REF).padStart(2,'0') + '/' + ANO_REF;
+  var nomesMes = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('pv-titulo').textContent = '📊 Vendas de ' + nomesMes[MES_REF] + '/' + ANO_REF;
+
+  // Calcular vendas e clientes por lab no mês atual
+  var vendas = {}, clientes = {};
+  var totalMes = 0;
+  if(typeof HIST_REP !== 'undefined'){
+    // Dados precisos: item a item por lab
+    Object.keys(HIST_REP).forEach(function(cod){
+      var cli = HIST_REP[cod];
+      var labsCli = new Set();
+      (cli.pedidos||[]).forEach(function(ped){
+        if(!(ped.data||'').endsWith(mesStr)) return;
+        (ped.itens||[]).forEach(function(it){
+          var lab = (it.lab||'OUTROS').toUpperCase();
+          vendas[lab] = (vendas[lab]||0) + (it.val||0);
+          labsCli.add(lab);
+          totalMes += (it.val||0);
+        });
+      });
+      labsCli.forEach(function(l){ clientes[l] = (clientes[l]||0) + 1; });
+    });
+    document.getElementById('pv-titulo').textContent = '📊 Vendas de ' + nomesMes[MES_REF] + '/' + ANO_REF;
+  } else {
+    // Fallback: usar CL.hist (fat do mês) e CL.labs
+    CL.forEach(function(c){
+      var fatMes = (c.hist && c.hist[MES_REF]) ? c.hist[MES_REF] : 0;
+      if(!fatMes || fatMes <= 0) return;
+      totalMes += fatMes;
+      var labs = c.labs || [];
+      labs.forEach(function(lab){
+        var l = (lab||'').toUpperCase();
+        vendas[l] = (vendas[l]||0) + fatMes / (labs.length||1);
+        clientes[l] = (clientes[l]||0) + 1;
+      });
+    });
+    document.getElementById('pv-titulo').textContent = '📊 Vendas de ' + nomesMes[MES_REF] + '/' + ANO_REF + ' (aprox.)';
+  }
+
+  // Metas do rep
+  var metas = (typeof METAS !== 'undefined' && METAS[REP]) ? METAS[REP] : {};
+
+  // Ordenar labs por valor decrescente
+  var labs = Object.keys(vendas).sort(function(a,b){ return vendas[b]-vendas[a]; });
+
+  var fmtR = function(v){ return 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0}); };
+
+  var h = '<div style="margin-bottom:14px;padding:12px 16px;background:#f8fafc;border-radius:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid #e2e8f0;">'
+    + '<span style="font-size:12px;color:#64748b;font-weight:600;">Total do mês</span>'
+    + '<span style="font-size:18px;font-weight:800;color:#CC0000;">' + fmtR(totalMes) + '</span>'
+    + '</div>';
+
+  h += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+  h += '<thead><tr style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.06em;background:#f8fafc;">'
+    + '<th style="text-align:left;padding:6px 4px;font-weight:600;">Laboratório</th>'
+    + '<th style="text-align:right;padding:6px 4px;font-weight:600;">Vendas</th>'
+    + '<th style="text-align:right;padding:6px 4px;font-weight:600;">Clientes</th>'
+    + '<th style="text-align:right;padding:6px 4px;font-weight:600;">Meta</th>'
+    + '<th style="text-align:left;padding:6px 8px;font-weight:600;min-width:80px;">%</th>'
+    + '</tr></thead><tbody>';
+
+  labs.forEach(function(lab, idx){
+    var v = vendas[lab]||0;
+    var c = clientes[lab]||0;
+    var meta = metas[lab]||0;
+    var pct = meta > 0 ? Math.min(Math.round(v/meta*100),100) : 0;
+    var corBarra = pct >= 100 ? '#16a34a' : pct >= 70 ? '#f59e0b' : '#CC0000';
+    var bg = idx%2 === 0 ? '#fff' : '#f8fafc';
+
+    h += '<tr style="background:' + bg + ';border-bottom:1px solid #f1f5f9;">'
+      + '<td style="padding:8px 4px;font-weight:600;color:#1e293b;">' + lab + '</td>'
+      + '<td style="padding:8px 4px;text-align:right;color:#111;font-weight:700;">' + fmtR(v) + '</td>'
+      + '<td style="padding:8px 4px;text-align:right;color:#64748b;">' + c + '</td>'
+      + '<td style="padding:8px 4px;text-align:right;color:#64748b;">' + (meta>0?fmtR(meta):'—') + '</td>'
+      + '<td style="padding:8px 4px 8px 8px;">';
+
+    if(meta > 0){
+      h += '<div style="display:flex;align-items:center;gap:6px;">'
+        + '<div style="flex:1;background:#e5e7eb;border-radius:4px;height:6px;">'
+        + '<div style="width:' + pct + '%;background:' + corBarra + ';border-radius:4px;height:6px;"></div></div>'
+        + '<span style="font-size:11px;font-weight:700;color:' + corBarra + ';min-width:28px;">' + pct + '%</span>'
+        + '</div>';
+    } else {
+      h += '<span style="color:#cbd5e1;font-size:11px;">sem meta</span>';
+    }
+
+    h += '</td></tr>';
+  });
+
+  h += '</tbody></table>';
+  document.getElementById('pv-body').innerHTML = h;
+}
+
 function sF(t,b){FA=t;_PAGE_ATUAL=0;document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');rnd();}
 function fil(){rnd();}
 function mostrarToast(msg){

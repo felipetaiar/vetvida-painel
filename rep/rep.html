@@ -2612,13 +2612,7 @@ function _montarComparativoBio(prodsAnteriores, bioComprados){
     prodsAnteriores.forEach(function(pr,ix){
       var k=_normProd(pr);
       var achado=bioComprados[k];
-      if(!achado){
-        // casamento parcial pelo primeiro termo (marca)
-        var marca=k.split(' ')[0];
-        for(var i=0;i<compradosKeys.length;i++){
-          if(marca&&compradosKeys[i].indexOf(marca)===0){achado=bioComprados[compradosKeys[i]];break;}
-        }
-      }
+      // sem fallback parcial — só casa se _normProd bater exatamente
       if(achado) usados[_normProd(achado.nome)]=true;
       var bg=ix%2?'#fafafa':'#fff';
       h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;background:'+bg+';border-bottom:1px solid #f3f4f6;">'
@@ -2712,7 +2706,7 @@ function _montarBioDetalhes(cnpj, cod){
         if(!ehBio) return;
         var nm=(it.prod||it.nome||'').trim();
         if(!nm) return;
-        var k=nm.toUpperCase(); // chave exata — sem normalizar para não colapsar produtos similares
+        var k=_normProd(nm); // normalizado para cruzar com lista do distribuidor anterior
         if(!_bioComprados[k]) _bioComprados[k]={nome:nm, qtd:0, ultima:ped.data||''};
         _bioComprados[k].qtd+=(parseInt(it.qtde||it.qtd)||0);
         var _d1=(_bioComprados[k].ultima||'').split('/').reverse().join('');

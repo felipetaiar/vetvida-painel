@@ -317,6 +317,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
     <a href="roteiro.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">🗓 Roteiro</a>
     <button onclick="fecharMenuLateral();abrirCalculadora();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🧮 Calculadora</button>
     <button onclick="fecharMenuLateral();abrirAcoesGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🎯 Ações Comerciais</button>
+    <button onclick="fecharMenuLateral();abrirPdvGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">📅 Agenda PDV</button>
     <button onclick="fecharMenuLateral();abrirTelaPromo();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🌸 Leads da promotora</button>
     <a href="radar.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">📡 Radar Comercial</a>
     <button onclick="fecharMenuLateral();abrirBuscaGlobal();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🔍 Buscar cliente</button>
@@ -813,6 +814,7 @@ function rnd(){
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirAcoes(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;" id="btn-acoes-'+c.cod+'">🎯 Ações</button>';
     h+='<button class="btn-prom-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'">🌸 Promotora</button>';
     h+='<button class="btn-fab-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#0ea5e9;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">🏭 Fabricantes</button>';
+    h+='<button class="btn-pdv-c" data-nom="'+encodeURIComponent(c.nome)+'" data-cod="'+c.cod+'" style="background:#f59e0b;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;">📅 PDV</button>';
     h+='</div>';
     h+='</div></div>';
   });
@@ -913,7 +915,10 @@ function rnd(){
     });
   });
   document.querySelectorAll('.btn-prom-c').forEach(function(b){b.addEventListener('click',function(){verPromotor(decodeURIComponent(this.dataset.nom),this.dataset.cod);});
-  document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});});
+  document.querySelectorAll('.btn-fab-c').forEach(function(b){b.addEventListener('click',function(){verFabricantes(decodeURIComponent(this.dataset.nom),parseInt(this.dataset.cod));});});
+  document.querySelectorAll('.btn-pdv-c').forEach(function(b){
+    b.addEventListener('click',function(){abrirPdvCliente(parseInt(this.dataset.cod),decodeURIComponent(this.dataset.nom));});
+  });});
   }catch(err){document.getElementById('lista').innerHTML='<p style="padding:40px;color:red;text-align:center">Erro: '+err.message+'</p>';console.error('rnd() erro:',err);}
 }
 
@@ -2822,6 +2827,296 @@ async function salvarVisitaBio(){
 }
 // ══ FIM BIO ══
 
+
+
+function abrirPdvGlobal(){
+  _pdvClienteCod=null; _pdvClienteNome=null;
+  document.getElementById('m-pdv-t').textContent='📅 Agenda PDV';
+  _renderCalendarioPdv();
+}
+
+async function _renderCalendarioPdv(){
+  var body=document.getElementById('m-pdv-b');
+  body.innerHTML='<p style="text-align:center;padding:24px;color:#9ca3af;">Carregando agenda...</p>';
+  document.getElementById('m-pdv').classList.add('on');
+
+  var area=(typeof AREAS_LABEL_DATA!=='undefined'?AREAS_LABEL_DATA[REP]:'')||'';
+
+  try{
+    var todos=await sbPdv('pdv_agenda?select=*&order=data_pdv.asc');
+    if(!Array.isArray(todos)) todos=[];
+    // So considerar registros ATIVOS (pendente, confirmado, bloqueado) para ocupar a data
+    var ativos=todos.filter(function(p){return ['pendente','confirmado','bloqueado'].indexOf(p.status)>=0;});
+    var porData={};
+    ativos.forEach(function(p){ porData[p.data_pdv]=p; });
+
+    var meusPedidos=todos.filter(function(p){return p.rep===REP && ['pendente','confirmado'].indexOf(p.status)>=0;});
+
+    var datasValidas=_pdvDatasValidas();
+
+    var html='<div style="background:#eff6ff;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#1e40af;">';
+    html+='Datas disponíveis: sextas e sábados, com no mínimo 15 dias de antecedência.';
+    html+='</div>';
+
+    if(meusPedidos.length){
+      html+='<div style="font-weight:700;font-size:12px;color:#374151;margin-bottom:8px;">Meus pedidos</div>';
+      meusPedidos.forEach(function(p){
+        var corSt={'pendente':'#f59e0b','confirmado':'#16a34a'}[p.status]||'#6b7280';
+        var lblSt={'pendente':'Aguardando resposta','confirmado':'Confirmado'}[p.status]||p.status;
+        html+='<div style="border:1.5px solid '+corSt+';border-radius:8px;padding:10px 12px;margin-bottom:8px;">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+          +'<b style="font-size:13px;">'+_pdvFmtBr(p.data_pdv)+'</b>'
+          +'<span style="font-size:10px;font-weight:700;color:'+corSt+';">'+lblSt+'</span>'
+          +'</div>'
+          +'<div style="font-size:12px;color:#6b7280;margin-top:2px;">'+p.cliente_nome+'</div>'
+          +(p.status==='pendente'?'<button onclick="_pdvCancelarPedido(\''+p.id+'\')" style="margin-top:6px;font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer;">Cancelar pedido</button>':'')
+          +'</div>';
+      });
+    }
+
+    html+='<div style="font-weight:700;font-size:12px;color:#374151;margin:14px 0 8px;">Calendário</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:6px;">';
+    datasValidas.forEach(function(iso){
+      var ocupado=porData[iso];
+      var dow=new Date(iso+'T00:00:00').getDay();
+      var diaSemana=dow===5?'Sexta':'Sábado';
+      var jaMeuPedido=meusPedidos.some(function(p){return p.data_pdv===iso;});
+      if(ocupado){
+        var ehMinha=ocupado.rep===REP;
+        var label = ocupado.status==='bloqueado' ? 'Bloqueada (indisponibilidade da Nicolle)'
+          : (ehMinha ? (ocupado.status==='confirmado'?'Confirmado — '+ocupado.cliente_nome:'Pendente — '+ocupado.cliente_nome)
+          : 'Indisponível');
+        var corBg = ocupado.status==='bloqueado' ? '#f3f4f6' : (ehMinha ? '#f5f3ff' : '#fef2f2');
+        var corTxt = ocupado.status==='bloqueado' ? '#6b7280' : (ehMinha ? '#7c3aed' : '#dc2626');
+        html+='<div style="background:'+corBg+';border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">'
+          +'<div><b style="font-size:13px;">'+_pdvFmtBr(iso)+'</b> <span style="font-size:11px;color:#9ca3af;">('+diaSemana+')</span></div>'
+          +'<span style="font-size:11px;color:'+corTxt+';font-weight:600;">'+label+'</span>'
+          +'</div>';
+      } else {
+        html+='<button onclick="_pdvAbrirForm(\''+iso+'\')" style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left;">'
+          +'<div><b style="font-size:13px;color:#111;">'+_pdvFmtBr(iso)+'</b> <span style="font-size:11px;color:#9ca3af;">('+diaSemana+')</span></div>'
+          +'<span style="font-size:11px;color:#16a34a;font-weight:700;">Livre — solicitar</span>'
+          +'</button>';
+      }
+    });
+    html+='</div>';
+
+    body.innerHTML=html;
+  }catch(e){
+    body.innerHTML='<p style="color:#dc2626;padding:12px;">Erro ao carregar agenda: '+e.message+'</p>';
+  }
+}
+
+async function _pdvCancelarPedido(id){
+  if(!confirm('Cancelar este pedido de PDV?')) return;
+  try{
+    await sbPdv('pdv_agenda?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'cancelado',atualizado_em:new Date().toISOString()})});
+    mostrarToast('Pedido cancelado.');
+    _renderCalendarioPdv();
+  }catch(e){ mostrarToast('Erro ao cancelar: '+e.message); }
+}
+
+function _pdvAbrirForm(iso){
+  _pdvDataEscolhida=iso;
+  var body=document.getElementById('m-pdv-form-b');
+  document.getElementById('m-pdv-form-t').textContent='📅 Solicitar PDV — '+_pdvFmtBr(iso);
+
+  var clienteHtml='';
+  if(_pdvClienteCod){
+    clienteHtml='<div style="background:#f5f3ff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;color:#5b21b6;font-weight:600;">Cliente: '+_pdvClienteNome+'</div>';
+  } else {
+    clienteHtml='<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Cliente *</label>'
+      +'<div style="position:relative;"><input id="pdv-cliente" type="text" placeholder="Buscar cliente..." autocomplete="off" oninput="_pdvBuscarCliente(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+      +'<div id="pdv-cliente-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>'
+      +'</div>';
+  }
+
+  body.innerHTML = clienteHtml
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Nome do contato combinado *</label>'
+      +'<input id="pdv-contato-nome" type="text" placeholder="Quem você combinou o PDV" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Telefone do contato</label>'
+      +'<input id="pdv-contato-tel" type="tel" placeholder="(11) 99999-9999" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Objetivo do PDV *</label>'
+      +'<textarea id="pdv-objetivo" rows="3" placeholder="O que se espera desse PDV..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>'
+    +'</div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo do PDV *</label>'
+    +'<div style="display:flex;gap:6px;margin-bottom:8px;">'
+    +'<button type="button" id="pdv-alvo-btn-prod" onclick="pdvAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #f59e0b;background:#f59e0b;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>'
+    +'<button type="button" id="pdv-alvo-btn-lab" onclick="pdvAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratório(s)</button>'
+    +'</div>'
+    +'<div id="pdv-alvo-produtos">'
+    +'<div style="position:relative;"><input id="pdv-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="pdvBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'<div id="pdv-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>'
+    +'<div id="pdv-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>'
+    +'</div>'
+    +'<div id="pdv-alvo-lab" style="display:none;">'
+    +'<div id="pdv-labs-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>'
+    +'</div>'
+    +'</div>'
+    +'<button onclick="_pdvEnviarSolicitacao()" style="width:100%;background:#f59e0b;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;">Enviar solicitação</button>';
+
+  _pdvProdutosSelecionados=[];
+  _pdvLabsSelecionados=[];
+  pdvAlvoModo('produtos');
+
+  document.getElementById('m-pdv').classList.remove('on');
+  document.getElementById('m-pdv-form').classList.add('on');
+}
+
+function _pdvBuscarCliente(q){
+  var box=document.getElementById('pdv-cliente-sugs');
+  q=(q||'').trim().toLowerCase();
+  if(!q){box.style.display='none';return;}
+  var res=CL.filter(function(c){return c.nome.toLowerCase().indexOf(q)>=0;}).slice(0,8);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(c){
+    return '<div class="pdv-cli-sug" data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'+c.nome+'</div>';
+  }).join('');
+  box.querySelectorAll('.pdv-cli-sug').forEach(function(el){
+    el.addEventListener('click',function(){
+      _pdvClienteCod=parseInt(this.dataset.cod);
+      _pdvClienteNome=decodeURIComponent(this.dataset.nome);
+      document.getElementById('pdv-cliente').value=_pdvClienteNome;
+      box.style.display='none';
+    });
+  });
+  box.style.display='block';
+}
+
+
+var _pdvProdutosSelecionados=[];
+var _pdvLabsSelecionados=[];
+
+function pdvAlvoModo(modo){
+  var btnP=document.getElementById('pdv-alvo-btn-prod'), btnL=document.getElementById('pdv-alvo-btn-lab');
+  var wrapP=document.getElementById('pdv-alvo-produtos'), wrapL=document.getElementById('pdv-alvo-lab');
+  if(modo==='produtos'){
+    wrapP.style.display='block'; wrapL.style.display='none';
+    btnP.style.background='#f59e0b'; btnP.style.borderColor='#f59e0b'; btnP.style.color='white';
+    btnL.style.background='white'; btnL.style.borderColor='#e5e7eb'; btnL.style.color='#6b7280';
+  } else {
+    wrapP.style.display='none'; wrapL.style.display='block';
+    btnL.style.background='#f59e0b'; btnL.style.borderColor='#f59e0b'; btnL.style.color='white';
+    btnP.style.background='white'; btnP.style.borderColor='#e5e7eb'; btnP.style.color='#6b7280';
+    pdvPopularLabs();
+  }
+}
+
+function pdvPopularLabs(){
+  var wrap=document.getElementById('pdv-labs-chips');
+  if(!wrap||wrap.children.length) return;
+  var labs=(typeof LABS_LIST!=='undefined'?LABS_LIST:[]);
+  wrap.innerHTML=labs.map(function(l){
+    return '<span data-lab="'+l+'" class="pdv-lab-pill" style="padding:6px 12px;border-radius:14px;border:1.5px solid #e5e7eb;font-size:11px;font-weight:600;cursor:pointer;color:#374151;">'+l+'</span>';
+  }).join('');
+  wrap.querySelectorAll('.pdv-lab-pill').forEach(function(el){
+    el.addEventListener('click',function(){
+      var l=this.dataset.lab;
+      var idx=_pdvLabsSelecionados.indexOf(l);
+      if(idx>=0){
+        _pdvLabsSelecionados.splice(idx,1);
+        this.style.background='white'; this.style.color='#374151'; this.style.borderColor='#e5e7eb';
+      } else {
+        _pdvLabsSelecionados.push(l);
+        this.style.background='#f59e0b'; this.style.color='white'; this.style.borderColor='#f59e0b';
+      }
+    });
+  });
+}
+
+function pdvBuscarProduto(q){
+  var box=document.getElementById('pdv-produto-sugs');
+  if(!box) return;
+  q=(q||'').trim().toLowerCase();
+  if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
+  var res=PRECOS_VV.filter(function(p){
+    return (p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0)
+      && _pdvProdutosSelecionados.indexOf(p.nome)<0;
+  }).slice(0,6);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(p){
+    return '<div data-nome="'+p.nome.replace(/"/g,'&quot;')+'" class="pdv-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+      +'<div style="font-weight:600;">'+p.nome+'</div><div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.pdv-prod-sug').forEach(function(el){
+    el.addEventListener('click',function(){
+      var nome=this.dataset.nome;
+      if(_pdvProdutosSelecionados.indexOf(nome)<0) _pdvProdutosSelecionados.push(nome);
+      document.getElementById('pdv-produto').value='';
+      box.style.display='none';
+      pdvRenderChipsProdutos();
+    });
+  });
+  box.style.display='block';
+}
+
+function pdvRenderChipsProdutos(){
+  var wrap=document.getElementById('pdv-produtos-chips');
+  if(!wrap) return;
+  wrap.innerHTML=_pdvProdutosSelecionados.map(function(nome,i){
+    return '<span style="background:#fef3c7;color:#92400e;border-radius:14px;padding:5px 10px 5px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">'
+      +nome+'<button type="button" data-idx="'+i+'" class="pdv-chip-rm" style="background:none;border:none;color:#92400e;cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button></span>';
+  }).join('');
+  wrap.querySelectorAll('.pdv-chip-rm').forEach(function(b){
+    b.addEventListener('click',function(){
+      _pdvProdutosSelecionados.splice(parseInt(this.dataset.idx),1);
+      pdvRenderChipsProdutos();
+    });
+  });
+}
+
+async function _pdvEnviarSolicitacao(){
+  var contatoNome=(document.getElementById('pdv-contato-nome').value||'').trim();
+  var contatoTel=(document.getElementById('pdv-contato-tel').value||'').trim();
+  var objetivo=(document.getElementById('pdv-objetivo').value||'').trim();
+  var alvoModo=(document.getElementById('pdv-alvo-lab').style.display==='block')?'lab':'produtos';
+  var lab=alvoModo==='produtos'
+    ? (_pdvProdutosSelecionados.length?_pdvProdutosSelecionados.join(', '):'')
+    : (_pdvLabsSelecionados.length?_pdvLabsSelecionados.join(', '):'');
+
+  if(!_pdvClienteCod){mostrarToast('Selecione o cliente.');return;}
+  if(!contatoNome){mostrarToast('Informe o nome do contato.');return;}
+  if(!objetivo){mostrarToast('Informe o objetivo do PDV.');return;}
+  if(!lab){mostrarToast('Selecione ao menos um produto ou laboratório.');return;}
+
+  var area=(typeof AREAS_LABEL_DATA!=='undefined'?AREAS_LABEL_DATA[REP]:'')||'';
+
+  try{
+    // Checar de novo se ainda esta livre (evitar corrida entre 2 reps)
+    var check=await sbPdv('pdv_agenda?data_pdv=eq.'+_pdvDataEscolhida+'&status=in.(pendente,confirmado,bloqueado)');
+    if(Array.isArray(check)&&check.length){
+      mostrarToast('Essa data acabou de ficar indisponível. Escolha outra.');
+      document.getElementById('m-pdv-form').classList.remove('on');
+      _renderCalendarioPdv();
+      return;
+    }
+    // Checar se o rep ja tem pedido pendente para o MESMO cliente
+    var dup=await sbPdv('pdv_agenda?rep=eq.'+encodeURIComponent(REP)+'&cliente_cod=eq.'+_pdvClienteCod+'&status=eq.pendente');
+    if(Array.isArray(dup)&&dup.length){
+      mostrarToast('Você já tem um pedido pendente para este cliente.');
+      return;
+    }
+
+    await sbPdv('pdv_agenda',{method:'POST',body:JSON.stringify({
+      data_pdv:_pdvDataEscolhida, status:'pendente',
+      rep:REP, area:area,
+      cliente_cod:_pdvClienteCod, cliente_nome:_pdvClienteNome,
+      contato_nome:contatoNome, contato_telefone:contatoTel||null,
+      objetivo:objetivo, laboratorio:lab
+    })});
+    mostrarToast('✓ Solicitação enviada! Aguarde a Nicolle confirmar.');
+    document.getElementById('m-pdv-form').classList.remove('on');
+    _renderCalendarioPdv();
+  }catch(e){ mostrarToast('Erro ao enviar: '+e.message); }
+}
+// ══════════ FIM AGENDA PDV ══════════
+
 </script>
 
 
@@ -2964,6 +3259,1942 @@ async function salvarVisitaBio(){
 </div>
 </div>
 <!-- ═══════ FIM MODAL AÇÕES ═══════ -->
+
+<!-- MODAL PDV -->
+<div class="mfvv" id="m-pdv">
+  <div class="msvv">
+    <div class="msvv-h"></div>
+    <div class="msvv-t" id="m-pdv-t">📅 Agenda PDV</div>
+    <div id="m-pdv-b" style="max-height:70vh;overflow-y:auto;padding:12px;"></div>
+    <button class="msvv-f" id="btn-f-pdv">Fechar</button>
+  </div>
+</div>
+
+
+<!-- MODAL PDV - FORM SOLICITACAO -->
+<div class="mfvv" id="m-pdv-form">
+  <div class="msvv">
+    <div class="msvv-h"></div>
+    <div class="msvv-t" id="m-pdv-form-t">📅 Solicitar PDV</div>
+    <div id="m-pdv-form-b" style="max-height:70vh;overflow-y:auto;padding:12px;"></div>
+    <button class="msvv-f" id="btn-f-pdv-form">Fechar</button>
+  </div>
+</div>
+
+<script>
+// Eventos dos botões fechar — sem inline onclick para evitar problema de aspas
+document.getElementById('btn-f-ac').addEventListener('click',function(){document.getElementById('m-ac').classList.remove('on');});
+document.getElementById('btn-f-pr').addEventListener('click',function(){document.getElementById('m-pr').classList.remove('on');});
+document.getElementById('btn-f-prc').addEventListener('click',function(){document.getElementById('m-prc').classList.remove('on');});
+document.getElementById('btn-f-fab').addEventListener('click',function(){document.getElementById('m-fab').classList.remove('on');});
+document.getElementById('btn-f-pdv').addEventListener('click',function(){document.getElementById('m-pdv').classList.remove('on');});
+document.getElementById('btn-f-pdv-form').addEventListener('click',function(){document.getElementById('m-pdv-form').classList.remove('on');});
+</script>
+
+
+<!-- Modal busca global -->
+<div id="modal-busca-global" style="display:none;position:fixed;inset:0;background:white;z-index:600;flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid #e5e7eb;background:#CC0000;">
+    <input type="text" id="busca-global" placeholder="Buscar cliente..." autocomplete="off"
+      oninput="filtrarBuscaGlobal()"
+      style="flex:1;border:none;border-radius:20px;padding:10px 14px;font-size:15px;outline:none;">
+    <button onclick="fecharBuscaGlobal()" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;">✕</button>
+  </div>
+  <div id="busca-global-lista" style="flex:1;overflow-y:auto;padding:8px;"></div>
+</div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW falhou:', e); });
+  });
+}
+
+
+// ── RADAR COMERCIAL v3 ───────────────────────────────
+let radarFiltroSub = '';
+let radarFiltroMacro = '';
+let radarAba = 'busca';
+
+function abrirRadar() {
+  document.getElementById('tela-radar').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  renderMacroChips();
+  setTimeout(() => { document.getElementById('radar-input').focus(); renderRadar(); }, 50);
+}
+function fecharRadar() {
+  document.getElementById('tela-radar').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function setAbaRadar(aba, el) {
+  radarAba = aba;
+  document.querySelectorAll('.radar-aba').forEach(e => e.classList.remove('ativa'));
+  el.classList.add('ativa');
+  document.getElementById('radar-busca-section').style.display = aba==='busca' ? 'block' : 'none';
+  document.getElementById('radar-cross-section').style.display = aba==='cross' ? 'block' : 'none';
+  if(aba==='cross') { setTimeout(()=>{ document.getElementById('cross-input').focus(); renderCross(); },50); }
+  else { setTimeout(()=>{ document.getElementById('radar-input').focus(); renderRadar(); },50); }
+}
+
+function renderMacroChips() {
+  const chips = document.getElementById('radar-macro-chips');
+  chips.innerHTML = ['Todos', ...RADAR_MACROS].map(m => `
+    <button class="mchip${m==='Todos'&&!radarFiltroMacro?' ativo':m===radarFiltroMacro?' ativo':''}"
+      onclick="setMacro('${m}',this)">${m==='Todos'?'Todas as categorias':m}</button>
+  `).join('');
+}
+
+function setMacro(macro, btn) {
+  radarFiltroMacro = macro === 'Todos' ? '' : macro;
+  document.querySelectorAll('.mchip').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderRadar();
+}
+
+function setFiltroRadar(val, btn) {
+  radarFiltroSub = val;
+  document.querySelectorAll('.rfbtn').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderRadar();
+}
+
+function badgeSub(sub) {
+  const s = (sub||'').toLowerCase();
+  if(s.includes('ressalva')) return {cls:'sub-ressalva', txt:'⚠️ Com ressalva'};
+  if(s.startsWith('sim')) return {cls:'sub-sim', txt:'✅ Substituível'};
+  if(s.startsWith('não')) return {cls:'sub-nao', txt:'❌ Sem equivalente'};
+  return {cls:'sub-vazio', txt:'—'};
+}
+
+function renderRadar() {
+  const q = (document.getElementById('radar-input').value||'').toLowerCase().trim();
+  let res = RADAR_DB;
+
+  if(radarFiltroMacro) res = res.filter(r => r.macro === radarFiltroMacro);
+
+  if(radarFiltroSub) {
+    res = res.filter(r => {
+      const s = (r.sub||'').toLowerCase();
+      if(radarFiltroSub==='sim') return s.startsWith('sim') && !s.includes('ressalva');
+      if(radarFiltroSub==='ressalva') return s.includes('ressalva');
+      if(radarFiltroSub==='nao') return s.startsWith('não');
+      return true;
+    });
+  }
+
+  if(q.length >= 2) {
+    res = res.filter(r =>
+      r.c.toLowerCase().includes(q) ||
+      r.lc.toLowerCase().includes(q) ||
+      r.ativo.toLowerCase().includes(q) ||
+      r.cat.toLowerCase().includes(q) ||
+      r.candidatos.some(c => c.nome.toLowerCase().includes(q) || c.lab.toLowerCase().includes(q))
+    );
+  }
+
+  document.getElementById('radar-contador').textContent =
+    res.length + ' produto' + (res.length!==1?'s':'') + ' encontrado' + (res.length!==1?'s':'');
+
+  const lista = document.getElementById('radar-lista');
+  if(!res.length) {
+    lista.innerHTML = '<div class="radar-vazio">🔍 Nenhum produto encontrado.<br>Tente o princípio ativo ou laboratório.</div>';
+    return;
+  }
+
+  lista.innerHTML = res.slice(0, 80).map(r => {
+    const badge = badgeSub(r.sub);
+    const temCandidatos = r.candidatos && r.candidatos.length > 0;
+    const candidatosHtml = temCandidatos ? r.candidatos.map((c, i) => `
+      <div class="radar-cand ${i===0?'radar-cand-prio1':'radar-cand-prio2'}">
+        <div style="font-size:9px;font-weight:700;${i===0?'color:#CC0000':'color:#6b7280'};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${i===0?'🏆 Recomendado':'Alternativa '+ i}</div>
+        <div class="radar-cand-nome">${c.nome}</div>
+        <div class="radar-cand-lab">${c.lab}</div>
+        <div class="radar-cand-nivel">${c.nivel}</div>
+        ${c.sku ? `<div class="radar-cand-sku">${c.sku}</div>` : ''}
+      </div>`).join('')
+    : '<div class="radar-lacuna">⚠️ Lacuna de portfólio — sem substituto disponível</div>';
+
+    const crossHtml = r.cross && r.cross.length ? `
+      <div class="radar-cross-box">
+        <div class="radar-cross-title">🔗 Oportunidades de cross-selling</div>
+        ${r.cross.map(cs => `
+          <div class="radar-cross-item">
+            <strong>${cs.produtos[0]}${cs.produtos.length>1?' e outros':''}</strong> — ${cs.just}
+            ${cs.cuidados?`<br><span style="opacity:0.7">${cs.cuidados}</span>`:''}
+          </div>`).join('')}
+      </div>` : '';
+
+    return `
+    <div class="radar-card" onclick="toggleRadarCard(this)">
+      <div class="radar-card-topo">
+        <div class="radar-card-nomes">
+          <div class="radar-card-concorrente">${r.c}</div>
+          <div class="radar-card-lab">${r.lc}${r.cat?' · '+r.cat:''}${r.esp?' · '+r.esp:''}</div>
+        </div>
+        <span class="radar-badge-sub ${badge.cls}">${badge.txt}</span>
+      </div>
+      <div class="radar-card-detalhe">
+        ${r.ativo?`<div class="radar-row"><div class="radar-row-label">Princípio ativo</div><div class="radar-row-val">${r.ativo}${r.fmt?' · <em>'+r.fmt+'</em>':''}</div></div>`:''}
+        <div class="radar-row"><div class="radar-row-label">Produto VetVida</div>
+          <div class="radar-candidatos">${candidatosHtml}</div>
+        </div>
+        ${r.com?`<div class="radar-com-box"><div class="radar-row-label" style="color:#0284c7;">💬 Argumento comercial</div><div class="radar-com-val">${r.com}</div></div>`:''}
+        ${r.alerta?`<div class="radar-alert-box"><div class="radar-row-label" style="color:#b45309;">⚠️ Atenção</div><div class="radar-alert-val">${r.alerta}</div></div>`:''}
+        ${crossHtml}
+      </div>
+    </div>`;
+  }).join('') + (res.length>80 ? '<div class="radar-vazio" style="padding:16px;">Refine a busca para ver mais.</div>' : '');
+}
+
+function toggleRadarCard(card) {
+  const det = card.querySelector('.radar-card-detalhe');
+  const aberto = det.classList.contains('aberto');
+  document.querySelectorAll('.radar-card-detalhe.aberto').forEach(d => d.classList.remove('aberto'));
+  if(!aberto) det.classList.add('aberto');
+}
+
+// ── CROSS-SELLING ────────────────────────────────────
+function renderCross() {
+  const q = (document.getElementById('cross-input').value||'').toLowerCase().trim();
+  let res = CROSS_DB;
+  if(q.length >= 2) {
+    res = res.filter(r =>
+      r.gatilho.toLowerCase().includes(q) ||
+      r.cat.toLowerCase().includes(q) ||
+      r.produtos.some(p => p.toLowerCase().includes(q)) ||
+      r.just.toLowerCase().includes(q)
+    );
+  }
+
+  document.getElementById('cross-contador').textContent =
+    res.length + ' regra' + (res.length!==1?'s':'') + ' encontrada' + (res.length!==1?'s':'');
+
+  const lista = document.getElementById('cross-lista');
+  if(!res.length) {
+    lista.innerHTML = '<div class="radar-vazio">🔗 Nenhuma regra encontrada.<br>Tente buscar por categoria ou produto.</div>';
+    return;
+  }
+
+  lista.innerHTML = res.map(r => `
+    <div class="cross-card">
+      <div class="cross-card-topo">
+        <div class="cross-gatilho">Quando vê: ${r.gatilho}</div>
+        <div class="cross-esp">${r.esp}${r.cat?' · '+r.cat:''}</div>
+        <span class="${r.prio.toLowerCase()==='alta'?'cross-prio-alta':'cross-prio-media'}">${r.prio==='Alta'?'⭐ Alta prioridade':'◎ Média prioridade'}</span>
+        <div class="cross-produtos">
+          ${r.produtos.map(p=>`<span class="cross-prod-tag">${p}</span>`).join('')}
+        </div>
+        <div class="cross-just">${r.just}</div>
+        ${r.cuidados?`<div class="cross-cuidado">⚠️ ${r.cuidados}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+const CROSS_DB = [{"gatilho": "Antibióticos / antimicrobianos", "esp": "Cães", "produtos": ["Lactobac Dog Plus", "Probiot Pet Organnact", "Probsil"], "cat": "Saúde intestinal - probióticos", "just": "Apoiar a microbiota durante ou após antibioticoterapia, conforme orientação veterinária.", "prio": "Alta", "cuidados": "Não sugerir como substituto do tratamento."}, {"gatilho": "Antibióticos / antimicrobianos", "esp": "Gatos", "produtos": ["Lactobac Cat Plus", "Probiot Pet Organnact"], "cat": "Saúde intestinal - probióticos", "just": "Apoiar a microbiota durante ou após antibioticoterapia, conforme orientação veterinária.", "prio": "Alta", "cuidados": "Validar espécie e aceitação."}, {"gatilho": "Anti-inflamatórios / dor osteoarticular", "esp": "Cães", "produtos": ["Condrix Dog Plus", "Osteocart Plus", "Pro-Artro", "Condrotec Fácil"], "cat": "Suporte osteoarticular", "just": "Complementar o cuidado de mobilidade e articulações.", "prio": "Alta", "cuidados": "Não implica uso concomitante obrigatório."}, {"gatilho": "Anti-inflamatórios / dor osteoarticular", "esp": "Gatos", "produtos": ["Condrotec Fácil", "Condroitin Labyes"], "cat": "Suporte osteoarticular", "just": "Complementar o cuidado de mobilidade e articulações.", "prio": "Média", "cuidados": "Validar apresentação e palatabilidade."}, {"gatilho": "Dermatológicos", "esp": "Cães", "produtos": ["Ômega 3 Dog", "Pelefood Dog", "Labyderm Hidratação e Alívio"], "cat": "Pele e pelagem", "just": "Complementar protocolos de pele com suporte nutricional e dermocosmético.", "prio": "Alta", "cuidados": "Adequar ao tipo de dermatopatia."}, {"gatilho": "Dermatológicos", "esp": "Gatos", "produtos": ["Ômega Cat 3+6+D", "Pelefood Cat", "Labyderm Hidratação e Alívio"], "cat": "Pele e pelagem", "just": "Complementar protocolos de pele com suporte nutricional e dermocosmético.", "prio": "Alta", "cuidados": "Adequar ao tipo de dermatopatia."}, {"gatilho": "Otológicos - tratamento", "esp": "Cães e gatos", "produtos": ["Auritec", "Otiflex Limpador", "Removedor de Cerúmen", "Solução Otológica Vansil"], "cat": "Higiene otológica", "just": "Associar rotina de limpeza quando compatível com o protocolo.", "prio": "Alta", "cuidados": "Não usar limpeza em ouvido lesionado sem avaliação."}, {"gatilho": "Oftalmológicos - tratamento", "esp": "Cães e gatos", "produtos": ["Tears", "Good Care Solução Limpeza dos Olhos"], "cat": "Higiene e lubrificação ocular", "just": "Oferecer suporte de limpeza/lubrificação conforme indicação.", "prio": "Média", "cuidados": "Não misturar colírios sem orientação veterinária."}, {"gatilho": "Antipulgas / ectoparasitas", "esp": "Cães e gatos", "produtos": ["Pulgoff Ambiente"], "cat": "Controle ambiental", "just": "Trabalhar o ciclo ambiental de pulgas e carrapatos.", "prio": "Alta", "cuidados": "Confirmar segurança de uso no ambiente e espécie."}, {"gatilho": "Antipulgas / ectoparasitas", "esp": "Cães e gatos", "produtos": ["Top Gard", "Multitec", "Vermicanis/Vermicats", "Feline Endospot"], "cat": "Vermifugação", "just": "Explorar protocolo integrado de parasitas internos e externos.", "prio": "Média", "cuidados": "Sugestão de categoria; protocolo deve ser definido pelo veterinário."}, {"gatilho": "Vermífugos", "esp": "Cães e gatos", "produtos": ["Invicto", "Canis Fullspot", "Confront Plus", "Pulgoff"], "cat": "Controle de ectoparasitas", "just": "Explorar protocolo integrado de parasitas.", "prio": "Média", "cuidados": "Validar espécie, peso e princípio ativo."}, {"gatilho": "Suporte hepático", "esp": "Cães e gatos", "produtos": ["Trihepat", "Prohep", "Vitasil Hep", "Silitec Fácil"], "cat": "Suporte hepático", "just": "Apresentar alternativas de forma, marca e faixa de preço.", "prio": "Alta", "cuidados": "Produtos correlatos, não necessariamente equivalentes."}, {"gatilho": "Suporte renal e urinário", "esp": "Cães", "produtos": ["Rennapro Dog", "Nutrisana Cispet", "Cyst-Aid Pet"], "cat": "Saúde urinária/renal", "just": "Complementar o mix de suporte urinário e renal.", "prio": "Alta", "cuidados": "Validar indicação clínica."}, {"gatilho": "Suporte renal e urinário", "esp": "Gatos", "produtos": ["Rennapro Cat", "Nutrisana Cispet", "Cyst-Aid Pet"], "cat": "Saúde urinária/renal", "just": "Complementar o mix felino de suporte urinário e renal.", "prio": "Alta", "cuidados": "Validar indicação clínica."}, {"gatilho": "Suporte sênior", "esp": "Cães", "produtos": ["Gerioox", "Geriatric Plus", "Nutrisana Senior", "Condrix Dog Plus"], "cat": "Envelhecimento saudável", "just": "Ampliar o cuidado sênior com suporte geral e articular.", "prio": "Alta", "cuidados": "Personalizar conforme perfil do paciente."}, {"gatilho": "Suporte sênior", "esp": "Gatos", "produtos": ["Gerioox", "Geriatric Cat Plus", "Ômega Cat 3+6+D"], "cat": "Envelhecimento saudável", "just": "Ampliar o cuidado sênior felino.", "prio": "Média", "cuidados": "Personalizar conforme perfil do paciente."}, {"gatilho": "Comportamento e tranquilidade", "esp": "Cães", "produtos": ["Calmyn & Susse Dog", "Nutrisana Pet Akalme", "Anizen"], "cat": "Comportamento", "just": "Oferecer alternativas de suporte para estresse e adaptação.", "prio": "Alta", "cuidados": "Não substituir avaliação comportamental/veterinária."}, {"gatilho": "Comportamento e tranquilidade", "esp": "Gatos", "produtos": ["Calmyn Cat Plus", "Anizen"], "cat": "Comportamento", "just": "Oferecer alternativas de suporte para estresse felino.", "prio": "Alta", "cuidados": "Considerar manejo ambiental."}, {"gatilho": "Higiene oral", "esp": "Cães", "produtos": ["Fitodent Dog", "Geltec", "Vetradent", "Halito Dine"], "cat": "Saúde oral", "just": "Combinar higiene diária, petisco funcional e cuidados de placa/odor.", "prio": "Alta", "cuidados": "Avaliar condição dentária antes de indicar petiscos duros."}, {"gatilho": "Higiene oral", "esp": "Gatos", "produtos": ["Fitodent Cat", "Geltec", "Vetradent"], "cat": "Saúde oral", "just": "Combinar higiene e petisco funcional para gatos.", "prio": "Média", "cuidados": "Validar aceitação."}, {"gatilho": "Bolas de pelo", "esp": "Gatos", "produtos": ["Cat Malt", "Nutrisana Malt Paste", "Ball Feline Cat Snacks"], "cat": "Controle de bolas de pelo", "just": "Oferecer formatos alternativos para o mesmo objetivo comercial.", "prio": "Alta", "cuidados": "Adequar ao consumo alimentar."}, {"gatilho": "Recuperação e alta demanda energética", "esp": "Cães e gatos", "produtos": ["Glicol Pet", "Nutricuper Dog", "Nutrifull Dog/Cat", "Vitasil Energy"], "cat": "Recuperação e energia", "just": "Criar cesta de recuperação nutricional.", "prio": "Alta", "cuidados": "Ajustar à espécie e condição clínica."}, {"gatilho": "Suporte imunológico", "esp": "Cães", "produtos": ["Promun Dog", "Promun Defense Boost Dog", "Nutrisana Immunity", "Munnomax"], "cat": "Imunidade", "just": "Ampliar o mix de suporte imunológico.", "prio": "Alta", "cuidados": "Produtos correlatos; comparar composição."}, {"gatilho": "Suporte imunológico", "esp": "Gatos", "produtos": ["Promun Cat", "Promun Defense Boost Cat", "Nutrisana Immunity"], "cat": "Imunidade", "just": "Ampliar o mix felino de suporte imunológico.", "prio": "Alta", "cuidados": "Produtos correlatos; comparar composição."}, {"gatilho": "Filhotes / gestação / lactação", "esp": "Cães", "produtos": ["Mammy Dog", "Puppy Dog", "Orga Milk", "Compplet Mix Filhotes"], "cat": "Fases iniciais", "just": "Montar cesta para criação, gestação e filhotes.", "prio": "Alta", "cuidados": "Validar fase de vida e necessidade nutricional."}, {"gatilho": "Filhotes", "esp": "Gatos", "produtos": ["Orga Milk", "Compplet Mix Filhotes", "Nutrifull Cat"], "cat": "Fases iniciais", "just": "Montar cesta de suporte para filhotes felinos.", "prio": "Média", "cuidados": "Validar espécie e idade."}, {"gatilho": "Cicatrização e reparação cutânea", "esp": "Cães e gatos", "produtos": ["Fitofix Gel", "Fitoclean", "Organnact Prata", "Max Prata", "Ricinus"], "cat": "Reparação cutânea", "just": "Oferecer limpeza, proteção e suporte de recuperação.", "prio": "Alta", "cuidados": "Não aplicar em feridas profundas sem avaliação."}, {"gatilho": "Cosméticos - shampoo", "esp": "Cães", "produtos": ["Condicionador ou máscara da mesma linha", "colônia da mesma linha"], "cat": "Higiene e beleza", "just": "Aumentar ticket com rotina completa de banho.", "prio": "Alta", "cuidados": "Respeitar tipo de pele e pelagem."}, {"gatilho": "Dermocosméticos para pele sensível", "esp": "Cães e gatos", "produtos": ["Labyderm Hidratação e Alívio", "Labyderm Nutrição Profunda", "shampoo suave"], "cat": "Barreira cutânea", "just": "Montar protocolo de limpeza, hidratação e reparação.", "prio": "Alta", "cuidados": "Adequar ao diagnóstico dermatológico."}, {"gatilho": "Aves - antimicrobianos/anticoccidianos", "esp": "Aves", "produtos": ["Averol", "Avecox", "Enro Flec Líquido"], "cat": "Linha aves", "just": "Completar o mix de tratamento para aves.", "prio": "Média", "cuidados": "Produtos não são equivalentes; validar indicação."}];
+const RADAR_MACROS = ["Antipulgas / Carrapatos", "Vermífugos", "Antibióticos", "Anti-inflamatórios", "Otológicos", "Dermatológicos", "Suplementos", "Cardiológicos", "Vacinas", "Diagnóstico", "Neurológicos", "Outros"];
+
+// === CALCULADORA DE MARGEM ===
+function abrirCalculadora(){
+  document.getElementById('modal-calc').style.display='block';
+  document.body.style.overflow='hidden';
+  setTimeout(function(){document.getElementById('calc-busca').focus();},150);
+}
+function fecharCalculadora(){
+  document.getElementById('modal-calc').style.display='none';
+  document.body.style.overflow='';
+}
+function calcBuscarProduto(q){
+  var box=document.getElementById('calc-sugestoes');
+  q=(q||'').trim().toLowerCase();
+  if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
+  var res=PRECOS_VV.filter(function(p){
+    return p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0;
+  }).slice(0,8);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(p){
+    var custo='R$ '+p.custo.toFixed(2).replace('.',',');
+    return '<div data-pid="'+p.id+'" class="calc-sug-item" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:13px;">'
+      +'<div style="font-weight:600;color:#111;">'+p.nome+'</div>'
+      +'<div style="color:#9ca3af;font-size:11px;margin-top:1px;">'+p.lab+' &middot; '+custo+'</div>'
+      +'</div>';
+  }).join('');
+  box.querySelectorAll('.calc-sug-item').forEach(function(el){
+    el.addEventListener('mouseenter',function(){this.style.background='#fdf2f2';});
+    el.addEventListener('mouseleave',function(){this.style.background='white';});
+    el.addEventListener('click',function(){calcSelecionarProduto(parseInt(this.getAttribute('data-pid')));});
+  });
+  box.style.display='block';
+}
+function calcSelecionarProduto(id){
+  var p=(PRECOS_VV||[]).find(function(x){return x.id===id;});
+  if(!p) return;
+  document.getElementById('calc-busca').value=p.nome;
+  document.getElementById('calc-sugestoes').style.display='none';
+  var info=[p.lab,p.apresentacao,p.linha].filter(Boolean).join(' · ');
+  document.getElementById('calc-info-txt').textContent=info;
+  document.getElementById('calc-info').style.display='block';
+  document.getElementById('calc-custo').value=p.custo.toFixed(2);
+  if(!document.getElementById('calc-pct-margem').value)
+    document.getElementById('calc-pct-margem').value='40';
+  if(!document.getElementById('calc-pct-markup').value)
+    document.getElementById('calc-pct-markup').value='40';
+  calcRecalcular('pct');
+}
+function calcRecalcular(origem){
+  var custo=parseFloat(document.getElementById('calc-custo').value)||0;
+  var pctMargem=parseFloat(document.getElementById('calc-pct-margem').value)||0;
+  var pctMarkup=parseFloat(document.getElementById('calc-pct-markup').value)||0;
+  var venda=parseFloat(document.getElementById('calc-venda').value)||0;
+  if(custo<=0){document.getElementById('calc-resultados').style.display='none';return;}
+
+  var precoMargem=0, precoMarkup=0;
+
+  if(origem==='venda'&&venda>0){
+    // Rep digitou preco de venda -> calcular qual margem% e markup% isso representa
+    // Margem: venda = custo*(1+pct/100) -> pct = (venda/custo - 1)*100
+    pctMargem=(venda/custo-1)*100;
+    // Markup: venda = custo/((100-pct)/100) -> pct = 100 - custo/venda*100
+    pctMarkup=100-(custo/venda)*100;
+    document.getElementById('calc-pct-margem').value=pctMargem.toFixed(1);
+    document.getElementById('calc-pct-markup').value=pctMarkup.toFixed(1);
+    precoMargem=venda;
+    precoMarkup=venda;
+  } else {
+    // Calcular precos a partir dos percentuais
+    // Margem: custo * (1 + pct/100)
+    precoMargem=pctMargem>0?custo*(1+pctMargem/100):0;
+    // Markup: custo / ((100 - pct) / 100)  — invalido se pct >= 100
+    precoMarkup=(pctMarkup>0&&pctMarkup<100)?custo/((100-pctMarkup)/100):0;
+  }
+
+  document.getElementById('calc-resultados').style.display='block';
+
+  // Card margem
+  if(precoMargem>0){
+    document.getElementById('calc-res-margem-preco').textContent='R$ '+precoMargem.toFixed(2).replace('.',',');
+    document.getElementById('calc-res-margem-lucro').textContent='Lucro: R$ '+(precoMargem-custo).toFixed(2).replace('.',',');
+  } else {
+    document.getElementById('calc-res-margem-preco').textContent='-';
+    document.getElementById('calc-res-margem-lucro').textContent='';
+  }
+
+  // Card markup
+  if(precoMarkup>0){
+    document.getElementById('calc-res-markup-preco').textContent='R$ '+precoMarkup.toFixed(2).replace('.',',');
+    document.getElementById('calc-res-markup-lucro').textContent='Lucro: R$ '+(precoMarkup-custo).toFixed(2).replace('.',',');
+  } else {
+    document.getElementById('calc-res-markup-preco').textContent='-';
+    document.getElementById('calc-res-markup-lucro').textContent='';
+  }
+
+  // Alerta baseado no menor preco (margem, mais conservador)
+  var precoRef=origem==='venda'?venda:(precoMargem||precoMarkup);
+  var alerta=document.getElementById('calc-alerta');
+  var res=document.getElementById('calc-resultados');
+  if(precoRef>0&&precoRef<=custo){
+    alerta.textContent='Preco abaixo do custo - prejuizo!';
+    alerta.style.display='block';
+    res.style.background='#fef2f2';res.style.borderColor='#fecaca';
+  } else if(pctMargem>0&&pctMargem<10){
+    alerta.textContent='Margem muito baixa (< 10%) - atencao!';
+    alerta.style.display='block';
+    res.style.background='#fffbeb';res.style.borderColor='#fde68a';
+  } else {
+    alerta.style.display='none';
+    res.style.background='#f0fdf4';res.style.borderColor='#bbf7d0';
+  }
+}
+function calcLimpar(){
+  ['calc-busca','calc-custo','calc-pct-margem','calc-pct-markup','calc-venda'].forEach(function(id){
+    document.getElementById(id).value='';
+  });
+  document.getElementById('calc-sugestoes').style.display='none';
+  document.getElementById('calc-info').style.display='none';
+  document.getElementById('calc-resultados').style.display='none';
+  document.getElementById('calc-busca').focus();
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest || !e.target.closest('#modal-calc')) return;
+  if(!e.target.closest('#calc-busca')&&!e.target.closest('#calc-sugestoes')){
+    document.getElementById('calc-sugestoes').style.display='none';
+  }
+});
+// === FIM CALCULADORA ===
+
+
+// ═══════════════ AÇÕES COMERCIAIS ═══════════════
+var _acoesCod=0, _acoesNome='', _acoesTab='ativas';
+var SB_ACOES_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_ACOES_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+
+function sbAcoes(path, opts){
+  var url=SB_ACOES_URL+'/rest/v1/'+path;
+  var headers={'apikey':SB_ACOES_KEY,'Authorization':'Bearer '+SB_ACOES_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+  return fetch(url, Object.assign({headers:headers}, opts||{})).then(function(r){return r.json();});
+}
+
+function abrirAcoes(cod, nome){
+  _acoesCod=cod; _acoesNome=nome;
+  document.getElementById('acoes-cliente-nome').textContent=nome;
+  document.getElementById('modal-acoes').style.display='block';
+  document.body.style.overflow='hidden';
+  acoesTab('ativas');
+}
+function fecharAcoes(){
+  document.getElementById('modal-acoes').style.display='none';
+  document.body.style.overflow='';
+}
+function acoesTab(tab){
+  _acoesTab=tab;
+  ['ativas','hist','nova'].forEach(function(t){
+    var btn=document.getElementById('tab-acoes-'+t);
+    if(t===tab){btn.style.color='#7c3aed';btn.style.borderBottomColor='#7c3aed';btn.style.fontWeight='700';}
+    else{btn.style.color='#6b7280';btn.style.borderBottomColor='transparent';btn.style.fontWeight='600';}
+  });
+  if(tab==='nova') renderFormNovaAcao();
+  else carregarAcoes(tab==='ativas');
+}
+
+async function carregarAcoes(apenasAtivas){
+  var el=document.getElementById('acoes-content');
+  el.innerHTML='<div style="text-align:center;padding:40px;color:#9ca3af;">Carregando...</div>';
+  try{
+    var filtro=apenasAtivas?'&status=eq.ativa':'&status=neq.ativa';
+    var qs='acoes_comerciais?select=*&cliente_cod=eq.'+_acoesCod+filtro+'&order=created_at.desc';
+    var acoes=await sbAcoes(qs);
+    if(!Array.isArray(acoes)||!acoes.length){
+      el.innerHTML='<div style="text-align:center;padding:40px;color:#9ca3af;">'+(apenasAtivas?'Nenhuma ação ativa.':'Nenhuma ação no histórico.')+'</div>';
+      return;
+    }
+    el.innerHTML=acoes.map(function(a){return renderCardAcao(a);}).join('');
+  }catch(e){
+    el.innerHTML='<div style="color:#dc2626;padding:16px;">Erro ao carregar ações: '+e.message+'</div>';
+  }
+}
+
+function renderCardAcao(a){
+  var tipos={'premio_vet':'🏆 Prêmio Vet','premio_balconista':'🥇 Prêmio Balconista','relacionamento':'🤝 Relacionamento','outro':'📌 Outro'};
+  var metas={'volume_rs':'Volume R$','unidades':'Unidades','prescricoes':'Prescrições','positivacao':'Positivação'};
+  var statusCor={'ativa':'#dcfce7;color:#16a34a','encerrada':'#f3f4f6;color:#6b7280','cancelada':'#fef2f2;color:#dc2626'};
+  var cor=statusCor[a.status]||'#f3f4f6;color:#6b7280';
+  var progH='';
+  if(a.meta_valor&&a.resultado_real!=null){
+    var pct=Math.min(100,Math.round(a.resultado_real/a.meta_valor*100));
+    progH='<div style="margin:8px 0 4px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:3px;">'
+      +'<span>'+(metas[a.meta_tipo]||a.meta_tipo)+': '+a.resultado_real+' / '+a.meta_valor+'</span><span>'+pct+'%</span></div>'
+      +'<div style="background:#e5e7eb;border-radius:4px;height:6px;"><div style="background:#7c3aed;width:'+pct+'%;height:6px;border-radius:4px;"></div></div></div>';
+  } else if(a.meta_valor){
+    progH='<div style="font-size:11px;color:#6b7280;margin:6px 0;">Meta: '+a.meta_valor+' '+(metas[a.meta_tipo]||'')+'</div>';
+  }
+  var d1=a.data_inicio?a.data_inicio.split('-').reverse().join('/'):'';
+  var d2=a.data_fim?a.data_fim.split('-').reverse().join('/'):'';
+  var premH=a.premio_descricao?'<div style="font-size:11px;color:#7c3aed;margin-top:4px;">🎁 '+a.premio_descricao+'</div>':'';
+  var prodH=a.produto_alvo?'<div style="font-size:11px;color:#6b7280;">Produto: '+a.produto_alvo+'</div>':'';
+  var encBtn=a.status==='ativa'?'<button onclick="abrirEncerrarAcao(\''+a.id+'\')" style="font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer;">Encerrar</button>':'';
+  var updBtn=a.status==='ativa'?'<button onclick="abrirUpdateAcao(\''+a.id+'\')" style="font-size:11px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:6px;padding:4px 10px;cursor:pointer;">+ Update</button>':'';
+    var receitaH='';
+  if(a.tipo==='premio_vet'&&a.status==='ativa'){
+    var linkRec=window.location.origin+'/receita.html?acao='+a.id;
+    var inputId='linkrec-'+a.id;
+    receitaH='<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:8px 10px;margin-top:8px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+      +'<span style="font-size:11px;font-weight:700;color:#7c3aed;">Link de receita</span>'
+      +'<span id="rec-count-'+a.id+'" style="background:#7c3aed;color:white;border-radius:10px;padding:1px 7px;font-size:10px;">...</span>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px;">'
+      +'<input id="'+inputId+'" value="'+linkRec+'" readonly style="flex:1;font-size:10px;padding:5px 8px;border:1px solid #ddd6fe;border-radius:6px;background:white;color:#6b7280;">'
+      +'<button data-link="'+linkRec+'" class="ac-copy-link" style="background:#7c3aed;color:white;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">Copiar</button>'
+      +'</div>'
+      +'<button data-acid="'+a.id+'" class="ac-ver-rec" style="margin-top:6px;font-size:11px;color:#7c3aed;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">Ver receitas enviadas</button>'
+      +'</div>';
+    setTimeout(function(id){
+      sbAcoes('acoes_receitas?select=id&acao_id=eq.'+id).then(function(r){
+        var el=document.getElementById('rec-count-'+id);
+        if(el) el.textContent=Array.isArray(r)?r.length:0;
+      }).catch(function(){});
+    }.bind(null,a.id),0);
+  }
+  var clienteH=a.cliente_nome?'<div style="font-size:12px;font-weight:600;color:#7c3aed;margin-top:2px;">👤 '+a.cliente_nome+'</div>':'<div style="font-size:12px;font-weight:600;color:#9ca3af;margin-top:2px;">👥 Todos os clientes</div>';
+  var html='<div style="background:white;border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
+    +'<div style="flex:1;"><div style="font-weight:700;font-size:14px;color:#111;">'+a.titulo+'</div>'+clienteH+'</div>'
+    +'<span style="font-size:10px;padding:3px 8px;border-radius:10px;white-space:nowrap;background:'+cor+';">'+a.status.toUpperCase()+'</span>'
+    +'</div>'
+    +'<div style="font-size:11px;color:#6b7280;margin:4px 0;">'+(tipos[a.tipo]||a.tipo)+' · '+d1+' a '+d2+' · por '+a.criado_por+'</div>'
+    +prodH+premH+progH+receitaH
+    +(a.observacao_final?'<div style="font-size:11px;color:#6b7280;margin-top:6px;font-style:italic;">'+a.observacao_final+'</div>':'')
+    +'<div style="display:flex;gap:8px;margin-top:10px;">'+updBtn+encBtn+'</div>'
+    +'<div id="updates-'+a.id+'" style="margin-top:8px;"></div>'
+    +'</div>';
+  return html;
+}
+
+function renderFormNovaAcao(){
+  var el=document.getElementById('acoes-content');
+  var html='<div style="display:flex;flex-direction:column;gap:12px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Titulo da acao *</label>';
+  html+='<input id="ac-titulo" type="text" placeholder="Ex: Campanha Prescricao Nexin Jul/26" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
+  html+='<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
+  html+='</div></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo da acao</label>';
+  html+='<div style="display:flex;gap:6px;margin-bottom:8px;">';
+  html+='<button type="button" id="ac-alvo-btn-prod" onclick="acAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #7c3aed;background:#7c3aed;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>';
+  html+='<button type="button" id="ac-alvo-btn-lab" onclick="acAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratorio inteiro</button>';
+  html+='</div>';
+  html+='<div id="ac-alvo-produtos">';
+  html+='<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>';
+  html+='<div id="ac-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>';
+  html+='</div>';
+  html+='<div id="ac-alvo-lab" style="display:none;">';
+  html+='<select id="ac-lab-select" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<option value="">Selecione o laboratorio...</option>';
+  html+='</select>';
+  html+='</div>';
+  html+='</div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
+  html+='<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (tipo) *</label>';
+  html+='<select id="ac-meta-tipo" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html+='<option value="volume_rs">Volume R$</option><option value="unidades">Unidades</option><option value="prescricoes">Prescricoes</option><option value="positivacao">Positivacao</option></select></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (valor) *</label>';
+  html+='<input id="ac-meta-valor" type="number" placeholder="Ex: 5000" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Inicio *</label>';
+  html+='<input id="ac-inicio" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Fim *</label>';
+  html+='<input id="ac-fim" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  html+='<div id="ac-link-receita-wrap" style="display:none;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px;">';
+  html+='<div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:4px;">Link de envio de receita</div>';
+  html+='<div style="font-size:11px;color:#6b7280;">Gerado automaticamente ao criar a acao. Compartilhe com os vets pelo WhatsApp.</div></div>';
+  html+='<button onclick="salvarNovaAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">Criar Acao</button>';
+  html+='</div>';
+  el.innerHTML=html;
+  acAbrirNova();
+}
+function acAbrirNova(){
+  _acProdutosSelecionados=[];
+  var chips=document.getElementById('ac-produtos-chips'); if(chips) chips.innerHTML='';
+  var labSel=document.getElementById('ac-lab-select'); if(labSel) labSel.value='';
+  acAlvoModo('produtos');
+}
+
+function acTipoMudou(){
+  var tipo=document.getElementById('ac-tipo').value;
+  var wrap=document.getElementById('ac-link-receita-wrap');
+  if(wrap) wrap.style.display=(tipo==='premio_vet')?'block':'none';
+}
+var _acProdutosSelecionados=[];
+
+function acAlvoModo(modo){
+  var btnP=document.getElementById('ac-alvo-btn-prod'), btnL=document.getElementById('ac-alvo-btn-lab');
+  var wrapP=document.getElementById('ac-alvo-produtos'), wrapL=document.getElementById('ac-alvo-lab');
+  if(modo==='produtos'){
+    wrapP.style.display='block'; wrapL.style.display='none';
+    btnP.style.background='#7c3aed'; btnP.style.borderColor='#7c3aed'; btnP.style.color='white';
+    btnL.style.background='white'; btnL.style.borderColor='#e5e7eb'; btnL.style.color='#6b7280';
+  } else {
+    wrapP.style.display='none'; wrapL.style.display='block';
+    btnL.style.background='#7c3aed'; btnL.style.borderColor='#7c3aed'; btnL.style.color='white';
+    btnP.style.background='white'; btnP.style.borderColor='#e5e7eb'; btnP.style.color='#6b7280';
+    acPopularLabs();
+  }
+}
+
+function acPopularLabs(){
+  var sel=document.getElementById('ac-lab-select');
+  if(!sel||sel.options.length>1) return;
+  if(typeof PRECOS_VV==='undefined') return;
+  var labs=Array.from(new Set(PRECOS_VV.map(function(p){return p.lab;}).filter(Boolean))).sort();
+  labs.forEach(function(l){
+    var opt=document.createElement('option'); opt.value=l; opt.textContent=l; sel.appendChild(opt);
+  });
+}
+
+function acBuscarProduto(q){
+  var box=document.getElementById('ac-produto-sugs');
+  if(!box) return;
+  q=(q||'').trim().toLowerCase();
+  if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
+  var res=PRECOS_VV.filter(function(p){
+    return (p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0)
+      && _acProdutosSelecionados.indexOf(p.nome)<0;
+  }).slice(0,6);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(p){
+    return '<div data-nome="'+p.nome.replace(/"/g,'&quot;')+'" class="ac-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+      +'<div style="font-weight:600;">'+p.nome+'</div>'
+      +'<div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.ac-prod-sug').forEach(function(el){
+    el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
+    el.addEventListener('mouseleave',function(){this.style.background='white';});
+    el.addEventListener('click',function(){
+      var nome=this.getAttribute('data-nome');
+      if(_acProdutosSelecionados.indexOf(nome)<0) _acProdutosSelecionados.push(nome);
+      document.getElementById('ac-produto').value='';
+      box.style.display='none';
+      acRenderChips();
+    });
+  });
+  box.style.display='block';
+}
+
+function acRenderChips(){
+  var wrap=document.getElementById('ac-produtos-chips');
+  if(!wrap) return;
+  wrap.innerHTML=_acProdutosSelecionados.map(function(nome,i){
+    return '<span style="background:#ede9fe;color:#5b21b6;border-radius:14px;padding:5px 10px 5px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">'
+      +nome
+      +'<button type="button" data-idx="'+i+'" class="ac-chip-rm" style="background:none;border:none;color:#5b21b6;cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button>'
+      +'</span>';
+  }).join('');
+  wrap.querySelectorAll('.ac-chip-rm').forEach(function(b){
+    b.addEventListener('click',function(){
+      _acProdutosSelecionados.splice(parseInt(this.dataset.idx),1);
+      acRenderChips();
+    });
+  });
+}
+
+async function salvarNovaAcao(){
+  var titulo=(document.getElementById('ac-titulo').value||'').trim();
+  var tipo=document.getElementById('ac-tipo').value;
+  var inicio=document.getElementById('ac-inicio').value;
+  var fim=document.getElementById('ac-fim').value;
+  var metaTipo=document.getElementById('ac-meta-tipo').value;
+  var metaValor=parseFloat(document.getElementById('ac-meta-valor').value)||null;
+  if(!titulo||!tipo||!inicio||!fim){alert('Preencha titulo, tipo e datas.');return;}
+  if(!metaTipo){alert('Selecione o tipo de meta.');return;}
+  if(!metaValor||metaValor<=0){alert('Informe o valor da meta.');return;}
+  var alvoModo=(document.getElementById('ac-alvo-lab').style.display==='block')?'lab':'produtos';
+  var labSelecionado=(document.getElementById('ac-lab-select').value||'').trim();
+  var payload={
+    cliente_cod:_acoesCod, cliente_nome:_acoesNome,
+    titulo:titulo, tipo:tipo,
+    produto_alvo:_acProdutosSelecionados.length?_acProdutosSelecionados.join(', '):(labSelecionado?('Todos os produtos '+labSelecionado):null),
+    produtos_alvo:(alvoModo==='produtos'&&_acProdutosSelecionados.length)?_acProdutosSelecionados:null,
+    lab_alvo:(alvoModo==='lab'&&labSelecionado)?labSelecionado:null,
+    premio_descricao:(document.getElementById('ac-premio').value||'').trim()||null,
+    meta_tipo:metaTipo, meta_valor:metaValor,
+    data_inicio:inicio, data_fim:fim,
+    status:'ativa',
+    criado_por:REP||'rep'
+  };
+  try{
+    var res=await sbAcoes('acoes_comerciais',{method:'POST',body:JSON.stringify(payload)});
+    if(res&&res[0]&&res[0].id){
+      acoesTab('ativas');
+      atualizarBadgeAcoes(_acoesCod);
+      criarNotificacao('NICOLLE','acao','Nova acao de '+REP,titulo+' para '+_acoesNome,res[0].id);
+    } else {
+      alert('Erro ao salvar: '+(res&&res.message?res.message:JSON.stringify(res)));
+    }
+  }catch(e){alert('Erro: '+e.message);}
+}
+
+function abrirUpdateAcao(aId){
+  var div=document.getElementById('updates-'+aId);
+  div.innerHTML='<div style="margin-top:6px;">'
+    +'<textarea id="upd-txt-'+aId+'" placeholder="Relato do acompanhamento..." rows="3" '
+    +'style="width:100%;padding:8px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;"></textarea>'
+    +'<button onclick="salvarUpdateAcao(\''+aId+'\',this)" '
+    +'style="margin-top:4px;background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">Salvar update</button>'
+    +'</div>';
+}
+
+async function salvarUpdateAcao(aId, btn){
+  var txt=(document.getElementById('upd-txt-'+aId).value||'').trim();
+  if(!txt){alert('Digite o texto do update.');return;}
+  btn.disabled=true; btn.textContent='Salvando...';
+  try{
+    var payload={acao_id:aId,texto:txt,criado_por:REP||'rep'};
+    var res=await sbAcoes('acoes_updates',{method:'POST',body:JSON.stringify(payload)});
+    if(res&&res[0]&&res[0].id){
+      document.getElementById('updates-'+aId).innerHTML='<div style="font-size:11px;color:#16a34a;margin-top:4px;">✓ Update registrado</div>';
+    }else{btn.disabled=false;btn.textContent='Salvar update';alert('Erro: '+JSON.stringify(res));}
+  }catch(e){btn.disabled=false;btn.textContent='Salvar update';alert('Erro: '+e.message);}
+}
+
+function abrirEncerrarAcao(aId){
+  var div=document.getElementById('updates-'+aId);
+  div.innerHTML='<div style="margin-top:8px;background:#fef2f2;border-radius:8px;padding:10px;">'
+    +'<div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:6px;">Encerrar ação</div>'
+    +'<input id="enc-res-'+aId+'" type="number" placeholder="Resultado real (opcional)" '
+    +'style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;margin-bottom:6px;">'
+    +'<textarea id="enc-obs-'+aId+'" placeholder="Observação final..." rows="2" '
+    +'style="width:100%;padding:7px;border:1px solid #fecaca;border-radius:6px;font-size:12px;box-sizing:border-box;resize:none;margin-bottom:6px;"></textarea>'
+    +'<div style="display:flex;gap:6px;">'
+    +'<button onclick="confirmarEncerrar(\''+aId+'\',this)" style="flex:1;background:#dc2626;color:white;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;">Confirmar encerramento</button>'
+    +'<button onclick="document.getElementById(\'updates-'+aId+'\').innerHTML=\'\';" style="background:#f3f4f6;color:#6b7280;border:none;border-radius:6px;padding:7px;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'</div></div>';
+}
+
+async function confirmarEncerrar(aId, btn){
+  btn.disabled=true; btn.textContent='Salvando...';
+  var res=parseFloat(document.getElementById('enc-res-'+aId).value)||null;
+  var obs=(document.getElementById('enc-obs-'+aId).value||'').trim()||null;
+  try{
+    var r=await sbAcoes('acoes_comerciais?id=eq.'+aId,{
+      method:'PATCH',
+      body:JSON.stringify({status:'encerrada',resultado_real:res,observacao_final:obs})
+    });
+    carregarAcoes(true);
+    atualizarBadgeAcoes(_acoesCod);
+  }catch(e){btn.disabled=false;btn.textContent='Confirmar encerramento';alert('Erro: '+e.message);}
+}
+
+async function atualizarBadgeAcoes(cod){
+  try{
+    var qs='acoes_comerciais?select=id&cliente_cod=eq.'+cod+'&status=eq.ativa';
+    var res=await sbAcoes(qs);
+    var btn=document.getElementById('btn-acoes-'+cod);
+    if(btn){
+      var n=Array.isArray(res)?res.length:0;
+      btn.innerHTML=n>0?'🎯 Ações <span style="background:white;color:#7c3aed;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;">'+n+'</span>':'🎯 Ações';
+    }
+  }catch(e){}
+}
+
+// Carregar badges ao abrir o painel
+var _acoesLoaded=false;
+function carregarBadgesAcoes(){
+  if(_acoesLoaded) return;
+  _acoesLoaded=true;
+  CL.forEach(function(c){atualizarBadgeAcoes(c.cod);});
+}
+// ═══════════════ FIM AÇÕES COMERCIAIS ═══════════════
+
+
+// Delegação de eventos para links de receita nos cards de ação
+document.addEventListener('click',function(e){
+  var copyBtn=e.target.closest('.ac-copy-link');
+  if(copyBtn){
+    var link=copyBtn.getAttribute('data-link');
+    navigator.clipboard.writeText(link).then(function(){mostrarToast('Link copiado!');}).catch(function(){});
+    return;
+  }
+  var verBtn=e.target.closest('.ac-ver-rec');
+  if(verBtn){
+    verReceitas(verBtn.getAttribute('data-acid'));
+    return;
+  }
+});
+async function verReceitas(aId){
+  var el=document.getElementById('updates-'+aId);
+  el.innerHTML='<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Carregando receitas...</div>';
+  try{
+    var res=await sbAcoes('acoes_receitas?acao_id=eq.'+aId+'&order=created_at.desc');
+    if(!Array.isArray(res)||!res.length){el.innerHTML='<div style="color:#9ca3af;font-size:12px;padding:8px 0;">Nenhuma receita enviada ainda.</div>';return;}
+    var html='<div style="margin-top:8px;"><div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:8px;">'+res.length+' receita(s) enviada(s)</div>';
+    res.forEach(function(r){
+      var dt=new Date(r.created_at).toLocaleDateString('pt-BR');
+      html+='<div style="background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:6px;">'
+        +'<div style="font-size:12px;font-weight:700;">'+r.vet_nome+'</div>'
+        +'<div style="font-size:11px;color:#6b7280;">'+r.produto_prescrito+' \xb7 '+dt+'</div>'
+        +(r.foto_url?'<a href="'+r.foto_url+'" target="_blank"><img src="'+r.foto_url+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-top:6px;"></a>':'')
+        +'</div>';
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div style="color:#dc2626;font-size:12px;">Erro: '+e.message+'</div>';}
+}
+
+
+// === AÇÕES GLOBAIS (acesso pelo menu) ===
+var _acoesGlobalMode = false;
+
+function abrirAcoesGlobal(){
+  _acoesGlobalMode = true;
+  _acoesCod = 0;
+  _acoesNome = 'Todos os clientes';
+  document.getElementById('acoes-cliente-nome').textContent = 'Todos os clientes';
+  document.getElementById('modal-acoes').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  acoesTabGlobal('ativas');
+}
+
+function acoesTabGlobal(tab){
+  _acoesTab = tab;
+  ['ativas','hist','nova'].forEach(function(t){
+    var btn = document.getElementById('tab-acoes-'+t);
+    if(!btn) return;
+    if(t===tab){btn.style.color='#7c3aed';btn.style.borderBottomColor='#7c3aed';btn.style.fontWeight='700';}
+    else{btn.style.color='#6b7280';btn.style.borderBottomColor='transparent';btn.style.fontWeight='600';}
+  });
+  if(tab==='nova') renderFormNovaAcaoGlobal();
+  else carregarAcoesGlobal(tab==='ativas');
+}
+
+async function carregarAcoesGlobal(apenasAtivas){
+  var el = document.getElementById('acoes-content');
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">Carregando...</div>';
+  try{
+    // Rep vê só ações dos próprios clientes
+    var codigos = CL.map(function(c){return c.cod;});
+    if(!codigos.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#9ca3af;">Sem clientes na carteira.</div>';return;}
+    var filtro = apenasAtivas ? '&status=eq.ativa' : '&status=neq.ativa';
+    // Buscar por cliente_cod in (codigos)
+    var inFilter = 'cliente_cod=in.('+codigos.join(',')+')';
+    var qs = 'acoes_comerciais?select=*&'+inFilter+filtro+'&order=created_at.desc';
+    var acoes = await sbAcoes(qs);
+    if(!Array.isArray(acoes)||!acoes.length){
+      el.innerHTML='<div style="text-align:center;padding:40px;color:#9ca3af;">'+(apenasAtivas?'Nenhuma ação ativa na sua área.':'Nenhuma ação no histórico.')+'</div>';
+      return;
+    }
+    el.innerHTML = acoes.map(function(a){
+      // Adicionar nome do cliente no card quando em modo global
+      var cardHtml = renderCardAcao(a);
+      return cardHtml;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div style="color:#dc2626;padding:16px;">Erro: '+e.message+'</div>';
+  }
+}
+
+function renderFormNovaAcaoGlobal(){
+  // Mesmo form mas com busca de cliente no topo
+  var el = document.getElementById('acoes-content');
+  var html = '<div style="display:flex;flex-direction:column;gap:12px;">';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Cliente *</label>';
+  html += '<div style="position:relative;">';
+  html += '<input id="ac-cli-busca" type="text" placeholder="Buscar cliente..." autocomplete="off" oninput="acBuscarCliente(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<div id="ac-cli-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>';
+  html += '</div></div>';
+  html += '<div id="ac-cli-selecionado" style="display:none;background:#f5f3ff;border-radius:8px;padding:8px 12px;font-size:12px;color:#7c3aed;font-weight:600;"></div>';
+  el.innerHTML = html + '</div>';
+  // Após selecionar cliente, renderizar o resto do form
+}
+
+function acBuscarCliente(q){
+  var box = document.getElementById('ac-cli-sugs');
+  if(!box) return;
+  q = (q||'').trim().toLowerCase();
+  if(!q){box.style.display='none';return;}
+  var base = CL; // Apenas clientes da area do rep logado
+  var res = base.filter(function(c){
+    return c.nome.toLowerCase().indexOf(q)>=0||(c.razao_social||'').toLowerCase().indexOf(q)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(q.replace(/[.\/-]/g,''))>=0;
+  }).slice(0,8);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML = res.map(function(c){
+    return '<div data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" class="ac-cli-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:13px;">'
+      +'<div style="font-weight:600;">'+c.nome+'</div>'
+      +'<div style="font-size:11px;color:#9ca3af;">'+(c.cidade||c.municipio||'')+'</div>'
+      +'</div>';
+  }).join('');
+  box.querySelectorAll('.ac-cli-sug').forEach(function(el){
+    el.addEventListener('mouseenter',function(){this.style.background='#f5f3ff';});
+    el.addEventListener('mouseleave',function(){this.style.background='white';});
+    el.addEventListener('click',function(){
+      var cod = parseInt(this.getAttribute('data-cod'));
+      var nome = decodeURIComponent(this.getAttribute('data-nome'));
+      _acoesCod = cod; _acoesNome = nome;
+      document.getElementById('ac-cli-busca').value = nome;
+      box.style.display = 'none';
+      var sel = document.getElementById('ac-cli-selecionado');
+      sel.textContent = '✓ Cliente selecionado: '+nome;
+      sel.style.display = 'block';
+      // Renderizar resto do form abaixo
+      var formResto = document.getElementById('ac-form-resto');
+      if(!formResto){
+        var wrap = document.getElementById('acoes-content').querySelector('div');
+        var extra = document.createElement('div');
+        extra.id = 'ac-form-resto';
+        wrap.appendChild(extra);
+        extra.innerHTML = _buildFormResto();
+        acAbrirNova();
+      }
+    });
+  });
+  box.style.display = 'block';
+}
+
+function _buildFormResto(){
+  var html = '';
+  html += '<div style="height:1px;background:#e5e7eb;margin:4px 0;"></div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Titulo da acao *</label>';
+  html += '<input id="ac-titulo" type="text" placeholder="Ex: Campanha Prescricao Nexin Jul/26" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Tipo *</label>';
+  html += '<select id="ac-tipo" onchange="acTipoMudou()" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<option value="premio_vet">Premio Vet</option><option value="premio_balconista">Premio Balconista</option><option value="relacionamento">Relacionamento</option><option value="outro">Outro</option></select></div>';
+  html += '</div></div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo da acao</label>';
+  html += '<div style="display:flex;gap:6px;margin-bottom:8px;">';
+  html += '<button type="button" id="ac-alvo-btn-prod" onclick="acAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #7c3aed;background:#7c3aed;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>';
+  html += '<button type="button" id="ac-alvo-btn-lab" onclick="acAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratorio inteiro</button>';
+  html += '</div>';
+  html += '<div id="ac-alvo-produtos">';
+  html += '<div style="position:relative;"><input id="ac-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="acBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<div id="ac-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>';
+  html += '<div id="ac-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>';
+  html += '</div>';
+  html += '<div id="ac-alvo-lab" style="display:none;">';
+  html += '<select id="ac-lab-select" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<option value="">Selecione o laboratorio...</option>';
+  html += '</select>';
+  html += '</div>';
+  html += '</div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Premio / Incentivo</label>';
+  html += '<input id="ac-premio" type="text" placeholder="Ex: Fone JBL para top prescritor" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (tipo) *</label>';
+  html += '<select id="ac-meta-tipo" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<option value="volume_rs">Volume R$</option><option value="unidades">Unidades</option><option value="prescricoes">Prescricoes</option><option value="positivacao">Positivacao</option></select></div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Meta (valor) *</label>';
+  html += '<input id="ac-meta-valor" type="number" placeholder="Ex: 5000" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Inicio *</label>';
+  html += '<input id="ac-inicio" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Fim *</label>';
+  html += '<input id="ac-fim" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"></div></div>';
+  html += '<div id="ac-link-receita-wrap" style="display:none;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px;">';
+  html += '<div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:4px;">Link de envio de receita</div>';
+  html += '<div style="font-size:11px;color:#6b7280;">Gerado automaticamente ao criar a acao.</div></div>';
+  html += '<button onclick="salvarNovaAcao()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;">Criar Acao</button>';
+  return html;
+}
+
+// Sobrescrever acoesTab para detectar modo global
+var _acoesTabOrig = acoesTab;
+acoesTab = function(tab){
+  if(_acoesGlobalMode){ acoesTabGlobal(tab); return; }
+  _acoesTabOrig(tab);
+};
+
+// Reset ao fechar
+var _fecharAcoesOrig = fecharAcoes;
+fecharAcoes = function(){
+  _acoesGlobalMode = false;
+  _fecharAcoesOrig();
+};
+// === FIM AÇÕES GLOBAIS ===
+
+
+// ========= SISTEMA DE NOTIFICAÇÕES =========
+var SB_NOTIF_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_NOTIF_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+var _notifInterval=null;
+var _notifDestino='';
+
+function sbNotif(path,opts){
+  return fetch(SB_NOTIF_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':SB_NOTIF_KEY,'Authorization':'Bearer '+SB_NOTIF_KEY,
+      'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
+}
+
+async function criarNotificacao(dest,tipo,titulo,msg,refId){
+  if(!dest) return;
+  try{
+    await sbNotif('notificacoes',{method:'POST',body:JSON.stringify({
+      destinatario:dest.toUpperCase(),tipo:tipo,titulo:titulo,
+      mensagem:msg||'',referencia_id:refId||null,lida:false
+    })});
+  }catch(e){console.warn('notif err',e);}
+}
+
+function getRepPorCod(cod){
+  if(typeof BASE_CLIENTES==='undefined') return null;
+  var c=BASE_CLIENTES.find(function(x){return x.cod===cod;});
+  return c?c.vendedor:null;
+}
+
+async function carregarNotificacoes(dest){
+  try{
+    var res=await sbNotif('notificacoes?destinatario=eq.'+encodeURIComponent(dest.toUpperCase())+'&lida=eq.false&order=created_at.desc&limit=20');
+    return Array.isArray(res)?res:[];
+  }catch(e){return [];}
+}
+
+async function marcarNotifLida(id){
+  try{await sbNotif('notificacoes?id=eq.'+id,{method:'PATCH',body:JSON.stringify({lida:true})});}catch(e){}
+}
+
+function iniciarSininho(dest,onClickFn){
+  _notifDestino=dest.toUpperCase();
+  window._notifOnClick=onClickFn;
+  atualizarSininho();
+  if(_notifInterval) clearInterval(_notifInterval);
+  _notifInterval=setInterval(atualizarSininho,180000);
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('#notif-wrap')){
+      var dd=document.getElementById('notif-dropdown');
+      if(dd) dd.style.display='none';
+    }
+  });
+}
+
+async function atualizarSininho(){
+  var notifs=await carregarNotificacoes(_notifDestino);
+  window._notifCache=notifs;
+  var badge=document.getElementById('notif-badge');
+  if(badge){
+    var n=notifs.length;
+    badge.textContent=n>9?'9+':String(n);
+    badge.style.display=n>0?'flex':'none';
+  }
+}
+
+function toggleNotifDropdown(){
+  var dd=document.getElementById('notif-dropdown');
+  if(!dd) return;
+  if(dd.style.display==='block'){dd.style.display='none';return;}
+  renderNotifDropdown();
+  dd.style.display='block';
+}
+
+function renderNotifDropdown(){
+  var dd=document.getElementById('notif-dropdown');
+  var notifs=window._notifCache||[];
+  if(!notifs.length){
+    dd.innerHTML='<div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px;">Sem notificacoes</div>';
+    return;
+  }
+  var icons={'visita':'📍','acao':'🎯'};
+  dd.innerHTML=notifs.map(function(n){
+    var dt=new Date(n.created_at).toLocaleDateString('pt-BR');
+    return '<div data-nid="'+n.id+'" data-tipo="'+n.tipo+'" data-ref="'+(n.referencia_id||'')+'" class="notif-item"'
+      +' style="padding:12px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;display:flex;gap:10px;align-items:flex-start;">'
+      +'<span style="font-size:16px;flex-shrink:0;">'+(icons[n.tipo]||'🔔')+'</span>'
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-weight:600;font-size:13px;color:#111;">'+n.titulo+'</div>'
+      +'<div style="font-size:11px;color:#6b7280;margin-top:1px;">'+n.mensagem+'</div>'
+      +'<div style="font-size:10px;color:#9ca3af;margin-top:2px;">'+dt+'</div>'
+      +'</div></div>';
+  }).join('')
+    +'<div style="padding:8px;text-align:center;">'
+    +'<button onclick="marcarTodasLidas()" style="font-size:12px;color:#6b7280;background:none;border:none;cursor:pointer;text-decoration:underline;">Marcar todas como lidas</button>'
+    +'</div>';
+  dd.querySelectorAll('.notif-item').forEach(function(el){
+    el.addEventListener('click',function(){
+      var id=this.getAttribute('data-nid');
+      var tipo=this.getAttribute('data-tipo');
+      var ref=this.getAttribute('data-ref');
+      marcarNotifLida(id).then(atualizarSininho);
+      document.getElementById('notif-dropdown').style.display='none';
+      if(window._notifOnClick) window._notifOnClick(tipo,ref);
+    });
+  });
+}
+
+async function marcarTodasLidas(){
+  await Promise.all((window._notifCache||[]).map(function(n){return marcarNotifLida(n.id);}) );
+  atualizarSininho();
+  var dd=document.getElementById('notif-dropdown');
+  if(dd) dd.style.display='none';
+}
+
+function sininhoPHTML(){
+  return '<div id="notif-wrap" style="position:relative;flex-shrink:0;">'
+    +'<button onclick="toggleNotifDropdown()" style="background:rgba(255,255,255,0.15);border:none;color:white;'
+    +'border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;'
+    +'justify-content:center;position:relative;">🔔'
+    +'<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#CC0000;'
+    +'color:white;border-radius:10px;font-size:9px;font-weight:700;min-width:16px;height:16px;'
+    +'align-items:center;justify-content:center;padding:0 3px;">0</span>'
+    +'</button>'
+    +'<div id="notif-dropdown" style="display:none;position:absolute;top:44px;right:0;width:300px;'
+    +'background:white;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:600;'
+    +'max-height:400px;overflow-y:auto;"></div>'
+    +'</div>';
+}
+// ========= FIM NOTIFICAÇÕES =========
+
+
+// ═══════ VISITAS DE FABRICANTES ═══════
+var SB_FAB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var SB_FAB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+
+async function verFabricantes(nomeCli, codCli){
+  var modal=document.getElementById('m-fab');
+  var titulo=document.getElementById('m-fab-t');
+  var body=document.getElementById('m-fab-b');
+  titulo.textContent='🏭 '+nomeCli+' — Fabricantes';
+  body.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</p>';
+  modal.classList.add('on');
+
+  try{
+    // Buscar por cod ou nome
+    var qs='visitas_fabricantes?order=created_at.desc&limit=50';
+    if(codCli && !isNaN(codCli)) qs+='&cliente_cod=eq.'+codCli;
+    else qs+='&cliente_nome=ilike.'+encodeURIComponent('*'+nomeCli+'*');
+    var res=await fetch(SB_FAB_URL+'/rest/v1/'+qs,{
+      headers:{'apikey':SB_FAB_KEY,'Authorization':'Bearer '+SB_FAB_KEY}
+    }).then(function(r){return r.json();});
+
+    if(!Array.isArray(res)||!res.length){
+      body.innerHTML='<p style="text-align:center;padding:20px;color:#9ca3af;">Nenhuma visita de fabricante registrada.</p>';
+      return;
+    }
+
+    // Agrupar por fabricante
+    var porFab={};
+    res.forEach(function(v){
+      if(!porFab[v.fabricante]) porFab[v.fabricante]={};
+      if(!porFab[v.fabricante].visitas) porFab[v.fabricante].visitas=[];
+      porFab[v.fabricante].visitas.push(v);
+    });
+
+    var html='';
+    Object.keys(porFab).forEach(function(fab){
+      var visitas=porFab[fab].visitas;
+      html+='<div style="margin-bottom:16px;">'
+        +'<div style="font-size:12px;font-weight:700;color:#0ea5e9;text-transform:uppercase;margin-bottom:8px;">🏭 '+fab+' ('+visitas.length+' visita'+(visitas.length>1?'s':'')+')</div>';
+      visitas.forEach(function(v){
+        var dt=new Date(v.created_at).toLocaleDateString('pt-BR');
+        var ams=v.amostras_json;
+        var amH='';
+        if(ams&&ams.length){
+          amH='<div style="margin-top:6px;"><b>📦 Amostras:</b></div>'
+            +ams.map(function(a){
+              return '<div style="margin-left:8px;font-size:11px;color:#374151;">'+a.produto+' ('+a.quantidade+'un)'+(a.contato_nome?' — '+a.contato_nome:'')+'</div>';
+            }).join('');
+        }
+        var cts=v.contatos_json;
+        var ctH='';
+        if(cts&&cts.length){
+          ctH='<div style="margin-top:4px;"><b>👤 Contatos:</b> '+cts.map(function(c){return c.nome+(c.funcao?' ('+c.funcao+')':'');} ).join(', ')+'</div>';
+        }
+        html+='<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px;">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+          +'<b style="font-size:13px;">'+dt+'</b>'
+          +'<span style="font-size:10px;color:#6b7280;">por '+v.promotor_nome+'</span>'
+          +'</div>'
+          +(v.tipo?'<div style="color:#6b7280;">🏥 '+v.tipo+'</div>':'')
+          +ctH
+          +(v.objetivo?'<div style="color:#374151;margin-top:4px;">🎯 <b>Objetivo:</b> '+v.objetivo+'</div>':'')
+          +(v.resultado?'<div style="color:#374151;margin-top:4px;">📊 <b>Resultado:</b> '+v.resultado+'</div>':'')
+          +(v.obs?'<div style="color:#374151;margin-top:4px;font-style:italic;">📝 '+v.obs+'</div>':'')
+          +amH
+          +(v.foto_url?'<div style="margin-top:8px;"><a href="'+v.foto_url+'" target="_blank"><img src="'+v.foto_url+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:6px;"></a></div>':'')
+          +'</div>';
+      });
+      html+='</div>';
+    });
+    body.innerHTML=html;
+  }catch(e){
+    body.innerHTML='<p style="color:#dc2626;padding:12px;">Erro: '+e.message+'</p>';
+  }
+}
+// ═══════ FIM FABRICANTES ═══════
+
+
+// ══ BIOGÊNESIS PROSPECTS ══
+
+// ══ Deteccao de produto Biogenesis — deriva do catalogo oficial (fonte da verdade) ══
+var _MARCAS_BIO_CACHE=null;
+function _getMarcasBio(){
+  if(_MARCAS_BIO_CACHE) return _MARCAS_BIO_CACHE;
+  var marcas={};
+  if(typeof PRECOS_VV!=='undefined'){
+    PRECOS_VV.forEach(function(p){
+      var lab=(p.lab||'').toLowerCase();
+      if(lab.indexOf('biog')<0) return;
+      var n=(p.nome||'').toUpperCase().split('\u00b7')[0];
+      n=n.replace(/\d+[\.,]?\d*\s*(MG|ML|G|L|KG|%)?/g,' ');
+      n=n.replace(/\b(INJ|INJETAVEL|INJET\u00c1VEL|HOSP|CP|CPS|COMPRIMIDOS?|PASTA|SHAMPOO|CONDICIONADOR|MASCARA|M\u00c1SCARA|COLONIA|COL\u00d4NIA|SPRAY|POTE|SERINGA|FRASCO|SACHE|SACH\u00ca|CARTUCHO|KIT|TUBOS?|CAES|C\u00c3ES|GATOS|FILHOTES|PLUS|PROF|PROFISSIONAL)\b/g,' ');
+      n=n.replace(/[^\w&\s]/g,' ');
+      n=n.split(/\s+/).filter(Boolean)[0]||'';
+      if(n.length>=4) marcas[n]=true;
+    });
+  }
+  _MARCAS_BIO_CACHE=Object.keys(marcas);
+  // Fallback caso PRECOS_VV nao tenha carregado
+  if(!_MARCAS_BIO_CACHE.length){
+    _MARCAS_BIO_CACHE=['NUTRISANA','PETSPORIN','OTOSANA','OTOCARE','PREDIVET','MELOXIFLEX',
+      'KINOLOX','MECTAL','DOG&CO','CAT&CO','VITALLEDERM','PULGOFF','ASTOR','SANADOG',
+      'KETOFLEX','CARPROFLEX','OTOPHISIO','GOOD','PREMIUM','ALMOTOLIA'];
+  }
+  return _MARCAS_BIO_CACHE;
+}
+function _ehProdutoBio(nomeProd){
+  var nm=(nomeProd||'').toUpperCase();
+  if(!nm) return false;
+  var marcas=_getMarcasBio();
+  for(var i=0;i<marcas.length;i++){
+    if(nm.indexOf(marcas[i])>=0) return true;
+  }
+  return false;
+}
+
+
+// ══ Normalizar nome de produto para casar entre bases diferentes ══
+function _normProd(n){
+  return (n||'').toUpperCase()
+    .replace(/[\u00c0-\u00c5]/g,'A').replace(/[\u00c8-\u00cb]/g,'E').replace(/[\u00cc-\u00cf]/g,'I')
+    .replace(/[\u00d2-\u00d6]/g,'O').replace(/[\u00d9-\u00dc]/g,'U').replace(/\u00c7/g,'C')
+    .replace(/\d+[\.,]?\d*\s*(MG|ML|G|L|KG|UN|CP|CPS|%)?/g,' ')
+    .replace(/\b(HOSP|COMPRIMIDOS?|CARTUCHO|SERINGA|FRASCO|POTE|SACHE|KIT|C\/|X)\b/g,' ')
+    .replace(/[^A-Z0-9&]/g,' ')
+    .split(/\s+/).filter(Boolean).slice(0,3).join(' ');
+}
+
+// ══ Comparativo: o que comprava (dist. anterior) x o que já comprou pela VetVida ══
+function _montarComparativoBio(prodsAnteriores, bioComprados){
+  bioComprados=bioComprados||{};
+  var compradosKeys=Object.keys(bioComprados);
+  var usados={};
+  var h='';
+
+  // Bloco 1: produtos do histórico anterior, com status individual
+  if(prodsAnteriores&&prodsAnteriores.length){
+    h+='<div style="font-weight:700;font-size:12px;color:#1d4ed8;margin-bottom:6px;">Produtos que comprava (distribuidor anterior):</div>';
+    h+='<div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:10px;">';
+    prodsAnteriores.forEach(function(pr,ix){
+      var k=_normProd(pr);
+      var achado=bioComprados[k];
+      if(!achado){
+        // casamento parcial pelo primeiro termo (marca)
+        var marca=k.split(' ')[0];
+        for(var i=0;i<compradosKeys.length;i++){
+          if(marca&&compradosKeys[i].indexOf(marca)===0){achado=bioComprados[compradosKeys[i]];break;}
+        }
+      }
+      if(achado) usados[_normProd(achado.nome)]=true;
+      var bg=ix%2?'#fafafa':'#fff';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;background:'+bg+';border-bottom:1px solid #f3f4f6;">'
+        +'<span style="font-size:11px;color:#374151;flex:1;">'+pr+'</span>'
+        +(achado
+          ?'<span style="font-size:10px;font-weight:700;color:#16a34a;white-space:nowrap;">✅ Reativado'+(achado.ultima?' · '+achado.ultima:'')+'</span>'
+          :'<span style="font-size:10px;font-weight:700;color:#CC0000;white-space:nowrap;">⚠️ Não reativado</span>')
+        +'</div>';
+    });
+    h+='</div>';
+  }
+
+  // Bloco 2: produtos Biogênesis comprados pela VetVida que NÃO estavam no histórico anterior
+  var novos=compradosKeys.filter(function(k){return !usados[k];}).map(function(k){return bioComprados[k];});
+  if(novos.length){
+    h+='<div style="font-weight:700;font-size:12px;color:#16a34a;margin-bottom:6px;">Novos produtos Biogênesis comprados pela VetVida:</div>';
+    h+='<div style="border:1px solid #dcfce7;border-radius:8px;overflow:hidden;margin-bottom:10px;">';
+    novos.forEach(function(nv,ix){
+      var bg=ix%2?'#f0fdf4':'#fff';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;background:'+bg+';border-bottom:1px solid #f3f4f6;">'
+        +'<span style="font-size:11px;color:#374151;flex:1;">'+nv.nome+'</span>'
+        +'<span style="font-size:10px;color:#16a34a;font-weight:700;white-space:nowrap;">'+(nv.qtd?nv.qtd+' un · ':'')+(nv.ultima||'')+'</span>'
+        +'</div>';
+    });
+    h+='</div>';
+  }
+
+  if(!h) h='<div style="color:#9ca3af;font-size:12px;">Sem dados de produtos.</div>';
+  return h;
+}
+
+
+// Função de notificação toast -- reaproveita o elemento #tst já existente no HTML
+function mostrarToast(msg){
+  var t=document.getElementById('tst');
+  if(!t) return;
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2500);
+}
+
+function abrirBioDetalhes(cnpj, cod){
+  // Carregar histórico (hist_REP.js) antes de montar — traz itens com lab por pedido
+  if(typeof carregarHistorico==='function' && typeof HIST_CARREGADO!=='undefined' && !HIST_CARREGADO){
+    document.getElementById('m-prc-t').textContent='🔵 Biogênesis';
+    document.getElementById('m-prc-b').innerHTML='<p style="text-align:center;padding:24px;color:#9ca3af;">Carregando histórico...</p>';
+    document.getElementById('m-prc').classList.add('on');
+    carregarHistorico(function(){ _montarBioDetalhes(cnpj, cod); });
+    return;
+  }
+  _montarBioDetalhes(cnpj, cod);
+}
+function _montarBioDetalhes(cnpj, cod){
+  var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
+  var naBase=typeof BIO_NA_BASE!=='undefined'?BIO_NA_BASE:{};
+  var cliVV=null;
+  // 1) Prioridade: buscar pelo COD (chave confiavel do dados.js)
+  if(cod!==null&&cod!==undefined&&cod!==''){
+    var _cod=parseInt(cod);
+    cliVV=CL.find(function(c){return c.cod===_cod;})||null;
+  }
+  // 2) Fallback: cnpj (somente se nao-vazio, para nao casar '' com '')
+  var _cnpjLimpo=(cnpj||'').replace(/[^0-9]/g,'');
+  if(!cliVV&&_cnpjLimpo){
+    cliVV=CL.find(function(c){
+      var cc=(c.cnpj||'').replace(/[^0-9]/g,'');
+      return cc&&cc===_cnpjLimpo;
+    })||null;
+  }
+  // Prospect (fora da base)
+  var p=_cnpjLimpo?prospects.find(function(x){return x.cnpj===_cnpjLimpo;}):null;
+  var bioInfo=cliVV?naBase[cliVV.cod]:null;
+  var nome=p?p.nome:(cliVV?cliVV.nome:'');
+  var prods=p?(p.produtos||[]):(bioInfo?bioInfo.produtos:[]);
+  var ult=p?p.ultima_compra:(bioInfo?bioInfo.ultima_compra:'');
+  var ultFmt=ult?ult.split('-').reverse().join('/'):'';
+
+  // Verificar se reativou — cliente na base VetVida comprou algum produto Biogênesis após abril/2026
+  var reativado=false;
+  var prodReativados=[];
+  var _bioComprados={}; // nome normalizado -> {nome, qtd, ultima}
+  if(cliVV){
+    // Status geral: campo 'labs' (fonte da verdade, mesma do filtro LAB)
+    var _labs=cliVV.labs||[];
+    reativado=_labs.some(function(l){return (l||'').toUpperCase().indexOf('BIOG')>=0;});
+    // Detalhe produto a produto: itens dos pedidos (hist_REP.js), campo lab por item
+    var _hist=(typeof HIST_REP!=='undefined'&&HIST_REP[cliVV.cod])||{};
+    (_hist.pedidos||[]).forEach(function(ped){
+      (ped.itens||[]).forEach(function(it){
+        var ehBio=(it.lab&&it.lab.toUpperCase().indexOf('BIOG')>=0)||_ehProdutoBio(it.prod||it.nome);
+        if(!ehBio) return;
+        var nm=(it.prod||it.nome||'').trim();
+        if(!nm) return;
+        var k=_normProd(nm);
+        if(!_bioComprados[k]) _bioComprados[k]={nome:nm, qtd:0, ultima:ped.data||''};
+        _bioComprados[k].qtd+=(parseInt(it.qtde||it.qtd)||0);
+        var _d1=(_bioComprados[k].ultima||'').split('/').reverse().join('');
+        var _d2=(ped.data||'').split('/').reverse().join('');
+        if(_d2>_d1) _bioComprados[k].ultima=ped.data;
+      });
+    });
+    prodReativados=Object.keys(_bioComprados).map(function(k){return _bioComprados[k];});
+  }
+
+  var statusHtml='';
+  if(cliVV){
+    if(reativado){
+      statusHtml='<div style="background:#dcfce7;border:1px solid #16a34a;border-radius:8px;padding:8px 12px;margin:8px 0;">'
+        +'<div style="font-weight:700;font-size:12px;color:#16a34a;">✅ REATIVADO — já compra Biogênesis pela VetVida</div>'
+        +(prodReativados.length?'<div style="font-size:11px;color:#374151;margin-top:2px;">'+prodReativados.length+' produto(s) comprado(s) pela VetVida</div>':'')
+        +'</div>';
+    } else {
+      statusHtml='<div style="background:#fef2f2;border:1px solid #CC0000;border-radius:8px;padding:8px 12px;margin:8px 0;">'
+        +'<div style="font-weight:700;font-size:12px;color:#CC0000;margin-bottom:2px;">⚠️ NÃO REATIVADO — nunca comprou Biogênesis pela VetVida</div>'
+        +'<div style="font-size:11px;color:#6b7280;">Cliente na base mas sem compra da marca desde abril/2026</div>'
+        +'</div>';
+    }
+  }
+
+  var prodsHtml=(prods||[]).map(function(pr){
+    return '<li style="font-size:12px;padding:2px 0;">'+pr+'</li>';
+  }).join('');
+
+  var html='<div style="padding:4px">'
+    +'<div style="font-weight:700;font-size:15px;margin-bottom:8px;">'+nome+'</div>'
+    +statusHtml
+    +(p&&p.bairro?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">📍 '+p.bairro+(p.municipio?', '+p.municipio:'')+'</div>':'')
+    +(p&&p.endereco?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">🏠 '+p.endereco+'</div>':'')
+    +(p&&p.telefone?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">📞 '+p.telefone+'</div>':'')
+    +(p&&p.email?'<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">✉️ '+p.email+'</div>':'')
+    +'<div style="height:1px;background:#e5e7eb;margin:10px 0;"></div>'
+    +_montarComparativoBio(prods, _bioComprados)
+    +(ultFmt?'<div style="font-size:11px;color:#9ca3af;margin-top:8px;">Última compra (dist. anterior): '+ultFmt+'</div>':'')
+    +(p&&p.total_valor?'<div style="font-size:11px;color:#9ca3af;">Volume histórico: R$ '+p.total_valor.toFixed(2).replace('.',',')+'</div>':'')
+    +'</div>';
+  document.getElementById('m-prc-t').textContent='🔵 Biogênesis — '+nome;
+  document.getElementById('m-prc-b').innerHTML=html;
+  document.getElementById('m-prc').classList.add('on');
+}
+// ══ FIM BIOGÊNESIS ══
+
+
+// ══ BIO: Histórico do Excel ══
+function abrirHistBio(cnpj,nome){
+  var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
+  var naBase=typeof BIO_NA_BASE!=='undefined'?BIO_NA_BASE:{};
+  var p=prospects.find(function(x){return x.cnpj===cnpj;});
+  if(!p){
+    var keys=Object.keys(naBase);
+    for(var i=0;i<keys.length;i++){
+      if((naBase[keys[i]].cnpj||'')===cnpj){p=naBase[keys[i]];break;}
+    }
+  }
+  var trans=(p&&p.transacoes)||[];
+  var html='<div style="padding:4px">';
+  if(p&&p.total_valor){
+    html+='<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;">'
+      +'<span style="font-weight:700;color:#1d4ed8;">Volume total:</span> R$ '+p.total_valor.toFixed(2).replace('.',',')
+      +(p.ultima_compra?' <span style="color:#9ca3af;">\u00b7 \u00daltima compra: '+p.ultima_compra.split('-').reverse().join('/')+'</span>':'')
+      +'</div>';
+  }
+  if(trans.length){
+    // Agrupar por pedido: mesma data (e NF quando disponivel)
+    var grupos={};
+    trans.forEach(function(t){
+      var k=t.data+'|'+(t.nf||'');
+      if(!grupos[k]) grupos[k]={data:t.data, itens:[], total:0};
+      grupos[k].itens.push(t);
+      grupos[k].total+=(t.valor||0);
+    });
+    var chaves=Object.keys(grupos).sort(function(a,b){return a>b?-1:1;});
+    chaves.forEach(function(k){
+      var g=grupos[k];
+      var dtFmt=g.data.split('-').reverse().join('/');
+      // Linha de cima: DATA + TOTAL DO PEDIDO (padrao do historico VetVida)
+      html+='<div style="margin-bottom:12px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;">'
+        +'<span style="font-weight:700;font-size:13px;color:#111;">'+dtFmt+'</span>'
+        +'<span style="font-weight:700;font-size:13px;color:#CC0000;">R$ '+g.total.toFixed(2).replace('.',',')+'</span>'
+        +'</div>';
+      // Linhas de baixo: PRODUTO + QUANTIDADE
+      g.itens.forEach(function(t){
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 12px;border-bottom:1px solid #f3f4f6;">'
+          +'<span style="font-size:12px;color:#374151;flex:1;">'+t.produto+'</span>'
+          +'<span style="font-size:12px;color:#6b7280;white-space:nowrap;">'+(t.qtd||0)+' un</span>'
+          +'</div>';
+      });
+      html+='</div>';
+    });
+  }else{
+    html+='<div style="color:#9ca3af;font-size:13px;">Nenhuma transa\u00e7\u00e3o encontrada.</div>';
+  }
+  html+='</div>';
+  document.getElementById('m-prc-t').textContent='\ud83d\udcca Hist. Bio \u2014 '+nome;
+  document.getElementById('m-prc-b').innerHTML=html;
+  document.getElementById('m-prc').classList.add('on');
+}
+
+// ══ BIO: Modal de visita prospect ══
+var _bioVisitaCnpj='',_bioVisitaNome='';
+function abrirModalVisitaBio(cnpj,nome){
+  _bioVisitaCnpj=cnpj; _bioVisitaNome=nome;
+  var prospects=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS:[];
+  var p=prospects.find(function(x){return x.cnpj===cnpj;})||{};
+  var modal=document.getElementById('m-bio-visita');
+  if(!modal){
+    var div=document.createElement('div');
+    div.innerHTML='<div class="mfvv" id="m-bio-visita">'
+      +'<div class="msvv"><div class="msvv-h"></div>'
+      +'<div class="msvv-t" id="m-bv-t">📋 Registrar Visita</div>'
+      +'<div id="m-bv-b" style="padding:16px;max-height:65vh;overflow-y:auto;"></div>'
+      +'<button class="msvv-f" id="btn-f-bv">Fechar</button>'
+      +'</div></div>';
+    document.body.appendChild(div.firstChild);
+    document.getElementById('btn-f-bv').addEventListener('click',function(){
+      document.getElementById('m-bio-visita').classList.remove('on');
+    });
+  }
+  document.getElementById('m-bv-t').textContent='📋 Visita — '+nome;
+  var hoje=new Date().toISOString().split('T')[0];
+  document.getElementById('m-bv-b').innerHTML=
+    '<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Data *</label>'
+      +'<input id="bv-data" type="date" value="'+hoje+'" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Com quem falou *</label>'
+      +'<input id="bv-contato" type="text" placeholder="Nome do contato" value="'+(p.telefone?'':'')+'" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Telefone atualizado</label>'
+      +'<input id="bv-fone" type="tel" placeholder="(11) 99999-9999" value="'+(p.telefone||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Resultado *</label>'
+      +'<select id="bv-resultado" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">'
+        +'<option value="">Selecione...</option>'
+        +'<option>Compra realizada</option>'
+        +'<option>Interesse confirmado — enviar proposta</option>'
+        +'<option>Cliente fechado — aguardando pedido</option>'
+        +'<option>Sem interesse</option>'
+        +'<option>Ausente — reagendar</option>'
+        +'<option>Já compra pela VetVida</option>'
+      +'</select>'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Observações</label>'
+      +'<textarea id="bv-obs" rows="3" placeholder="Detalhes da visita..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;resize:vertical;"></textarea>'
+    +'</div>'
+    +'<button onclick="salvarVisitaBio()" style="width:100%;background:#1d4ed8;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">✓ Salvar visita</button>';
+  document.getElementById('m-bio-visita').classList.add('on');
+}
+
+async function salvarVisitaBio(){
+  var data=document.getElementById('bv-data').value;
+  var contato=(document.getElementById('bv-contato').value||'').trim();
+  var fone=(document.getElementById('bv-fone').value||'').trim();
+  var resultado=document.getElementById('bv-resultado').value;
+  var obs=(document.getElementById('bv-obs').value||'').trim();
+  if(!data||!contato||!resultado){mostrarToast('Preencha data, contato e resultado.');return;}
+  try{
+    var SB_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+    var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+    var _resp=await fetch(SB_URL+'/rest/v1/visitas_prospects_bio',{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({
+        rep:REP,
+        cliente_cnpj:_bioVisitaCnpj||null,
+        cliente_nome:_bioVisitaNome,
+        contato:contato,
+        telefone:fone||null,
+        resultado:resultado,
+        obs:obs||null,
+        data_visita:data
+      })
+    });
+    if(!_resp.ok){
+      mostrarToast('Erro ao salvar visita. Tente novamente.');
+      return;
+    }
+    mostrarToast('✓ Visita registrada!');
+    document.getElementById('m-bio-visita').classList.remove('on');
+  }catch(e){mostrarToast('Erro ao salvar: '+e.message);}
+}
+// ══ FIM BIO ══
+
+
+// ══════════ AGENDA PDV ══════════
+var PDV_URL='https://wpmvczohuhywwnefwumf.supabase.co';
+var PDV_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+var _pdvClienteCod=null, _pdvClienteNome=null, _pdvDataEscolhida=null;
+
+function sbPdv(path,opts){
+  return fetch(PDV_URL+'/rest/v1/'+path,Object.assign({
+    headers:{'apikey':PDV_KEY,'Authorization':'Bearer '+PDV_KEY,'Content-Type':'application/json','Prefer':'return=representation'}
+  },opts||{})).then(function(r){return r.json();});
+}
+
+// Formata Date -> "YYYY-MM-DD"
+function _pdvIso(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function _pdvFmtBr(iso){
+  var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0];
+}
+
+// Gera lista de sextas e sabados entre hoje+15d e hoje+60d
+function _pdvDatasValidas(){
+  var hoje=new Date(); hoje.setHours(0,0,0,0);
+  var minD=new Date(hoje); minD.setDate(minD.getDate()+15);
+  var maxD=new Date(hoje); maxD.setDate(maxD.getDate()+60);
+  var datas=[];
+  var d=new Date(minD);
+  while(d<=maxD){
+    var dow=d.getDay(); // 5=sexta, 6=sabado
+    if(dow===5||dow===6) datas.push(_pdvIso(d));
+    d.setDate(d.getDate()+1);
+  }
+  return datas;
+}
+
+// Abrir agenda a partir do card do cliente (ja vem com cliente pre-selecionado)
+function abrirPdvCliente(cod,nome){
+  _pdvClienteCod=cod; _pdvClienteNome=nome;
+  document.getElementById('m-pdv-t').textContent='📅 Agenda PDV — '+nome;
+  _renderCalendarioPdv();
+}
+
+// Abrir agenda pelo menu lateral (sem cliente pre-selecionado)
+function abrirPdvGlobal(){
+  _pdvClienteCod=null; _pdvClienteNome=null;
+  document.getElementById('m-pdv-t').textContent='📅 Agenda PDV';
+  _renderCalendarioPdv();
+}
+
+async function _renderCalendarioPdv(){
+  var body=document.getElementById('m-pdv-b');
+  body.innerHTML='<p style="text-align:center;padding:24px;color:#9ca3af;">Carregando agenda...</p>';
+  document.getElementById('m-pdv').classList.add('on');
+
+  var area=(typeof AREAS_LABEL_DATA!=='undefined'?AREAS_LABEL_DATA[REP]:'')||'';
+
+  try{
+    var todos=await sbPdv('pdv_agenda?select=*&order=data_pdv.asc');
+    if(!Array.isArray(todos)) todos=[];
+    // So considerar registros ATIVOS (pendente, confirmado, bloqueado) para ocupar a data
+    var ativos=todos.filter(function(p){return ['pendente','confirmado','bloqueado'].indexOf(p.status)>=0;});
+    var porData={};
+    ativos.forEach(function(p){ porData[p.data_pdv]=p; });
+
+    var meusPedidos=todos.filter(function(p){return p.rep===REP && ['pendente','confirmado'].indexOf(p.status)>=0;});
+
+    var datasValidas=_pdvDatasValidas();
+
+    var html='<div style="background:#eff6ff;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#1e40af;">';
+    html+='Datas disponíveis: sextas e sábados, com no mínimo 15 dias de antecedência.';
+    html+='</div>';
+
+    if(meusPedidos.length){
+      html+='<div style="font-weight:700;font-size:12px;color:#374151;margin-bottom:8px;">Meus pedidos</div>';
+      meusPedidos.forEach(function(p){
+        var corSt={'pendente':'#f59e0b','confirmado':'#16a34a'}[p.status]||'#6b7280';
+        var lblSt={'pendente':'Aguardando resposta','confirmado':'Confirmado'}[p.status]||p.status;
+        html+='<div style="border:1.5px solid '+corSt+';border-radius:8px;padding:10px 12px;margin-bottom:8px;">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+          +'<b style="font-size:13px;">'+_pdvFmtBr(p.data_pdv)+'</b>'
+          +'<span style="font-size:10px;font-weight:700;color:'+corSt+';">'+lblSt+'</span>'
+          +'</div>'
+          +'<div style="font-size:12px;color:#6b7280;margin-top:2px;">'+p.cliente_nome+'</div>'
+          +(p.status==='pendente'?'<button onclick="_pdvCancelarPedido(\''+p.id+'\')" style="margin-top:6px;font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer;">Cancelar pedido</button>':'')
+          +'</div>';
+      });
+    }
+
+    html+='<div style="font-weight:700;font-size:12px;color:#374151;margin:14px 0 8px;">Calendário</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:6px;">';
+    datasValidas.forEach(function(iso){
+      var ocupado=porData[iso];
+      var dow=new Date(iso+'T00:00:00').getDay();
+      var diaSemana=dow===5?'Sexta':'Sábado';
+      var jaMeuPedido=meusPedidos.some(function(p){return p.data_pdv===iso;});
+      if(ocupado){
+        var ehMinha=ocupado.rep===REP;
+        var label = ocupado.status==='bloqueado' ? 'Bloqueada (indisponibilidade da Nicolle)'
+          : (ehMinha ? (ocupado.status==='confirmado'?'Confirmado — '+ocupado.cliente_nome:'Pendente — '+ocupado.cliente_nome)
+          : 'Indisponível');
+        var corBg = ocupado.status==='bloqueado' ? '#f3f4f6' : (ehMinha ? '#f5f3ff' : '#fef2f2');
+        var corTxt = ocupado.status==='bloqueado' ? '#6b7280' : (ehMinha ? '#7c3aed' : '#dc2626');
+        html+='<div style="background:'+corBg+';border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">'
+          +'<div><b style="font-size:13px;">'+_pdvFmtBr(iso)+'</b> <span style="font-size:11px;color:#9ca3af;">('+diaSemana+')</span></div>'
+          +'<span style="font-size:11px;color:'+corTxt+';font-weight:600;">'+label+'</span>'
+          +'</div>';
+      } else {
+        html+='<button onclick="_pdvAbrirForm(\''+iso+'\')" style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left;">'
+          +'<div><b style="font-size:13px;color:#111;">'+_pdvFmtBr(iso)+'</b> <span style="font-size:11px;color:#9ca3af;">('+diaSemana+')</span></div>'
+          +'<span style="font-size:11px;color:#16a34a;font-weight:700;">Livre — solicitar</span>'
+          +'</button>';
+      }
+    });
+    html+='</div>';
+
+    body.innerHTML=html;
+  }catch(e){
+    body.innerHTML='<p style="color:#dc2626;padding:12px;">Erro ao carregar agenda: '+e.message+'</p>';
+  }
+}
+
+async function _pdvCancelarPedido(id){
+  if(!confirm('Cancelar este pedido de PDV?')) return;
+  try{
+    await sbPdv('pdv_agenda?id=eq.'+id,{method:'PATCH',body:JSON.stringify({status:'cancelado',atualizado_em:new Date().toISOString()})});
+    mostrarToast('Pedido cancelado.');
+    _renderCalendarioPdv();
+  }catch(e){ mostrarToast('Erro ao cancelar: '+e.message); }
+}
+
+function _pdvAbrirForm(iso){
+  _pdvDataEscolhida=iso;
+  var body=document.getElementById('m-pdv-form-b');
+  document.getElementById('m-pdv-form-t').textContent='📅 Solicitar PDV — '+_pdvFmtBr(iso);
+
+  var clienteHtml='';
+  if(_pdvClienteCod){
+    clienteHtml='<div style="background:#f5f3ff;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;color:#5b21b6;font-weight:600;">Cliente: '+_pdvClienteNome+'</div>';
+  } else {
+    clienteHtml='<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Cliente *</label>'
+      +'<div style="position:relative;"><input id="pdv-cliente" type="text" placeholder="Buscar cliente..." autocomplete="off" oninput="_pdvBuscarCliente(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+      +'<div id="pdv-cliente-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>'
+      +'</div>';
+  }
+
+  body.innerHTML = clienteHtml
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Nome do contato combinado *</label>'
+      +'<input id="pdv-contato-nome" type="text" placeholder="Quem você combinou o PDV" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Telefone do contato</label>'
+      +'<input id="pdv-contato-tel" type="tel" placeholder="(11) 99999-9999" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Objetivo do PDV *</label>'
+      +'<textarea id="pdv-objetivo" rows="3" placeholder="O que se espera desse PDV..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>'
+    +'</div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Alvo do PDV *</label>'
+    +'<div style="display:flex;gap:6px;margin-bottom:8px;">'
+    +'<button type="button" id="pdv-alvo-btn-prod" onclick="pdvAlvoModo(\'produtos\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #f59e0b;background:#f59e0b;color:white;font-size:11px;font-weight:700;cursor:pointer;">Produto(s)</button>'
+    +'<button type="button" id="pdv-alvo-btn-lab" onclick="pdvAlvoModo(\'lab\')" style="flex:1;padding:7px;border-radius:7px;border:1.5px solid #e5e7eb;background:white;color:#6b7280;font-size:11px;font-weight:700;cursor:pointer;">Laboratório(s)</button>'
+    +'</div>'
+    +'<div id="pdv-alvo-produtos">'
+    +'<div style="position:relative;"><input id="pdv-produto" type="text" placeholder="Buscar e adicionar produto..." autocomplete="off" oninput="pdvBuscarProduto(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'<div id="pdv-produto-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>'
+    +'<div id="pdv-produtos-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>'
+    +'</div>'
+    +'<div id="pdv-alvo-lab" style="display:none;">'
+    +'<div id="pdv-labs-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>'
+    +'</div>'
+    +'</div>'
+    +'<button onclick="_pdvEnviarSolicitacao()" style="width:100%;background:#f59e0b;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;">Enviar solicitação</button>';
+
+  _pdvProdutosSelecionados=[];
+  _pdvLabsSelecionados=[];
+  pdvAlvoModo('produtos');
+
+  document.getElementById('m-pdv').classList.remove('on');
+  document.getElementById('m-pdv-form').classList.add('on');
+}
+
+function _pdvBuscarCliente(q){
+  var box=document.getElementById('pdv-cliente-sugs');
+  q=(q||'').trim().toLowerCase();
+  if(!q){box.style.display='none';return;}
+  var res=CL.filter(function(c){return c.nome.toLowerCase().indexOf(q)>=0;}).slice(0,8);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(c){
+    return '<div class="pdv-cli-sug" data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'+c.nome+'</div>';
+  }).join('');
+  box.querySelectorAll('.pdv-cli-sug').forEach(function(el){
+    el.addEventListener('click',function(){
+      _pdvClienteCod=parseInt(this.dataset.cod);
+      _pdvClienteNome=decodeURIComponent(this.dataset.nome);
+      document.getElementById('pdv-cliente').value=_pdvClienteNome;
+      box.style.display='none';
+    });
+  });
+  box.style.display='block';
+}
+
+
+var _pdvProdutosSelecionados=[];
+var _pdvLabsSelecionados=[];
+
+function pdvAlvoModo(modo){
+  var btnP=document.getElementById('pdv-alvo-btn-prod'), btnL=document.getElementById('pdv-alvo-btn-lab');
+  var wrapP=document.getElementById('pdv-alvo-produtos'), wrapL=document.getElementById('pdv-alvo-lab');
+  if(modo==='produtos'){
+    wrapP.style.display='block'; wrapL.style.display='none';
+    btnP.style.background='#f59e0b'; btnP.style.borderColor='#f59e0b'; btnP.style.color='white';
+    btnL.style.background='white'; btnL.style.borderColor='#e5e7eb'; btnL.style.color='#6b7280';
+  } else {
+    wrapP.style.display='none'; wrapL.style.display='block';
+    btnL.style.background='#f59e0b'; btnL.style.borderColor='#f59e0b'; btnL.style.color='white';
+    btnP.style.background='white'; btnP.style.borderColor='#e5e7eb'; btnP.style.color='#6b7280';
+    pdvPopularLabs();
+  }
+}
+
+function pdvPopularLabs(){
+  var wrap=document.getElementById('pdv-labs-chips');
+  if(!wrap||wrap.children.length) return;
+  var labs=(typeof LABS_LIST!=='undefined'?LABS_LIST:[]);
+  wrap.innerHTML=labs.map(function(l){
+    return '<span data-lab="'+l+'" class="pdv-lab-pill" style="padding:6px 12px;border-radius:14px;border:1.5px solid #e5e7eb;font-size:11px;font-weight:600;cursor:pointer;color:#374151;">'+l+'</span>';
+  }).join('');
+  wrap.querySelectorAll('.pdv-lab-pill').forEach(function(el){
+    el.addEventListener('click',function(){
+      var l=this.dataset.lab;
+      var idx=_pdvLabsSelecionados.indexOf(l);
+      if(idx>=0){
+        _pdvLabsSelecionados.splice(idx,1);
+        this.style.background='white'; this.style.color='#374151'; this.style.borderColor='#e5e7eb';
+      } else {
+        _pdvLabsSelecionados.push(l);
+        this.style.background='#f59e0b'; this.style.color='white'; this.style.borderColor='#f59e0b';
+      }
+    });
+  });
+}
+
+function pdvBuscarProduto(q){
+  var box=document.getElementById('pdv-produto-sugs');
+  if(!box) return;
+  q=(q||'').trim().toLowerCase();
+  if(!q||typeof PRECOS_VV==='undefined'){box.style.display='none';return;}
+  var res=PRECOS_VV.filter(function(p){
+    return (p.nome.toLowerCase().indexOf(q)>=0||(p.lab||'').toLowerCase().indexOf(q)>=0)
+      && _pdvProdutosSelecionados.indexOf(p.nome)<0;
+  }).slice(0,6);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(p){
+    return '<div data-nome="'+p.nome.replace(/"/g,'&quot;')+'" class="pdv-prod-sug" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+      +'<div style="font-weight:600;">'+p.nome+'</div><div style="color:#9ca3af;font-size:11px;">'+p.lab+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.pdv-prod-sug').forEach(function(el){
+    el.addEventListener('click',function(){
+      var nome=this.dataset.nome;
+      if(_pdvProdutosSelecionados.indexOf(nome)<0) _pdvProdutosSelecionados.push(nome);
+      document.getElementById('pdv-produto').value='';
+      box.style.display='none';
+      pdvRenderChipsProdutos();
+    });
+  });
+  box.style.display='block';
+}
+
+function pdvRenderChipsProdutos(){
+  var wrap=document.getElementById('pdv-produtos-chips');
+  if(!wrap) return;
+  wrap.innerHTML=_pdvProdutosSelecionados.map(function(nome,i){
+    return '<span style="background:#fef3c7;color:#92400e;border-radius:14px;padding:5px 10px 5px 12px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">'
+      +nome+'<button type="button" data-idx="'+i+'" class="pdv-chip-rm" style="background:none;border:none;color:#92400e;cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button></span>';
+  }).join('');
+  wrap.querySelectorAll('.pdv-chip-rm').forEach(function(b){
+    b.addEventListener('click',function(){
+      _pdvProdutosSelecionados.splice(parseInt(this.dataset.idx),1);
+      pdvRenderChipsProdutos();
+    });
+  });
+}
+
+async function _pdvEnviarSolicitacao(){
+  var contatoNome=(document.getElementById('pdv-contato-nome').value||'').trim();
+  var contatoTel=(document.getElementById('pdv-contato-tel').value||'').trim();
+  var objetivo=(document.getElementById('pdv-objetivo').value||'').trim();
+  var alvoModo=(document.getElementById('pdv-alvo-lab').style.display==='block')?'lab':'produtos';
+  var lab=alvoModo==='produtos'
+    ? (_pdvProdutosSelecionados.length?_pdvProdutosSelecionados.join(', '):'')
+    : (_pdvLabsSelecionados.length?_pdvLabsSelecionados.join(', '):'');
+
+  if(!_pdvClienteCod){mostrarToast('Selecione o cliente.');return;}
+  if(!contatoNome){mostrarToast('Informe o nome do contato.');return;}
+  if(!objetivo){mostrarToast('Informe o objetivo do PDV.');return;}
+  if(!lab){mostrarToast('Selecione ao menos um produto ou laboratório.');return;}
+
+  var area=(typeof AREAS_LABEL_DATA!=='undefined'?AREAS_LABEL_DATA[REP]:'')||'';
+
+  try{
+    // Checar de novo se ainda esta livre (evitar corrida entre 2 reps)
+    var check=await sbPdv('pdv_agenda?data_pdv=eq.'+_pdvDataEscolhida+'&status=in.(pendente,confirmado,bloqueado)');
+    if(Array.isArray(check)&&check.length){
+      mostrarToast('Essa data acabou de ficar indisponível. Escolha outra.');
+      document.getElementById('m-pdv-form').classList.remove('on');
+      _renderCalendarioPdv();
+      return;
+    }
+    // Checar se o rep ja tem pedido pendente para o MESMO cliente
+    var dup=await sbPdv('pdv_agenda?rep=eq.'+encodeURIComponent(REP)+'&cliente_cod=eq.'+_pdvClienteCod+'&status=eq.pendente');
+    if(Array.isArray(dup)&&dup.length){
+      mostrarToast('Você já tem um pedido pendente para este cliente.');
+      return;
+    }
+
+    await sbPdv('pdv_agenda',{method:'POST',body:JSON.stringify({
+      data_pdv:_pdvDataEscolhida, status:'pendente',
+      rep:REP, area:area,
+      cliente_cod:_pdvClienteCod, cliente_nome:_pdvClienteNome,
+      contato_nome:contatoNome, contato_telefone:contatoTel||null,
+      objetivo:objetivo, laboratorio:lab
+    })});
+    mostrarToast('✓ Solicitação enviada! Aguarde a Nicolle confirmar.');
+    document.getElementById('m-pdv-form').classList.remove('on');
+    _renderCalendarioPdv();
+  }catch(e){ mostrarToast('Erro ao enviar: '+e.message); }
+}
+// ══════════ FIM AGENDA PDV ══════════
+
+</script>
+
+
+<div id="tela-radar">
+  <div class="radar-header">
+    <button onclick="fecharRadar()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer;flex-shrink:0;">✕</button>
+    <h2>📡 Radar Comercial</h2>
+  </div>
+  <!-- Abas -->
+  <div class="radar-abas">
+    <div class="radar-aba ativa" onclick="setAbaRadar('busca',this)">🔍 Substituição</div>
+    <div class="radar-aba" onclick="setAbaRadar('cross',this)">🔗 Cross-Selling</div>
+  </div>
+
+  <!-- ABA: BUSCA/SUBSTITUIÇÃO -->
+  <div id="radar-busca-section">
+    <div class="radar-search-box">
+      <input type="text" id="radar-input" placeholder="Produto concorrente, ativo ou laboratório..." oninput="renderRadar()" autocomplete="off">
+    </div>
+    <!-- Chips de macro-categoria -->
+    <div class="radar-macro-chips" id="radar-macro-chips"></div>
+    <!-- Filtros substituição -->
+    <div class="radar-filtros">
+      <button class="rfbtn ativo" onclick="setFiltroRadar('',this)">Todos</button>
+      <button class="rfbtn" onclick="setFiltroRadar('sim',this)">✅ Substituível</button>
+      <button class="rfbtn" onclick="setFiltroRadar('ressalva',this)">⚠️ Com ressalva</button>
+      <button class="rfbtn" onclick="setFiltroRadar('nao',this)">❌ Sem equivalente</button>
+    </div>
+    <div class="radar-contador" id="radar-contador"></div>
+    <div class="radar-lista" id="radar-lista"></div>
+  </div>
+
+  <!-- ABA: CROSS-SELLING -->
+  <div id="radar-cross-section">
+    <div class="radar-search-box">
+      <input type="text" id="cross-input" placeholder="Buscar por categoria ou produto..." oninput="renderCross()" autocomplete="off">
+    </div>
+    <div class="radar-contador" id="cross-contador"></div>
+    <div id="cross-lista"></div>
+  </div>
+</div>
+
+
+<!-- CALCULADORA DE MARGEM -->
+<div id="modal-calc" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.45);" onclick="if(event.target===this)fecharCalculadora()">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(96vw,420px);background:white;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="background:#CC0000;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="color:white;font-weight:700;font-size:16px;">&#x1F9EE; Calculadora de Margem</span>
+      <button onclick="fecharCalculadora()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;line-height:1;">&#x2715;</button>
+    </div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      <div style="position:relative;">
+        <label style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Produto</label>
+        <input id="calc-busca" type="text" placeholder="Digite o nome do produto..." autocomplete="off"
+          oninput="calcBuscarProduto(this.value)"
+          style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#CC0000'" onblur="this.style.borderColor='#e5e7eb'">
+        <div id="calc-sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:200px;overflow-y:auto;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,0.1);"></div>
+      </div>
+      <div id="calc-info" style="display:none;background:#f9fafb;border-radius:8px;padding:10px 12px;font-size:12px;color:#6b7280;line-height:1.6;">
+        <span id="calc-info-txt"></span>
+      </div>
+      <!-- Custo -->
+      <div>
+        <label style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Custo (R$)</label>
+        <input id="calc-custo" type="number" step="0.01" min="0" placeholder="0,00"
+          oninput="calcRecalcular('custo')"
+          style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:15px;font-weight:600;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#CC0000'" onblur="this.style.borderColor='#e5e7eb'">
+      </div>
+      <!-- Percentuais -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#16a34a;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Margem (%)</label>
+          <input id="calc-pct-margem" type="number" step="0.1" min="0" max="999" placeholder="40"
+            oninput="calcRecalcular('pct')"
+            style="width:100%;padding:10px 12px;border:1.5px solid #bbf7d0;border-radius:8px;font-size:15px;font-weight:600;outline:none;box-sizing:border-box;color:#16a34a;"
+            onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#bbf7d0'">
+          <div style="font-size:10px;color:#9ca3af;margin-top:3px;">custo &times; (1 + %)</div>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#2563eb;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Markup (%)</label>
+          <input id="calc-pct-markup" type="number" step="0.1" min="0" max="99.9" placeholder="40"
+            oninput="calcRecalcular('pct')"
+            style="width:100%;padding:10px 12px;border:1.5px solid #bfdbfe;border-radius:8px;font-size:15px;font-weight:600;outline:none;box-sizing:border-box;color:#2563eb;"
+            onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#bfdbfe'">
+          <div style="font-size:10px;color:#9ca3af;margin-top:3px;">custo &divide; ((100 &minus; %) &divide; 100)</div>
+        </div>
+      </div>
+      <!-- Preco de venda -->
+      <div>
+        <label style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Preco de venda negociado (R$) <span style="font-weight:400;color:#9ca3af;">— recalcula margem e markup</span></label>
+        <input id="calc-venda" type="number" step="0.01" min="0" placeholder="0,00"
+          oninput="calcRecalcular('venda')"
+          style="width:100%;padding:12px 14px;border:2px solid #CC0000;border-radius:8px;font-size:18px;font-weight:700;color:#CC0000;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#990000'" onblur="this.style.borderColor='#CC0000'">
+      </div>
+      <!-- Resultados -->
+      <div id="calc-resultados" style="display:none;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:14px 16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="text-align:center;background:white;border-radius:8px;padding:10px;">
+            <div style="font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Margem</div>
+            <div id="calc-res-margem-preco" style="font-size:20px;font-weight:800;color:#111;"></div>
+            <div id="calc-res-margem-lucro" style="font-size:11px;color:#6b7280;margin-top:3px;"></div>
+          </div>
+          <div style="text-align:center;background:white;border-radius:8px;padding:10px;">
+            <div style="font-size:11px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Markup</div>
+            <div id="calc-res-markup-preco" style="font-size:20px;font-weight:800;color:#111;"></div>
+            <div id="calc-res-markup-lucro" style="font-size:11px;color:#6b7280;margin-top:3px;"></div>
+          </div>
+        </div>
+        <div id="calc-alerta" style="display:none;margin-top:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 10px;font-size:12px;color:#dc2626;text-align:center;font-weight:600;"></div>
+      </div>
+      <button onclick="calcLimpar()" style="background:none;border:1px solid #e5e7eb;border-radius:8px;padding:8px;font-size:13px;color:#9ca3af;cursor:pointer;">Limpar</button>
+    </div>
+  </div>
+</div>
+<!-- FIM CALCULADORA -->
+
+
+<!-- ═══════ MODAL AÇÕES COMERCIAIS ═══════ -->
 
 </body></html>
 <!-- deploy trigger -->

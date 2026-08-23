@@ -559,7 +559,7 @@ function init(){
   var pf=sessionStorage.getItem('vv_perfil'), au=sessionStorage.getItem('vv_auth');
   if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
   REP=pf; CL=(TODOS_DADOS[REP]||[]).slice(); TG=CL.length;
-  fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/visitas_prospects_bio?rep=eq.'+encodeURIComponent(REP)+'&select=cnpj_prospect',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}}).then(function(r){return r.json();}).then(function(rows){_BIO_VISITADOS=new Set((Array.isArray(rows)?rows:[]).map(function(r){return (r.cnpj_prospect||'').replace(/[^0-9]/g,'');}));}).catch(function(){_BIO_VISITADOS=new Set();});
+  fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/visitas_prospects_bio?rep=eq.'+encodeURIComponent(REP)+'&select=cliente_cnpj',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}}).then(function(r){return r.json();}).then(function(rows){_BIO_VISITADOS=new Set((Array.isArray(rows)?rows:[]).map(function(r){return (r.cliente_cnpj||'').replace(/[^0-9]/g,'');}));}).catch(function(){_BIO_VISITADOS=new Set();});
   // Enriquecer CL com razao_social, cnpj e endereco do BASE_CLIENTES
   function _enriquecerCL(){
     if(typeof BASE_CLIENTES==='undefined'){setTimeout(_enriquecerCL,100);return;}

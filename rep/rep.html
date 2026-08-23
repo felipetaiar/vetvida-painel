@@ -2622,7 +2622,7 @@ function _montarComparativoBio(prodsAnteriores, bioComprados){
       var k=_normExato(pr);
       var achado=bioComprados[k];
       // sem fallback parcial — só casa se _normProd bater exatamente
-      if(achado) usados[_normProd(achado.nome)]=true;
+      if(achado) usados[_normExato(achado.nome)]=true;
       var bg=ix%2?'#fafafa':'#fff';
       h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;background:'+bg+';border-bottom:1px solid #f3f4f6;">'
         +'<span style="font-size:11px;color:#374151;flex:1;">'+pr+'</span>'

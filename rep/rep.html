@@ -371,6 +371,13 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
     <span id="lab-btns"></span>
   </div>
 </div>
+<div id="painel-vendas" style="display:none;background:white;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin:0 0 12px;overflow:hidden;">
+  <button onclick="_toggleVendas()" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:none;border:none;cursor:pointer;font-size:13px;font-weight:700;color:#111;">
+    <span id="pv-titulo">📊 Vendas do mês</span>
+    <span id="pv-chevron" style="font-size:11px;color:#888;">▼</span>
+  </button>
+  <div id="pv-body" style="display:none;padding:0 16px 16px;"></div>
+</div>
 <div class="cont" id="lista"><p style="text-align:center;padding:60px;color:#aaa">Carregando...</p></div>
 <div class="ftr">Vet Vida — Hub Comercial</div>
 <div class="tst" id="tst">Mensagem copiada!</div>
@@ -539,6 +546,7 @@ tr:hover td{background:#f8fafc!important;}
 
 </style>
 <script src="dados.js"></script>
+<script src="metas.js"></script>
 <script src="base_clientes.js"></script>
 <script src="radar_db.js" async></script>
 <script src="precos_vv.js" async></script>
@@ -1096,6 +1104,7 @@ function renderHist(hist){
 function fecharHist(){document.getElementById('modal-cli').classList.remove('open');}
 
 function pg(){
+  var _pvEl=document.getElementById('painel-vendas');if(_pvEl)_pvEl.style.display='block';
   var positivados=CL.filter(function(c){return c.tipo==='positivado';});
   var _p2=positivados.length;
   var _ar=CL.filter(function(c){return c.tipo==='ativo_recente';}).length;

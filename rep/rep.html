@@ -563,10 +563,10 @@ tr:hover td{background:#f8fafc!important;}
 .filtro-label{color:#64748b!important;}
 
 </style>
-<script src="teste_dados.js"></script>
-<script src="teste_base_clientes.js"></script>
+<script src="dados.js"></script>
+<script src="base_clientes.js"></script>
 <script src="radar_db.js" async></script>
-<script src="teste_precos_vv.js" async></script>
+<script src="precos_vv.js" async></script>
 <!-- bio_prospects.js desativado no ambiente de teste (bases de codigo diferentes) -->
 <script>
 // Carregar contagem de leads abertos (Supabase direto, substitui API antiga /api/sheets)
@@ -975,7 +975,7 @@ var _histCod=0, _histData=null;
 function carregarHistorico(cb){
   if(HIST_CARREGADO){cb();return;}
   var s=document.createElement('script');
-  s.src='teste_hist_'+REP.toLowerCase()+'.js';
+  s.src='hist_'+REP.toLowerCase()+'.js';
   s.onload=function(){HIST_CARREGADO=true;cb();};
   s.onerror=function(){HIST_CARREGADO=true;cb();};
   document.head.appendChild(s);

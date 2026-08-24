@@ -623,6 +623,7 @@ function init(){
     });
   },600);
   document.getElementById('badge').textContent=REP;
+  buscarSincronizacao();
   var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').innerHTML='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+'<br>Area: '+(AREAS_LABEL_DATA[REP]||'');
   document.getElementById('ct').textContent=TG;
   document.getElementById('ca').textContent=CL.filter(function(c){return c.tipo==='alta';}).length;

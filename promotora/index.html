@@ -953,7 +953,10 @@ document.addEventListener('click', function(e) {
   <!-- ── SCREEN: AGENDA PDV ── -->
   <div id="screen-pdv" class="screen">
     <div class="card" style="padding-top:12px;">
-      <div class="card-title" style="margin-bottom:12px;">📅 Agenda PDV</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;">📅 Agenda PDV</div>
+        <button data-oc="pdvnAbrirCriacao()" style="background:#f59e0b;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Novo PDV</button>
+      </div>
       <div style="display:flex;border-bottom:1px solid #e5e7eb;margin:0 -16px 16px;flex-shrink:0;">
         <button id="pdv-tab-pend" data-oc="pdvNicolleTab('pendentes')" style="flex:1;padding:10px;font-size:12px;font-weight:700;color:#f59e0b;border:none;border-bottom:2px solid #f59e0b;background:white;cursor:pointer;">Pendentes</button>
         <button id="pdv-tab-conf" data-oc="pdvNicolleTab('confirmados')" style="flex:1;padding:10px;font-size:12px;font-weight:700;color:#9ca3af;border:none;border-bottom:2px solid transparent;background:white;cursor:pointer;">Confirmados</button>
@@ -962,6 +965,16 @@ document.addEventListener('click', function(e) {
       <div id="pdv-nicolle-content"></div>
     </div>
   </div>
+
+<!-- MODAL PDVN CRIACAO -->
+<div class="modal-overlay" id="modal-pdvn-criar">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📅 Novo PDV</div>
+    <div id="pdvn-criar-body"></div>
+    <button class="btn btn-secondary" style="margin-top:16px;" data-oc="fecharModal('modal-pdvn-criar')">Cancelar</button>
+  </div>
+</div>
 
 <!-- ── SCREEN: AÇÕES COMERCIAIS ── -->
   <div id="screen-acoes" class="screen">
@@ -1436,6 +1449,7 @@ function entrar(perfil) {
       iniciarSininho('NICOLLE',function(tipo,ref){
         if(tipo==='acao') navegarPara('acoes');
         else if(tipo==='visita') navegarPara('historico');
+        else if(tipo==='pdv') navegarPara('pdv');
       });
     },800);
   }
@@ -4468,6 +4482,133 @@ async function _renderResumoPdvDash(){
     el.textContent='Não foi possível carregar.';
   }
 }
+
+
+// ══════════ NICOLLE CRIA PDV DIRETAMENTE ══════════
+var _pdvnCriarClienteCod=null, _pdvnCriarClienteNome=null, _pdvnCriarArea=null, _pdvnCriarRep=null;
+var _pdvnCriarLabsSel=[];
+var PDVN_LABS_FIXOS=['DECHRA','HOMEOPET','VANSIL','LABYES','BIOGENESIS BAGÓ','ORGANNACT','SYNTEC'];
+
+function pdvnAbrirCriacao(){
+  _pdvnCriarClienteCod=null; _pdvnCriarClienteNome=null; _pdvnCriarArea=null; _pdvnCriarRep=null;
+  _pdvnCriarLabsSel=[];
+
+  var hoje=new Date(); hoje.setHours(0,0,0,0);
+  var maxD=new Date(hoje); maxD.setDate(maxD.getDate()+60);
+  var datas=[]; var d=new Date(hoje);
+  while(d<=maxD){ var dow=d.getDay(); if(dow===5||dow===6) datas.push(_pdvnIso(d)); d.setDate(d.getDate()+1); }
+  var dataOpts=datas.map(function(iso){
+    var dow=new Date(iso+'T00:00:00').getDay();
+    return '<option value="'+iso+'">'+_pdvnFmtBr(iso)+' ('+(dow===5?'Sexta':'Sábado')+')</option>';
+  }).join('');
+
+  var labChips=PDVN_LABS_FIXOS.map(function(l){
+    return '<span data-lab="'+l+'" class="pdvn-criar-lab-pill" style="padding:6px 12px;border-radius:14px;border:1.5px solid #e5e7eb;font-size:11px;font-weight:600;cursor:pointer;color:#374151;">'+l+'</span>';
+  }).join('');
+
+  document.getElementById('pdvn-criar-body').innerHTML =
+    '<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Cliente *</label>'
+      +'<div style="position:relative;"><input id="pdvn-criar-cliente" type="text" placeholder="Buscar cliente..." autocomplete="off" oninput="pdvnBuscarClienteCriacao(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+      +'<div id="pdvn-criar-cliente-sugs" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid #e5e7eb;border-radius:8px;margin-top:2px;max-height:160px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div></div>'
+      +'<div id="pdvn-criar-area-info" style="font-size:11px;color:#7c3aed;margin-top:4px;"></div>'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Data *</label>'
+      +'<select id="pdvn-criar-data" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;"><option value="">Selecione...</option>'+dataOpts+'</select>'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Nome do contato *</label>'
+      +'<input id="pdvn-criar-contato" type="text" placeholder="Quem combinou o PDV" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Telefone do contato</label>'
+      +'<input id="pdvn-criar-tel" type="tel" placeholder="(11) 99999-9999" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;">'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:4px;">Objetivo do PDV *</label>'
+      +'<textarea id="pdvn-criar-objetivo" rows="3" placeholder="O que se espera desse PDV..." style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;">'
+      +'<label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Laboratório(s) *</label>'
+      +'<div id="pdvn-criar-labs-chips" style="display:flex;flex-wrap:wrap;gap:6px;">'+labChips+'</div>'
+    +'</div>'
+    +'<button data-oc="pdvnConfirmarCriacao()" style="width:100%;background:#f59e0b;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Confirmar PDV</button>';
+
+  document.querySelectorAll('.pdvn-criar-lab-pill').forEach(function(el){
+    el.addEventListener('click',function(){
+      var l=this.dataset.lab;
+      var idx=_pdvnCriarLabsSel.indexOf(l);
+      if(idx>=0){ _pdvnCriarLabsSel.splice(idx,1); this.style.background='white'; this.style.color='#374151'; this.style.borderColor='#e5e7eb'; }
+      else{ _pdvnCriarLabsSel.push(l); this.style.background='#f59e0b'; this.style.color='white'; this.style.borderColor='#f59e0b'; }
+    });
+  });
+
+  document.getElementById('modal-pdvn-criar').classList.add('open');
+}
+
+function pdvnBuscarClienteCriacao(q){
+  var box=document.getElementById('pdvn-criar-cliente-sugs');
+  q=(q||'').trim().toLowerCase();
+  if(!q||typeof BASE_CLIENTES==='undefined'){box.style.display='none';return;}
+  var res=BASE_CLIENTES.filter(function(c){return c.nome.toLowerCase().indexOf(q)>=0;}).slice(0,8);
+  if(!res.length){box.style.display='none';return;}
+  box.innerHTML=res.map(function(c){
+    return '<div class="pdvn-criar-cli-sug" data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" data-area="'+encodeURIComponent(c.area||'')+'" data-vend="'+encodeURIComponent(c.vendedor||'')+'" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #f3f4f6;font-size:12px;">'
+      +c.nome+' <span style="color:#9ca3af;font-size:11px;">('+(c.area||'sem área')+')</span></div>';
+  }).join('');
+  box.querySelectorAll('.pdvn-criar-cli-sug').forEach(function(el){
+    el.addEventListener('click',function(){
+      _pdvnCriarClienteCod=parseInt(this.dataset.cod);
+      _pdvnCriarClienteNome=decodeURIComponent(this.dataset.nome);
+      _pdvnCriarArea=decodeURIComponent(this.dataset.area);
+      _pdvnCriarRep=decodeURIComponent(this.dataset.vend);
+      document.getElementById('pdvn-criar-cliente').value=_pdvnCriarClienteNome;
+      document.getElementById('pdvn-criar-area-info').textContent='Área: '+_pdvnCriarArea+' · Rep: '+_pdvnCriarRep;
+      box.style.display='none';
+    });
+  });
+  box.style.display='block';
+}
+
+async function pdvnConfirmarCriacao(){
+  var dataEsc=document.getElementById('pdvn-criar-data').value;
+  var contatoNome=(document.getElementById('pdvn-criar-contato').value||'').trim();
+  var contatoTel=(document.getElementById('pdvn-criar-tel').value||'').trim();
+  var objetivo=(document.getElementById('pdvn-criar-objetivo').value||'').trim();
+
+  if(!_pdvnCriarClienteCod){mostrarToast('Selecione o cliente.');return;}
+  if(!dataEsc){mostrarToast('Selecione a data.');return;}
+  if(!contatoNome){mostrarToast('Informe o nome do contato.');return;}
+  if(!objetivo){mostrarToast('Informe o objetivo do PDV.');return;}
+  if(!_pdvnCriarLabsSel.length){mostrarToast('Selecione ao menos um laboratório.');return;}
+  if(!_pdvnCriarRep){mostrarToast('Este cliente não tem representante associado.');return;}
+
+  try{
+    var check=await sbPdvN('pdv_agenda?data_pdv=eq.'+dataEsc+'&status=in.(pendente,confirmado,bloqueado)');
+    if(Array.isArray(check)&&check.length){
+      mostrarToast('Essa data já está ocupada. Escolha outra.');
+      return;
+    }
+    var res=await sbPdvN('pdv_agenda',{method:'POST',body:JSON.stringify({
+      data_pdv:dataEsc, status:'confirmado',
+      rep:_pdvnCriarRep, area:_pdvnCriarArea,
+      cliente_cod:_pdvnCriarClienteCod, cliente_nome:_pdvnCriarClienteNome,
+      contato_nome:contatoNome, contato_telefone:contatoTel||null,
+      objetivo:objetivo, laboratorio:_pdvnCriarLabsSel.join(', ')
+    })});
+    var novo=Array.isArray(res)?res[0]:null;
+    if(novo){
+      criarNotificacao(_pdvnCriarRep,'pdv','PDV agendado pela Nicolle',
+        'Nicolle marcou PDV em '+_pdvnFmtBr(dataEsc)+' para '+_pdvnCriarClienteNome,novo.id);
+    }
+    mostrarToast('✓ PDV criado e confirmado!');
+    fecharModal('modal-pdvn-criar');
+    pdvNicolleTab(_pdvnTabAtual);
+    _renderResumoPdvDash();
+  }catch(e){ mostrarToast('Erro ao criar: '+e.message); }
+}
+// ══════════ FIM CRIACAO PDV NICOLLE ══════════
 
 </script>
 </body>

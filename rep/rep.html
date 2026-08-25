@@ -356,6 +356,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
     <button class="bf fr" onclick="sF('risco',this)">Risco de Inativação</button>
     <button class="bf fi" onclick="sF('inativo',this)">Inativos</button>
     <button class="bf fp" onclick="sF('positivado',this)">Positivados</button>
+    <button class="bf" id="btn-bio-toggle" onclick="toggleProspectsBio(this)" style="background:#1d4ed8;color:white;border-color:#1d4ed8;">🔵 Prospects Bio</button>
   </div>
   <div class="ord">
     <label>Ordenar</label>
@@ -573,6 +574,7 @@ tr:hover td{background:#f8fafc!important;}
   }).catch(function(e){ console.warn('leads count:', e); });
 })();
 var REP='', CL=[], FA='todos', LAB_FILTRO='todos', CO=new Set(), TG=0, STATUS_SALVO={};
+var MOSTRAR_BIO=true;
 var ROTEIROS_REP={};
 var _pCod=0, _pNome='', _selSt='';
 var CO_MES=new Set(), CO_MES_ANT=new Set(), MODO_HIST=false;
@@ -831,10 +833,11 @@ function rnd(){
   // Prospects Biogenesis no topo
   var BIO_P=typeof BIO_PROSPECTS!=='undefined'?BIO_PROSPECTS.filter(function(p){return p.vendedor===REP;}):[];
   var hBio='';
-  if(BIO_P.length&&FA!=='positivado'&&FA!=='ativo_recente'&&FA!=='risco'&&(LAB_FILTRO==='todos'||(LAB_FILTRO||'').toUpperCase().indexOf('BIOG')>=0)){
+  if(MOSTRAR_BIO&&BIO_P.length&&FA!=='positivado'&&FA!=='ativo_recente'&&FA!=='risco'&&(LAB_FILTRO==='todos'||(LAB_FILTRO||'').toUpperCase().indexOf('BIOG')>=0)&&(!b||BIO_P.some(function(p){return p.nome.toLowerCase().indexOf(b)>=0;}))){
     hBio+='<div style="background:#eff6ff;border-left:4px solid #1d4ed8;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;font-weight:700;color:#1d4ed8;">🔵 '+BIO_P.length+' Prospect'+(BIO_P.length>1?'s':'')+' Biogênesis — nunca compraram pela VetVida</div>';
     // Ordenar por ultima_compra mais antiga = mais urgente
     var _bioFiltrado=BIO_P.filter(function(p){
+      if(b&&p.nome.toLowerCase().indexOf(b)<0) return false; // busca ativa filtra tambem os prospects
       if(_BIO_FILTRO==='todos') return true;
       var cnpjL=(p.cnpj||'').replace(/[^0-9]/g,'');
       var visitado=_BIO_VISITADOS&&_BIO_VISITADOS.has(cnpjL);
@@ -1048,6 +1051,13 @@ function _renderVendas(){
   document.getElementById('pv-body').innerHTML = h;
 }
 
+function toggleProspectsBio(btn){
+  MOSTRAR_BIO=!MOSTRAR_BIO;
+  btn.style.background=MOSTRAR_BIO?'#1d4ed8':'white';
+  btn.style.color=MOSTRAR_BIO?'white':'#6b7280';
+  btn.style.borderColor=MOSTRAR_BIO?'#1d4ed8':'#e5e7eb';
+  rnd();
+}
 function sF(t,b){FA=t;_PAGE_ATUAL=0;document.querySelectorAll('.bf').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');rnd();}
 function fil(){rnd();}
 function mostrarToast(msg){

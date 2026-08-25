@@ -372,12 +372,15 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
     <span id="lab-btns"></span>
   </div>
 </div>
-<div id="painel-vendas" style="display:none;background:white;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin:0 0 12px;overflow:hidden;">
-  <button onclick="_toggleVendas()" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:none;border:none;cursor:pointer;font-size:13px;font-weight:700;color:#111;">
-    <span id="pv-titulo">📊 Vendas do mês</span>
-    <span id="pv-chevron" style="font-size:11px;color:#888;">▼</span>
+<div id="painel-vendas" style="display:none;background:white;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin:0 0 12px;overflow:hidden;border:1px solid #eef0f2;">
+  <button onclick="_toggleVendas()" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:none;border:none;cursor:pointer;">
+    <span style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:15px;">📊</span>
+      <span id="pv-titulo" style="font-size:14px;font-weight:700;color:#0f172a;letter-spacing:-.01em;">Desempenho do mês</span>
+    </span>
+    <span id="pv-chevron" style="font-size:12px;color:#94a3b8;transition:transform .2s;">▼</span>
   </button>
-  <div id="pv-body" style="display:none;padding:0 16px 16px;"></div>
+  <div id="pv-body" style="display:none;padding:0 18px 18px;"></div>
 </div>
 <div class="cont" id="lista"><p style="text-align:center;padding:60px;color:#aaa">Carregando...</p></div>
 <div class="ftr">Vet Vida — Hub Comercial</div>
@@ -959,13 +962,12 @@ function _toggleVendas(){
 function _renderVendas(){
   var mesStr = '/' + String(MES_REF).padStart(2,'0') + '/' + ANO_REF;
   var nomesMes = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  document.getElementById('pv-titulo').textContent = '📊 Vendas de ' + nomesMes[MES_REF] + '/' + ANO_REF;
+  document.getElementById('pv-titulo').textContent = 'Desempenho de ' + nomesMes[MES_REF];
 
-  // Calcular vendas e clientes por lab no mês atual
   var vendas = {}, clientes = {};
   var totalMes = 0;
+  var _aprox = false;
   if(typeof HIST_REP !== 'undefined'){
-    // Dados precisos: item a item por lab
     Object.keys(HIST_REP).forEach(function(cod){
       var cli = HIST_REP[cod];
       var labsCli = new Set();
@@ -980,9 +982,8 @@ function _renderVendas(){
       });
       labsCli.forEach(function(l){ clientes[l] = (clientes[l]||0) + 1; });
     });
-    document.getElementById('pv-titulo').textContent = '📊 Vendas de ' + nomesMes[MES_REF] + '/' + ANO_REF;
   } else {
-    // Fallback: usar CL.hist (fat do mês) e CL.labs
+    _aprox = true;
     CL.forEach(function(c){
       var fatMes = (c.hist && c.hist[MES_REF]) ? c.hist[MES_REF] : 0;
       if(!fatMes || fatMes <= 0) return;
@@ -994,63 +995,84 @@ function _renderVendas(){
         clientes[l] = (clientes[l]||0) + 1;
       });
     });
-    document.getElementById('pv-titulo').textContent = '📊 Vendas de ' + nomesMes[MES_REF] + '/' + ANO_REF + ' (aprox.)';
   }
 
-  // Metas do rep
   var metas = (typeof METAS !== 'undefined' && METAS[REP]) ? METAS[REP] : {};
-
-  // Ordenar labs por valor decrescente
-  var labs = Object.keys(vendas).sort(function(a,b){ return vendas[b]-vendas[a]; });
+  var metaTotal = 0;
+  Object.keys(metas).forEach(function(l){ metaTotal += metas[l]||0; });
+  var pctTotal = metaTotal > 0 ? Math.round(totalMes/metaTotal*100) : 0;
+  var corTotal = pctTotal >= 100 ? '#22c55e' : pctTotal >= 70 ? '#fbbf24' : '#f87171';
 
   var fmtR = function(v){ return 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0}); };
 
-  var h = '<div style="margin-bottom:14px;padding:12px 16px;background:#f8fafc;border-radius:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid #e2e8f0;">'
-    + '<span style="font-size:12px;color:#64748b;font-weight:600;">Total do mês</span>'
-    + '<span style="font-size:18px;font-weight:800;color:#CC0000;">' + fmtR(totalMes) + '</span>'
-    + '</div>';
+  // Separar labs COM meta (prioridade, mostrados em destaque) dos SEM meta (secundarios)
+  var todosLabs = Object.keys(vendas).sort(function(a,b){ return vendas[b]-vendas[a]; });
+  var comMeta = todosLabs.filter(function(l){ return (metas[l]||0) > 0; });
+  var semMeta = todosLabs.filter(function(l){ return !(metas[l]||0) > 0; });
 
-  h += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
-  h += '<thead><tr style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.06em;background:#f8fafc;">'
-    + '<th style="text-align:left;padding:6px 4px;font-weight:600;">Laboratório</th>'
-    + '<th style="text-align:right;padding:6px 4px;font-weight:600;">Vendas</th>'
-    + '<th style="text-align:right;padding:6px 4px;font-weight:600;">Clientes</th>'
-    + '<th style="text-align:right;padding:6px 4px;font-weight:600;">Meta</th>'
-    + '<th style="text-align:left;padding:6px 8px;font-weight:600;min-width:80px;">%</th>'
-    + '</tr></thead><tbody>';
+  // ── Hero: total do mes ──
+  var h = '<div style="background:#0f172a;border-radius:12px;padding:18px 20px;margin-bottom:14px;color:white;position:relative;overflow:hidden;">';
+  if(_aprox){
+    h += '<span style="position:absolute;top:12px;right:14px;font-size:9px;font-weight:700;color:#64748b;background:rgba(255,255,255,.06);padding:3px 8px;border-radius:10px;letter-spacing:.03em;">ESTIMADO</span>';
+  }
+  h += '<div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.09em;font-weight:700;margin-bottom:8px;">Faturamento total</div>'
+    + '<div style="font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1;">' + fmtR(totalMes) + '</div>';
 
-  labs.forEach(function(lab, idx){
-    var v = vendas[lab]||0;
-    var c = clientes[lab]||0;
-    var meta = metas[lab]||0;
-    var pct = meta > 0 ? Math.min(Math.round(v/meta*100),100) : 0;
-    var corBarra = pct >= 100 ? '#16a34a' : pct >= 70 ? '#f59e0b' : '#CC0000';
-    var bg = idx%2 === 0 ? '#fff' : '#f8fafc';
+  if(metaTotal > 0){
+    h += '<div style="margin-top:14px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">'
+      + '<span style="font-size:11px;color:#64748b;">Meta: ' + fmtR(metaTotal) + '</span>'
+      + '<span style="font-size:15px;font-weight:800;color:' + corTotal + ';">' + pctTotal + '%</span>'
+      + '</div>'
+      + '<div style="background:rgba(255,255,255,.1);border-radius:5px;height:7px;overflow:hidden;">'
+      + '<div style="width:' + Math.min(pctTotal,100) + '%;background:' + corTotal + ';height:100%;border-radius:5px;"></div></div>'
+      + '</div>';
+  }
+  h += '</div>';
 
-    h += '<tr style="background:' + bg + ';border-bottom:1px solid #f1f5f9;">'
-      + '<td style="padding:8px 4px;font-weight:600;color:#1e293b;">' + lab + '</td>'
-      + '<td style="padding:8px 4px;text-align:right;color:#111;font-weight:700;">' + fmtR(v) + '</td>'
-      + '<td style="padding:8px 4px;text-align:right;color:#64748b;">' + c + '</td>'
-      + '<td style="padding:8px 4px;text-align:right;color:#64748b;">' + (meta>0?fmtR(meta):'—') + '</td>'
-      + '<td style="padding:8px 4px 8px 8px;">';
-
-    if(meta > 0){
-      h += '<div style="display:flex;align-items:center;gap:6px;">'
-        + '<div style="flex:1;background:#e5e7eb;border-radius:4px;height:6px;">'
-        + '<div style="width:' + pct + '%;background:' + corBarra + ';border-radius:4px;height:6px;"></div></div>'
-        + '<span style="font-size:11px;font-weight:700;color:' + corBarra + ';min-width:28px;">' + pct + '%</span>'
+  // ── Cards com meta: destaque, 2 colunas, barra de progresso ──
+  if(comMeta.length){
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:'+(semMeta.length?'12px':'0')+';">';
+    comMeta.forEach(function(lab){
+      var v = vendas[lab]||0, c = clientes[lab]||0, meta = metas[lab]||0;
+      var pct = Math.round(v/meta*100);
+      var cor = pct >= 100 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626';
+      var corBg = pct >= 100 ? '#f0fdf4' : pct >= 70 ? '#fffbeb' : '#fef2f2';
+      h += '<div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">'
+        + '<span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.03em;">' + lab + '</span>'
+        + '<span style="font-size:10px;font-weight:800;color:' + cor + ';background:' + corBg + ';padding:2px 6px;border-radius:5px;">' + pct + '%</span>'
+        + '</div>'
+        + '<div style="font-size:17px;font-weight:800;color:#0f172a;letter-spacing:-.02em;">' + fmtR(v) + '</div>'
+        + '<div style="background:#f1f5f9;border-radius:4px;height:5px;margin-top:8px;overflow:hidden;">'
+        + '<div style="width:' + Math.min(pct,100) + '%;background:' + cor + ';height:100%;border-radius:4px;"></div></div>'
+        + '<div style="display:flex;justify-content:space-between;margin-top:5px;">'
+        + '<span style="font-size:10px;color:#94a3b8;">' + c + ' cliente' + (c!==1?'s':'') + '</span>'
+        + '<span style="font-size:10px;color:#94a3b8;">meta ' + fmtR(meta) + '</span>'
+        + '</div>'
         + '</div>';
-    } else {
-      h += '<span style="color:#cbd5e1;font-size:11px;">sem meta</span>';
-    }
+    });
+    h += '</div>';
+  }
 
-    h += '</td></tr>';
-  });
+  // ── Labs sem meta: linha compacta, discreta ──
+  if(semMeta.length){
+    h += '<div style="font-size:10px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:.05em;margin:4px 0 6px;">Sem meta definida</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:1px;border-radius:8px;overflow:hidden;border:1px solid #f1f5f9;">';
+    semMeta.forEach(function(lab, i){
+      var v = vendas[lab]||0, c = clientes[lab]||0;
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:' + (i%2===0?'#fff':'#f8fafc') + ';">'
+        + '<span style="font-size:12px;font-weight:600;color:#334155;">' + lab + '</span>'
+        + '<span style="display:flex;align-items:center;gap:10px;">'
+        + '<span style="font-size:10px;color:#94a3b8;">' + c + ' cli.</span>'
+        + '<span style="font-size:13px;font-weight:700;color:#475569;">' + fmtR(v) + '</span>'
+        + '</span></div>';
+    });
+    h += '</div>';
+  }
 
-  h += '</tbody></table>';
   document.getElementById('pv-body').innerHTML = h;
 }
-
 function toggleProspectsBio(btn){
   MOSTRAR_BIO=!MOSTRAR_BIO;
   btn.style.background=MOSTRAR_BIO?'#1d4ed8':'white';

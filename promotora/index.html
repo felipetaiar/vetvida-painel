@@ -1177,7 +1177,7 @@ document.addEventListener('click', function(e) {
         <img id="amv-foto-preview" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;">
         <button type="button" data-oc="removerFotoAmostra()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:26px;height:26px;font-size:14px;cursor:pointer;">✕</button>
       </div>
-      <button type="button" data-oc="document.getElementById('amv-foto').click()" id="amv-foto-btn" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">📷 Tirar/anexar foto</button>
+      <button type="button" onclick="document.getElementById('amv-foto').click()" id="amv-foto-btn" style="width:100%;background:#f3f4f6;border:1.5px dashed #d1d5db;border-radius:8px;padding:9px;font-size:13px;font-weight:600;color:#374151;cursor:pointer;">📷 Tirar/anexar foto</button>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:16px;">
@@ -1787,6 +1787,13 @@ function buscarAreaPorEstabelecimento(nomeEstab) {
   const baseVV = (typeof BASE_CLIENTES !== 'undefined') ? BASE_CLIENTES : [];
   const encontrado = baseVV.find(e => e.nome.toLowerCase().trim() === nomeEstab.toLowerCase().trim());
   return encontrado ? encontrado.area : null;
+}
+
+function buscarVendedorPorEstabelecimento(nomeEstab) {
+  if (!nomeEstab) return null;
+  const baseVV = (typeof BASE_CLIENTES !== 'undefined') ? BASE_CLIENTES : [];
+  const encontrado = baseVV.find(e => e.nome.toLowerCase().trim() === nomeEstab.toLowerCase().trim());
+  return encontrado ? encontrado.vendedor : null;
 }
 
 function buscarRepPorEstabelecimento(nomeEstab) {
@@ -3573,6 +3580,7 @@ function adicionarContatoNaVisita(contato) {
 
 // ═══════════════ FOTO DA AMOSTRA ═══════════════
 let AMV_FOTO_FILE = null;
+let AMV_OUTROS_CONTATOS = [];
 
 function previewFotoAmostra() {
   const input = document.getElementById('amv-foto');
@@ -3648,6 +3656,7 @@ async function abrirModalAmostraVisita() {
       outrosDoEstab = (data || []).filter(c => !idsVisita.has(c.id));
     } catch(e) { /* silencioso */ }
   }
+  AMV_OUTROS_CONTATOS = outrosDoEstab;
 
   let opcoes = '';
   if (CONTATOS_VISITA_TEMP.length) {
@@ -3668,11 +3677,16 @@ function fecharModalAmostraVisita() {
 function confirmarAmostraVisita() {
   const produto = document.getElementById('amv-produto').value.trim();
   if (!produto) { mostrarToast('Informe o produto'); return; }
+  const destVal = document.getElementById('amv-destinatario').value.trim();
+  // Buscar o ID do contato selecionado (nesta visita ou outros do local)
+  const contatoObj = CONTATOS_VISITA_TEMP.find(c => c.nome === destVal)
+    || (typeof AMV_OUTROS_CONTATOS !== 'undefined' ? AMV_OUTROS_CONTATOS.find(c => c.nome === destVal) : null);
   AMOSTRAS_VISITA_TEMP.push({
     produto,
     lab: document.getElementById('amv-produto-lab').value || '',
     quantidade: parseInt(document.getElementById('amv-qtde').value) || 1,
-    destinatario: document.getElementById('amv-destinatario').value.trim(),
+    destinatario: destVal,
+    destinatarioId: contatoObj ? contatoObj.id : null,
     fotoFile: AMV_FOTO_FILE
   });
   removerFotoAmostra();
@@ -3697,16 +3711,21 @@ function removerAmostraVisita(i) {
 async function persistirAmostrasDaVisita(estabelecimentoNome, visitaId) {
   if (!AMOSTRAS_VISITA_TEMP.length) return;
   const areaVenda = buscarAreaPorEstabelecimento(estabelecimentoNome);
+  const vendedorResp = buscarVendedorPorEstabelecimento(estabelecimentoNome);
   // Upload das fotos em paralelo (quando houver)
   const fotoUrls = await Promise.all(AMOSTRAS_VISITA_TEMP.map(a => a.fotoFile ? uploadFotoAmostra(a.fotoFile) : Promise.resolve(null)));
+  const estabIdAtual = document.getElementById('estab-id') ? document.getElementById('estab-id').value || null : null;
   const registros = AMOSTRAS_VISITA_TEMP.map((a, i) => ({
     produto: a.produto,
     lab: a.lab || '',
     quantidade: a.quantidade,
     estabelecimento_nome: estabelecimentoNome,
+    estabelecimento_id: estabIdAtual,
     contato_nome: a.destinatario || null,
+    contato_id: a.destinatarioId || null,
     promotora_id: 'Nicolle',
     area: areaVenda,
+    vendedor: vendedorResp,
     visita_id: visitaId || null,
     status: 'pendente',
     foto_url: fotoUrls[i] || null
@@ -3804,7 +3823,13 @@ async function salvarFeedbackAmostra() {
   const status = document.getElementById('fb-status').value;
   const obs = document.getElementById('fb-obs').value.trim();
   try {
-    await sb.from('amostras').update({ status_feedback: status, obs_feedback: obs }).eq('id', AMOSTRA_FEEDBACK_ID);
+    await sb.from('amostras').update({
+      status_feedback: status,
+      obs_feedback: obs,
+      feedback: obs || status,
+      feedback_at: new Date().toISOString(),
+      status: 'finalizado'
+    }).eq('id', AMOSTRA_FEEDBACK_ID);
     mostrarToast('✓ Feedback registrado!');
     fecharModalFeedback();
     renderAmostras();

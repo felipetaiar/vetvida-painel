@@ -350,6 +350,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 </div>
 <div class="ctrl">
   <input class="bsc" type="text" id="busca" placeholder="Buscar nome, cidade, segmento ou produto..." oninput="fil()">
+  <div id="hist-loading-badge" style="display:none;font-size:10px;color:#94a3b8;padding:2px 4px 6px;">⏳ Carregando histórico completo para busca por produto...</div>
   <div class="flt">
     <button class="bf ft ativo" onclick="sF('todos',this)">Todos</button>
     <button class="bf fa" onclick="sF('ativo_recente',this)">Ativos Recentes</button>
@@ -604,6 +605,24 @@ function init(){
   if(au!=='ok'||!pf||pf==='gestor'){window.location.href='/';return;}
   REP=pf; CL=(TODOS_DADOS[REP]||[]).slice(); TG=CL.length;
 
+  // Carregar histórico completo em BACKGROUND (sem bloquear a tela) para que a
+  // busca por produto encontre TODOS os produtos comprados, não só os top-3
+  // que ficam em c.prods. Enquanto não carrega, a busca usa o fallback antigo.
+  (function _carregarHistBackground(){
+    if(typeof HIST_REP!=='undefined'){ HIST_CARREGADO=true; return; }
+    var _badge=document.getElementById('hist-loading-badge');
+    if(_badge) _badge.style.display='block';
+    var s=document.createElement('script');
+    s.src='hist_'+REP.toLowerCase()+'.js?v='+Date.now();
+    s.onload=function(){
+      HIST_CARREGADO=true;
+      if(_badge) _badge.style.display='none';
+      if(document.getElementById('busca')&&document.getElementById('busca').value) rnd();
+    };
+    s.onerror=function(){ HIST_CARREGADO=true; if(_badge) _badge.style.display='none'; };
+    document.head.appendChild(s);
+  })();
+
   fetch('https://wpmvczohuhywwnefwumf.supabase.co/rest/v1/visitas_prospects_bio?rep=eq.'+encodeURIComponent(REP)+'&select=cliente_cnpj',{'headers':{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4'}}).then(function(r){return r.json();}).then(function(rows){_BIO_VISITADOS=new Set((Array.isArray(rows)?rows:[]).map(function(r){return (r.cliente_cnpj||'').replace(/[^0-9]/g,'');}));}).catch(function(){_BIO_VISITADOS=new Set();});
   // Enriquecer CL com razao_social, cnpj e endereco do BASE_CLIENTES
   function _enriquecerCL(){
@@ -709,7 +728,18 @@ function rnd(){
   var lista=CL.filter(function(c){
     var matchFiltro=(FA==='todos'||c.tipo===FA);
     var prods_str=(c.prods||[]).map(function(p){return p.nome;}).join(' ').toLowerCase();
-    var matchBusca=(!b||c.nome.toLowerCase().indexOf(b)>=0||(c.municipio||'').toLowerCase().indexOf(b)>=0||(c.segmento||'').toLowerCase().indexOf(b)>=0||prods_str.indexOf(b)>=0||(c.razao_social||'').toLowerCase().indexOf(b)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(b.replace(/[.\/-]/g,''))>=0||(c.endereco||'').toLowerCase().indexOf(b)>=0);
+    // Busca completa no historico (todos os produtos, nao so top-3) quando ja carregado
+    var matchHistProd=false;
+    if(b&&typeof HIST_REP!=='undefined'&&HIST_REP[c.cod]){
+      var _pedsHist=HIST_REP[c.cod].pedidos||[];
+      for(var _pi=0;_pi<_pedsHist.length&&!matchHistProd;_pi++){
+        var _itsHist=_pedsHist[_pi].itens||[];
+        for(var _ii=0;_ii<_itsHist.length;_ii++){
+          if((_itsHist[_ii].prod||'').toLowerCase().indexOf(b)>=0){matchHistProd=true;break;}
+        }
+      }
+    }
+    var matchBusca=(!b||c.nome.toLowerCase().indexOf(b)>=0||(c.municipio||'').toLowerCase().indexOf(b)>=0||(c.segmento||'').toLowerCase().indexOf(b)>=0||prods_str.indexOf(b)>=0||matchHistProd||(c.razao_social||'').toLowerCase().indexOf(b)>=0||(c.cnpj||'').replace(/[.\/-]/g,'').indexOf(b.replace(/[.\/-]/g,''))>=0||(c.endereco||'').toLowerCase().indexOf(b)>=0);
     // Filtro de lab: usa campo labs pre-calculado no dados.js
     var matchLab=true;
     if(LAB_FILTRO!=='todos'){

@@ -1433,19 +1433,18 @@ async function renderCampo(){
   }
   var partes = mesInput.value.split('-');
   var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
-  // Início e fim do mês em UTC (Brasília = UTC-3)
-  // 00:00 Brasília = 03:00 UTC, 23:59 Brasília = 02:59 UTC do dia seguinte
-  var ultimoDia = new Date(ano, mes, 0).getDate();
-  var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01T03:00:00';
-  var fimD = new Date(ano, mes-1, ultimoDia+1, 3, 0, 0);
-  var fim = fimD.getFullYear()+'-'+String(fimD.getMonth()+1).padStart(2,'0')+'-'+String(fimD.getDate()).padStart(2,'0')+'T02:59:59';
+  // Filtro de datas — igual à promotora: new Date() -> toISOString()
+  var inicioMesDate = new Date(ano, mes-1, 1, 0, 0, 0);
+  var fimMesDate = new Date(ano, mes, 1, 0, 0, 0); // primeiro dia do mês seguinte
+  var inicio = inicioMesDate.toISOString();
+  var fim = fimMesDate.toISOString();
 
   try {
     if(sb){
       var resV = await sb.from('visitas')
         .select('*')
         .gte('created_at', inicio+'T00:00:00')
-        .lte('created_at', fim+'T23:59:59')
+        .lt('created_at', fim)
         .order('created_at', {ascending:false});
       _visitas = resV.data || [];
     } else { _visitas = []; }
@@ -1456,7 +1455,7 @@ async function renderCampo(){
       var resA = await sb.from('amostras')
         .select('*')
         .gte('created_at', inicio+'T00:00:00')
-        .lte('created_at', fim+'T23:59:59')
+        .lt('created_at', fim)
         .order('created_at', {ascending:false});
       _amostras = resA.data || [];
     } else { _amostras = []; }
@@ -1577,12 +1576,11 @@ async function renderEstoque(){
 
   var partes = mesInput.value.split('-');
   var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
-  // Início e fim do mês em UTC (Brasília = UTC-3)
-  // 00:00 Brasília = 03:00 UTC, 23:59 Brasília = 02:59 UTC do dia seguinte
-  var ultimoDia = new Date(ano, mes, 0).getDate();
-  var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01T03:00:00';
-  var fimD = new Date(ano, mes-1, ultimoDia+1, 3, 0, 0);
-  var fim = fimD.getFullYear()+'-'+String(fimD.getMonth()+1).padStart(2,'0')+'-'+String(fimD.getDate()).padStart(2,'0')+'T02:59:59';
+  // Filtro de datas — igual à promotora: new Date() -> toISOString()
+  var inicioMesDate = new Date(ano, mes-1, 1, 0, 0, 0);
+  var fimMesDate = new Date(ano, mes, 1, 0, 0, 0); // primeiro dia do mês seguinte
+  var inicio = inicioMesDate.toISOString();
+  var fim = fimMesDate.toISOString();
 
   try {
     _contagens = await sbFetch("contagens_estoque?select=*&created_at=gte."+inicio+"T00:00:00&created_at=lte."+fim+"T23:59:59&order=created_at.desc&limit=500");
@@ -1638,12 +1636,11 @@ async function renderPDV(){
   if(!mesInput.value) mesInput.value = _anoAtual+'-'+String(_mesAtual).padStart(2,'0');
   var partes = mesInput.value.split('-');
   var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
-  // Início e fim do mês em UTC (Brasília = UTC-3)
-  // 00:00 Brasília = 03:00 UTC, 23:59 Brasília = 02:59 UTC do dia seguinte
-  var ultimoDia = new Date(ano, mes, 0).getDate();
-  var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01T03:00:00';
-  var fimD = new Date(ano, mes-1, ultimoDia+1, 3, 0, 0);
-  var fim = fimD.getFullYear()+'-'+String(fimD.getMonth()+1).padStart(2,'0')+'-'+String(fimD.getDate()).padStart(2,'0')+'T02:59:59';
+  // Filtro de datas — igual à promotora: new Date() -> toISOString()
+  var inicioMesDate = new Date(ano, mes-1, 1, 0, 0, 0);
+  var fimMesDate = new Date(ano, mes, 1, 0, 0, 0); // primeiro dia do mês seguinte
+  var inicio = inicioMesDate.toISOString();
+  var fim = fimMesDate.toISOString();
 
   try {
     _pdv = await sbFetch("pdv_agenda?select=*&data_pdv=gte."+inicio+"&data_pdv=lte."+fim+"&order=data_pdv.asc");

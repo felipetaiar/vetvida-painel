@@ -3,465 +3,1659 @@
 <head>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#CC0000">
-
 <script>
-// Restaurar sessão do localStorage se sessionStorage estiver vazio
 (function() {
   if (!sessionStorage.getItem('vv_auth') && localStorage.getItem('vv_auth') === 'ok') {
-    sessionStorage.setItem('vv_auth',   localStorage.getItem('vv_auth'));
+    sessionStorage.setItem('vv_auth', localStorage.getItem('vv_auth'));
     sessionStorage.setItem('vv_perfil', localStorage.getItem('vv_perfil'));
-    sessionStorage.setItem('vv_user',   localStorage.getItem('vv_user') || '');
+    sessionStorage.setItem('vv_user', localStorage.getItem('vv_user') || '');
   }
 })();
 </script>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>VetVida — Gestor</title>
+<script src="/rep/dados.js"></script>
+<script src="/rep/base_clientes.js"></script>
+<script src="/rep/hist_paula.js"></script>
+<script src="/rep/hist_mauro.js"></script>
+<script src="/rep/hist_suane.js"></script>
+<script src="/rep/hist_nayara.js"></script>
+<script src="/rep/hist_vanessa.js"></script>
+<script src="/rep/hist_diego.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f5f7;min-height:100vh;color:#1f2937;}
+:root{
+  --red:#CC0000;--red-soft:#fff0f0;--red-mid:#e8a0a0;
+  --bg:#f4f5f7;--white:#ffffff;--border:#e5e7eb;
+  --text:#1f2937;--muted:#6b7280;--muted2:#9ca3af;
+  --green:#16a34a;--green-soft:#f0fdf4;
+  --yellow:#d97706;--yellow-soft:#fffbeb;
+  --blue:#2563eb;--blue-soft:#eff6ff;
+  --sidebar:220px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
 
 /* HEADER */
-.hdr{background:#CC0000;color:white;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.hdr-logo{display:flex;align-items:center;gap:10px;}
-.hdr-logo img{height:32px;border-radius:6px;}
-.hdr-title{font-size:15px;font-weight:700;}
-.hdr-sub{font-size:11px;opacity:.8;}
-.btn-sair{background:rgba(255,255,255,.2);border:none;color:white;padding:5px 10px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;}
+.hdr{background:var(--red);color:white;padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;flex-shrink:0;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.hdr-logo{height:28px;border-radius:5px;}
+.hdr-title{font-size:14px;font-weight:700;letter-spacing:.3px;}
+.hdr-sub{font-size:10px;opacity:.75;font-weight:500;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.btn-sair{background:rgba(255,255,255,.18);border:none;color:white;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;}
+.sync-badge{font-size:10px;opacity:.65;}
 
-/* ABAS */
-.tabs{display:flex;background:white;border-bottom:1px solid #e5e7eb;position:sticky;top:57px;z-index:99;overflow-x:auto;}
-.tabs::-webkit-scrollbar{display:none;}
-.tab{flex:1;min-width:70px;padding:10px 6px;text-align:center;font-size:12px;font-weight:600;color:#6b7280;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;}
-.tab.active{color:#CC0000;border-bottom-color:#CC0000;}
+/* LAYOUT */
+.layout{display:flex;flex:1;min-height:0;}
 
-/* CONTEÚDO */
-.screen{display:none;padding:14px;}
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;flex-shrink:0;}
+.sidebar::-webkit-scrollbar{width:4px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.nav-section{padding:12px 10px 4px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-radius:0;font-size:13px;font-weight:500;color:var(--muted);transition:all .15s;border-left:3px solid transparent;text-decoration:none;}
+.nav-item:hover{background:#f9fafb;color:var(--text);}
+.nav-item.active{background:var(--red-soft);color:var(--red);border-left-color:var(--red);font-weight:600;}
+.nav-item .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--red);color:white;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center;}
+.nav-badge.green{background:var(--green);}
+.nav-badge.yellow{background:var(--yellow);}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;min-width:0;}
+.screen{display:none;padding:16px;}
 .screen.active{display:block;}
 
 /* CARDS KPI */
-.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-.kpi{background:white;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-top:3px solid #e5e7eb;}
-.kpi.red{border-top-color:#CC0000;}
-.kpi.green{border-top-color:#16a34a;}
-.kpi.blue{border-top-color:#2563eb;}
-.kpi.yellow{border-top-color:#d97706;}
-.kpi.pink{border-top-color:#db2777;}
-.kpi-val{font-size:26px;font-weight:700;line-height:1;}
-.kpi-lbl{font-size:11px;color:#6b7280;margin-top:4px;line-height:1.3;}
-.kpi-bar{height:3px;background:#f3f4f6;border-radius:2px;margin-top:8px;}
-.kpi-fill{height:3px;border-radius:2px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+.kpi-grid.cols3{grid-template-columns:repeat(3,1fr);}
+.kpi-grid.cols4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:600px){.kpi-grid.cols3,.kpi-grid.cols4{grid-template-columns:repeat(2,1fr);}}
+.kpi{background:var(--white);border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-top:3px solid var(--border);}
+.kpi.red{border-top-color:var(--red);}
+.kpi.green{border-top-color:var(--green);}
+.kpi.blue{border-top-color:var(--blue);}
+.kpi.yellow{border-top-color:var(--yellow);}
+.kpi-val{font-size:24px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;}
+.kpi-lbl{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.3;}
+.kpi-sub{font-size:11px;margin-top:6px;font-weight:600;}
+.kpi-sub.up{color:var(--green);}
+.kpi-sub.down{color:var(--red);}
 
-/* SEÇÕES */
-.sec-title{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6b7280;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.sec{margin-bottom:16px;}
+/* SEÇÃO */
+.sec{margin-bottom:20px;}
+.sec-title{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.sec-title span{font-size:14px;}
 
-/* ALERTAS */
-.alerta{display:flex;align-items:flex-start;gap:10px;background:white;border-radius:10px;padding:11px 12px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
-.alerta.vermelho{border-left:3px solid #CC0000;}
-.alerta.amarelo{border-left:3px solid #d97706;}
-.alerta.verde{border-left:3px solid #16a34a;}
-.alerta-icon{font-size:18px;flex-shrink:0;}
-.alerta-titulo{font-size:13px;font-weight:600;}
-.alerta-sub{font-size:11px;color:#6b7280;margin-top:2px;}
+/* TABELA */
+.tbl-wrap{background:var(--white);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{background:#f9fafb;padding:9px 12px;text-align:left;font-weight:700;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+.tbl th.r,.tbl td.r{text-align:right;}
+.tbl td{padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:#fafafa;}
 
-/* CARDS ATIVIDADE */
-.ativ-card{background:white;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
-.ativ-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
-.ativ-nome{font-size:13px;font-weight:600;}
-.ativ-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;}
-.badge-ok{background:#dcfce7;color:#15803d;}
-.badge-warn{background:#fef3c7;color:#92400e;}
-.badge-err{background:#fee2e2;color:#991b1b;}
-.ativ-meta{font-size:11px;color:#6b7280;line-height:1.5;}
+/* BARRA DE PROGRESSO */
+.bar-wrap{height:5px;background:#f3f4f6;border-radius:3px;margin-top:4px;overflow:hidden;}
+.bar-fill{height:5px;border-radius:3px;transition:width .3s;}
+.bar-fill.red{background:var(--red);}
+.bar-fill.green{background:var(--green);}
+.bar-fill.yellow{background:var(--yellow);}
 
-/* REPS TABLE */
-.rep-row{background:white;border-radius:10px;padding:11px 14px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:center;gap:10px;}
-.rep-avatar{width:36px;height:36px;border-radius:50%;background:#CC0000;color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
-.rep-info{flex:1;}
-.rep-nome{font-size:13px;font-weight:600;}
-.rep-area{font-size:11px;color:#6b7280;}
-.rep-stats{text-align:right;}
-.rep-stat-val{font-size:15px;font-weight:700;color:#CC0000;}
-.rep-stat-lbl{font-size:10px;color:#9ca3af;}
+/* ALERTA */
+.alerta-list{display:flex;flex-direction:column;gap:8px;}
+.alerta{background:var(--white);border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:3px solid var(--border);display:flex;align-items:flex-start;gap:10px;}
+.alerta.vermelho{border-left-color:var(--red);}
+.alerta.amarelo{border-left-color:var(--yellow);}
+.alerta.verde{border-left-color:var(--green);}
+.alerta.azul{border-left-color:var(--blue);}
+.alerta-ico{font-size:18px;flex-shrink:0;margin-top:1px;}
+.alerta-body{flex:1;}
+.alerta-title{font-size:13px;font-weight:600;color:var(--text);}
+.alerta-sub{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;}
+.alerta-count{margin-left:auto;font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0;padding-top:1px;}
 
-/* VISITAS PROMOTORA */
-.vis-card{background:white;border-radius:10px;padding:11px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:3px solid #e5e7eb;}
-.vis-card.lead{border-left-color:#d97706;}
-.vis-nome{font-size:13px;font-weight:600;}
-.vis-meta{font-size:11px;color:#6b7280;margin-top:2px;}
-.vis-resultado{font-size:11px;margin-top:4px;}
+/* GRÁFICO BARRAS */
+.chart-bars{display:flex;align-items:flex-end;gap:6px;height:120px;padding:0 4px;}
+.chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.chart-bar{width:100%;border-radius:4px 4px 0 0;background:var(--red);opacity:.7;transition:height .4s;min-height:2px;}
+.chart-bar.active{opacity:1;}
+.chart-bar-lbl{font-size:9px;color:var(--muted);white-space:nowrap;}
+.chart-bar-val{font-size:9px;font-weight:700;color:var(--text);}
 
-/* BI EMBED */
-.bi-wrap{background:white;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
-.bi-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f3f4f6;}
-.bi-row:last-child{border-bottom:none;}
-.bi-rep{font-size:13px;font-weight:500;}
-.bi-val{font-size:13px;font-weight:700;color:#CC0000;}
-.bi-meta{font-size:11px;color:#9ca3af;}
+/* PILL */
+.pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.pill.green{background:var(--green-soft);color:var(--green);}
+.pill.red{background:var(--red-soft);color:var(--red);}
+.pill.yellow{background:var(--yellow-soft);color:var(--yellow);}
+.pill.blue{background:var(--blue-soft);color:var(--blue);}
+.pill.gray{background:#f3f4f6;color:var(--muted);}
+
+/* FILTROS */
+.filtros{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.filtro-select{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--white);color:var(--text);cursor:pointer;}
+.filtro-input{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--white);color:var(--text);flex:1;min-width:160px;}
+
+/* VAZIO */
+.vazio{text-align:center;padding:40px 20px;color:var(--muted2);font-size:13px;}
+.vazio-ico{font-size:36px;display:block;margin-bottom:8px;}
 
 /* LOADING */
-.loading{text-align:center;padding:30px;color:#9ca3af;font-size:13px;}
-.empty{text-align:center;padding:30px;color:#9ca3af;font-size:13px;}
+.loading{text-align:center;padding:30px;color:var(--muted);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--white);border-radius:16px;padding:20px;width:90%;max-width:480px;max-height:85vh;overflow-y:auto;}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:14px;}
+.modal-close{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);margin-top:-4px;}
+
+/* SEMAFORO */
+.semaforo{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.semaforo.verde{background:var(--green);}
+.semaforo.amarelo{background:var(--yellow);}
+.semaforo.vermelho{background:var(--red);}
+
+@media(max-width:640px){
+  .sidebar{display:none;position:fixed;top:52px;left:0;bottom:0;z-index:300;width:260px;box-shadow:4px 0 12px rgba(0,0,0,.15);}
+  .sidebar.open{display:flex;}
+  .overlay-menu{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:299;}
+  .overlay-menu.open{display:block;}
+  .btn-menu{display:flex;}
+}
+.btn-menu{display:none;background:rgba(255,255,255,.18);border:none;color:white;padding:5px 8px;border-radius:8px;font-size:18px;cursor:pointer;line-height:1;margin-right:4px;}
+@media(max-width:640px){.btn-menu{display:flex;align-items:center;}}
 </style>
 </head>
 <body>
 
-<div class="hdr">
-  <div class="hdr-logo">
-    <img src="/logo.jpg" onerror="this.style.display='none'">
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-left">
+    <button class="btn-menu" onclick="toggleMenu()" id="btn-menu">☰</button>
+    <img src="/logo.jpg" class="hdr-logo" alt="VetVida">
     <div>
-      <div class="hdr-title">VetVida</div>
-      <div class="hdr-sub">Felipe · Gestor</div>
+      <div class="hdr-title">Vet Hub — Gestor</div>
+      <div class="hdr-sub" id="sync-info-gestor">Carregando...</div>
     </div>
   </div>
-  <button class="btn-sair" onclick="sair()">Sair</button>
+  <div class="hdr-right">
+    <span class="sync-badge" id="sync-time"></span>
+    <button class="btn-sair" onclick="sair()">Sair</button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-section">Principal</div>
+    <div class="nav-item active" onclick="navegarPara('visao-geral',this)">
+      <span class="nav-icon">🏠</span> Visão Geral
+    </div>
+    <div class="nav-item" onclick="navegarPara('equipe',this)">
+      <span class="nav-icon">👥</span> Equipe
+    </div>
+    <div class="nav-item" onclick="navegarPara('laboratorios',this)">
+      <span class="nav-icon">🧪</span> Laboratórios
+    </div>
+    <div class="nav-item" onclick="navegarPara('produtos',this)">
+      <span class="nav-icon">📊</span> Produtos
+    </div>
+    <div class="nav-item" onclick="navegarPara('alertas',this)">
+      <span class="nav-icon">🔔</span> Alertas
+      <span class="nav-badge" id="badge-alertas" style="display:none">0</span>
+    </div>
+    <div class="nav-section">Campo</div>
+    <div class="nav-item" onclick="navegarPara('campo',this)">
+      <span class="nav-icon">🗺️</span> Campo (Nicolle)
+    </div>
+    <div class="nav-item" onclick="navegarPara('roteiro',this)">
+      <span class="nav-icon">📋</span> Roteiro
+    </div>
+    <div class="nav-item" onclick="navegarPara('estoque',this)">
+      <span class="nav-icon">📦</span> Estoque
+    </div>
+    <div class="nav-item" onclick="navegarPara('pdv',this)">
+      <span class="nav-icon">📅</span> PDV
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ================================ VISÃO GERAL ================================ -->
+    <div class="screen active" id="screen-visao-geral">
+      <div class="sec">
+        <div class="sec-title"><span>🏠</span> Visão Geral — <span id="mes-ref-label">...</span></div>
+        <div id="kpis-geral-wrap">
+          <div class="loading">⏳ Carregando dados do ERP...</div>
+        </div>
+        <div class="kpi-grid cols4" id="kpis-geral" style="display:none;"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>📈</span> Faturamento por rep — últimos 6 meses</div>
+        <div class="tbl-wrap" style="padding:16px;">
+          <div class="chart-bars" id="chart-6meses"></div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>🎯</span> Atingimento de meta — mês atual</div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="tbl-metas">
+            <thead><tr>
+              <th>Representante</th>
+              <th class="r">Faturado</th>
+              <th class="r">Meta</th>
+              <th class="r">%</th>
+              <th>Progresso</th>
+            </tr></thead>
+            <tbody id="tbody-metas"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>⚡</span> Alertas críticos</div>
+        <div class="alerta-list" id="alertas-resumo"></div>
+      </div>
+    </div>
+
+    <!-- ================================ EQUIPE ================================ -->
+    <div class="screen" id="screen-equipe">
+      <div class="sec">
+        <div class="sec-title"><span>👥</span> Desempenho da equipe — <span id="equipe-mes-ref">...</span></div>
+        <div class="kpi-grid cols4" id="kpis-equipe"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>📊</span> Faturamento por representante</div>
+        <div class="filtros">
+          <select class="filtro-select" id="equipe-mes-sel" onchange="renderEquipe()"></select>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>Rep</th>
+              <th class="r">Faturamento</th>
+              <th class="r">Meta</th>
+              <th class="r">%</th>
+              <th class="r">Cli. Ativos</th>
+              <th class="r">Mix Labs</th>
+            </tr></thead>
+            <tbody id="tbody-equipe"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>🎯</span> Positivação por representante</div>
+        <div class="filtros">
+          <select class="filtro-select" id="positiv-rep-sel" onchange="renderPositivacaoRep()">
+            <option value="">Todos os reps</option>
+          </select>
+          <select class="filtro-select" id="positiv-lab-sel" onchange="renderPositivacaoRep()">
+            <option value="">Todos os labs</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>Rep</th>
+              <th>Laboratório</th>
+              <th class="r">Clientes ativos</th>
+              <th class="r">Mês ant.</th>
+              <th class="r">Δ</th>
+            </tr></thead>
+            <tbody id="tbody-positiv-rep"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================ LABORATÓRIOS ================================ -->
+    <div class="screen" id="screen-laboratorios">
+      <div class="sec">
+        <div class="sec-title"><span>🧪</span> Participação por laboratório — mês atual</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>Laboratório</th>
+              <th class="r">Faturamento</th>
+              <th class="r">Part. %</th>
+              <th class="r">Mês ant.</th>
+              <th class="r">Δ%</th>
+              <th class="r">Cli. Ativos</th>
+            </tr></thead>
+            <tbody id="tbody-labs"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>📈</span> Positivação por laboratório — evolução 6 meses</div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="tbl-positiv-lab">
+            <thead><tr>
+              <th>Laboratório</th>
+              <th class="r" id="pl-m5"></th>
+              <th class="r" id="pl-m4"></th>
+              <th class="r" id="pl-m3"></th>
+              <th class="r" id="pl-m2"></th>
+              <th class="r" id="pl-m1"></th>
+              <th class="r" id="pl-m0"></th>
+              <th class="r">Δ 6m</th>
+            </tr></thead>
+            <tbody id="tbody-positiv-lab"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>👥</span> Cobertura de labs por rep — mês atual</div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="tbl-lab-rep">
+            <thead><tr id="lab-rep-header"></tr></thead>
+            <tbody id="tbody-lab-rep"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================ PRODUTOS ================================ -->
+    <div class="screen" id="screen-produtos">
+      <div class="sec">
+        <div class="sec-title"><span>📉</span> Produtos em queda vs média 6 meses</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>Produto</th>
+              <th>Lab</th>
+              <th class="r">Mês atual</th>
+              <th class="r">Projeção</th>
+              <th class="r">Média 6m</th>
+              <th class="r">Δ%</th>
+              <th>Status</th>
+            </tr></thead>
+            <tbody id="tbody-queda"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>📈</span> Produtos em alta vs média 6 meses</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>Produto</th>
+              <th>Lab</th>
+              <th class="r">Mês atual</th>
+              <th class="r">Projeção</th>
+              <th class="r">Média 6m</th>
+              <th class="r">Δ%</th>
+            </tr></thead>
+            <tbody id="tbody-alta"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>📊</span> Curva ABC — produtos por faturamento</div>
+        <div class="filtros">
+          <select class="filtro-select" id="abc-mes-sel" onchange="renderABC()"></select>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>#</th>
+              <th>Produto</th>
+              <th>Lab</th>
+              <th class="r">Faturamento</th>
+              <th class="r">Part. %</th>
+              <th class="r">Acum. %</th>
+              <th>Curva</th>
+            </tr></thead>
+            <tbody id="tbody-abc"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>⚠️</span> Produtos concentrados em poucos clientes</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>Produto</th>
+              <th>Lab</th>
+              <th class="r">Total cli.</th>
+              <th class="r">Top 2 cli. %</th>
+              <th>Risco</th>
+            </tr></thead>
+            <tbody id="tbody-concentracao"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>🔁</span> Produtos com baixa recompra</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>Produto</th>
+              <th>Lab</th>
+              <th class="r">Compraram 1x</th>
+              <th class="r">Recompraram</th>
+              <th class="r">Taxa recompra</th>
+            </tr></thead>
+            <tbody id="tbody-recompra"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================ ALERTAS ================================ -->
+    <div class="screen" id="screen-alertas">
+      <div class="sec">
+        <div class="sec-title"><span>🔔</span> Central de alertas</div>
+        <div class="alerta-list" id="lista-alertas-completa"><div class="loading">Carregando alertas...</div></div>
+      </div>
+    </div>
+
+    <!-- ================================ CAMPO ================================ -->
+    <div class="screen" id="screen-campo">
+      <div class="sec">
+        <div class="sec-title"><span>🗺️</span> Campo — Nicolle</div>
+        <div class="kpi-grid cols4" id="kpis-campo"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>📍</span> Visitas do mês</div>
+        <div class="filtros">
+          <input type="month" class="filtro-input" id="campo-mes" style="max-width:180px;" onchange="renderCampo()">
+          <select class="filtro-select" id="campo-tipo-sel" onchange="renderCampo()">
+            <option value="">Todos os tipos</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>Estabelecimento</th>
+              <th>Tipo</th>
+              <th>Objetivo</th>
+              <th>Resultado</th>
+              <th>Data</th>
+            </tr></thead>
+            <tbody id="tbody-campo-visitas"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-title"><span>🧪</span> Amostras distribuídas</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>Estabelecimento</th>
+              <th>Produto</th>
+              <th>Data</th>
+              <th>Feedback</th>
+              <th>Dias s/ feedback</th>
+            </tr></thead>
+            <tbody id="tbody-campo-amostras"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================ ROTEIRO ================================ -->
+    <div class="screen" id="screen-roteiro">
+      <div class="sec">
+        <div class="sec-title"><span>📋</span> Roteiro da equipe</div>
+        <div class="filtros">
+          <select class="filtro-select" id="rot-rep-sel" onchange="renderRoteiro()">
+            <option value="">Todos os reps</option>
+          </select>
+          <select class="filtro-select" id="rot-status-sel" onchange="renderRoteiro()">
+            <option value="">Todos os status</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="pendente">Pendente aprovação</option>
+            <option value="rascunho">Rascunho</option>
+          </select>
+        </div>
+        <div id="roteiro-content"><div class="loading">Carregando roteiros...</div></div>
+      </div>
+    </div>
+
+    <!-- ================================ ESTOQUE ================================ -->
+    <div class="screen" id="screen-estoque">
+      <div class="sec">
+        <div class="sec-title"><span>📦</span> Contagens de estoque</div>
+        <div class="filtros">
+          <select class="filtro-select" id="est-rep-sel" onchange="renderEstoque()">
+            <option value="">Todos os reps</option>
+          </select>
+          <input class="filtro-input" id="est-busca" placeholder="Buscar cliente..." oninput="renderEstoque()">
+          <input type="month" class="filtro-input" id="est-mes" style="max-width:160px;" onchange="renderEstoque()">
+        </div>
+        <div id="estoque-content"><div class="loading">Carregando contagens...</div></div>
+      </div>
+    </div>
+
+    <!-- ================================ PDV ================================ -->
+    <div class="screen" id="screen-pdv">
+      <div class="sec">
+        <div class="sec-title"><span>📅</span> Agendamentos de PDV</div>
+        <div class="filtros">
+          <select class="filtro-select" id="pdv-rep-sel" onchange="renderPDV()">
+            <option value="">Todos os reps</option>
+          </select>
+          <select class="filtro-select" id="pdv-status-sel" onchange="renderPDV()">
+            <option value="">Todos os status</option>
+            <option value="pendente">Pendente</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="bloqueado">Bloqueado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+          <input type="month" class="filtro-input" id="pdv-mes" style="max-width:160px;" onchange="renderPDV()">
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr>
+              <th>Data</th>
+              <th>Rep</th>
+              <th>Cliente</th>
+              <th>Status</th>
+              <th>Obs.</th>
+            </tr></thead>
+            <tbody id="tbody-pdv"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
 </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="abrirAba('home',this)">🏠 Home</div>
-  <div class="tab" onclick="abrirAba('reps',this)">👥 Reps</div>
-  <div class="tab" onclick="abrirAba('promotora',this)">🌸 Promotora</div>
-  <div class="tab" onclick="abrirAba('bi',this)">📊 BI</div>
-  <div class="tab" onclick="abrirAba('alertas',this)">⚠️ Alertas</div>
-</div>
-
-<!-- HOME -->
-<div id="screen-home" class="screen active">
-  <div class="kpi-grid" id="kpis-home"><div class="loading">⏳ Carregando...</div></div>
-  <div class="sec">
-    <div class="sec-title">⚠️ Atenção agora</div>
-    <div id="alertas-home"><div class="loading">⏳</div></div>
-  </div>
-  <div class="sec">
-    <div class="sec-title">📅 Atividade recente</div>
-    <div id="atividade-home"><div class="loading">⏳</div></div>
-  </div>
-</div>
-
-<!-- REPS -->
-<div id="screen-reps" class="screen">
-  <div class="sec">
-    <div class="sec-title">📊 Performance do mês</div>
-    <div id="reps-perf"><div class="loading">⏳ Carregando...</div></div>
-  </div>
-  <div class="sec">
-    <div class="sec-title">🔔 Leads abertos</div>
-    <div id="reps-leads"><div class="loading">⏳</div></div>
-  </div>
-</div>
-
-<!-- PROMOTORA -->
-<div id="screen-promotora" class="screen">
-  <div class="kpi-grid" id="kpis-prom"></div>
-  <div class="sec">
-    <div class="sec-title">📍 Visitas recentes</div>
-    <div id="prom-visitas"><div class="loading">⏳ Carregando...</div></div>
-  </div>
-  <div class="sec">
-    <div class="sec-title">🧪 Amostras sem feedback</div>
-    <div id="prom-amostras"><div class="loading">⏳</div></div>
-  </div>
-</div>
-
-<!-- BI -->
-<div id="screen-bi" class="screen">
-  <div class="bi-wrap">
-    <div id="bi-content"><div class="loading">⏳ Carregando...</div></div>
-  </div>
-</div>
-
-<!-- ALERTAS -->
-<div id="screen-alertas" class="screen">
-  <div id="alertas-todos"><div class="loading">⏳ Carregando...</div></div>
-</div>
+<div class="overlay-menu" id="overlay-menu" onclick="toggleMenu()"></div>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────
-var SB_PROM_URL = 'https://waiujqbzncemkpznvnct.supabase.co';
-var SB_PROM_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhaXVqcWJ6bmNlbWtwem52bmN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNjgwMjEsImV4cCI6MjA5NDk0NDAyMX0.JYAoQh7Oyauzk_EXeH2NHRSjyYPx-UQNfKDv-0r-eyI';
-var SB_POS_URL  = 'https://wpmvczohuhywwnefwumf.supabase.co';
-var SB_POS_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
-var HP = {'apikey':SB_PROM_KEY,'Authorization':'Bearer '+SB_PROM_KEY};
-var HQ = {'apikey':SB_POS_KEY,'Authorization':'Bearer '+SB_POS_KEY};
+function toggleMenu(){
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('overlay-menu').classList.toggle('open');
+}
+// ============================================================
+// CONFIG
+// ============================================================
+const SB_URL  = 'https://wpmvczohuhywwnefwumf.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
 
-var TODOS_DADOS = typeof window.TODOS_DADOS_REP !== 'undefined' ? window.TODOS_DADOS_REP : {};
+const REPS = ['PAULA','MAURO','SUANE','NAYARA','VANESSA','DIEGO'];
+const LABS_EXCLUSIVOS = ['BIOGENESIS BAGÓ','DECHRA','VANSIL','HOMEOPET','LABYES','BIOGENESIS BAGO','BIOGENESIS'];
+function isLabExclusivo(lab){ 
+  if(!lab) return false;
+  var l = lab.toUpperCase();
+  return LABS_EXCLUSIVOS.some(function(ex){ return l.includes(ex.split(' ')[0]); });
+}
+// Metas de agosto 2026 por área (arquivo OBJS_AGO-DEZ_26.xlsx)
+const METAS_POR_MES = {
+  '2026-8':  { PAULA:112950, MAURO:105500, SUANE:104000, NAYARA:65100, VANESSA:87900, DIEGO:69500 },
+  '2026-9':  { PAULA:116390, MAURO:107710, SUANE:106000, NAYARA:76490, VANESSA:87900, DIEGO:77390 },
+  '2026-10': { PAULA:121900, MAURO:112775, SUANE:111000, NAYARA:80125, VANESSA:92200, DIEGO:81350 },
+  '2026-11': { PAULA:123650, MAURO:113775, SUANE:111650, NAYARA:81975, VANESSA:94000, DIEGO:83000 },
+  '2026-12': { PAULA:112650, MAURO:106000, SUANE:103850, NAYARA:76550, VANESSA:85000, DIEGO:74750 },
+};
+function getMetas(ano, mes){
+  var k = ano+'-'+mes;
+  return METAS_POR_MES[k] || { PAULA:112950, MAURO:105500, SUANE:104000, NAYARA:65100, VANESSA:87900, DIEGO:69500 };
+}
+const METAS = getMetas(_anoAtual, _mesAtual);
 
-function fmt(v){ return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function fmtD(iso){ var d=new Date(iso); return d.toLocaleDateString('pt-BR'); }
+// Históricos por rep — carregados dinamicamente (cada arquivo usa var HIST_REP)
+var HISTS = { PAULA:{}, MAURO:{}, SUANE:{}, NAYARA:{}, VANESSA:{}, DIEGO:{} };
 
-// ── NAVEGAÇÃO ──────────────────────────────────────
-function abrirAba(id, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('screen-'+id).classList.add('active');
-  if(id==='home') renderHome();
-  if(id==='reps') renderReps();
-  if(id==='promotora') renderPromotora();
-  if(id==='bi') renderBI();
-  if(id==='alertas') renderAlertas();
+function carregarHists(callback){
+  // Variáveis nomeadas por rep — geradas pelo extrair_dados.py
+  HISTS.PAULA  = typeof HIST_REP_PAULA  !== 'undefined' ? HIST_REP_PAULA  : {};
+  HISTS.MAURO  = typeof HIST_REP_MAURO  !== 'undefined' ? HIST_REP_MAURO  : {};
+  HISTS.SUANE  = typeof HIST_REP_SUANE  !== 'undefined' ? HIST_REP_SUANE  : {};
+  HISTS.NAYARA = typeof HIST_REP_NAYARA !== 'undefined' ? HIST_REP_NAYARA : {};
+  HISTS.VANESSA= typeof HIST_REP_VANESSA!== 'undefined' ? HIST_REP_VANESSA: {};
+  HISTS.DIEGO  = typeof HIST_REP_DIEGO  !== 'undefined' ? HIST_REP_DIEGO  : {};
+  callback();
 }
 
-function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/?logout=1';}
-
-// ── HOME ───────────────────────────────────────────
-async function renderHome() {
-  var hoje = new Date();
-  var inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
-
-  // Visitas promotora do mês
-  var rv = await fetch(SB_PROM_URL+'/rest/v1/visitas?select=*&created_at=gte.'+inicioMes+'&order=created_at.desc', {headers:HP});
-  var visitas = await rv.json();
-
-  // Amostras pendentes
-  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status=eq.pendente', {headers:HP});
-  var amostras = await ra.json();
-
-  // Leads abertos
-  var rl = await fetch(SB_POS_URL+'/rest/v1/leads?select=*&status_lead=eq.aberto', {headers:HQ});
-  var leads = await rl.json();
-
-  // Contatos do mês (reps)
-  var rc = await fetch(SB_POS_URL+'/rest/v1/contatos?select=*&data_hora=gte.'+inicioMes, {headers:HQ});
-  var contatos = await rc.json();
-
-  var hoje2 = new Date();
-  var am45 = (amostras||[]).filter(function(a){ return Math.floor((hoje2-new Date(a.created_at))/86400000)>=45; });
-
-  // KPIs
-  document.getElementById('kpis-home').innerHTML =
-    kpiCard('red', (visitas||[]).length, 'Visitas promotora no mês', null) +
-    kpiCard('blue', (leads||[]).length, 'Leads abertos', null) +
-    kpiCard('yellow', am45.length, 'Amostras +45 dias', null) +
-    kpiCard('green', (contatos||[]).length, 'Contatos reps no mês', null);
-
-  // Alertas home
-  var alertas = [];
-  am45.forEach(function(a){
-    var dias = Math.floor((hoje2-new Date(a.created_at))/86400000);
-    alertas.push({tipo:'vermelho', icon:'🧪', titulo:'Amostra sem feedback há '+dias+' dias', sub:a.produto+' · '+a.estabelecimento_nome});
-  });
-  (leads||[]).slice(0,3).forEach(function(l){
-    alertas.push({tipo:'amarelo', icon:'🔔', titulo:'Lead aberto — '+(l.estabelecimento||''), sub:(l.obs||'Aguardando ação')+' · '+fmtD(l.created_at)});
-  });
-
-  if(!alertas.length) {
-    document.getElementById('alertas-home').innerHTML = '<div class="empty">✅ Nenhum alerta no momento</div>';
-  } else {
-    document.getElementById('alertas-home').innerHTML = alertas.map(function(a){
-      return '<div class="alerta '+a.tipo+'"><div class="alerta-icon">'+a.icon+'</div><div><div class="alerta-titulo">'+a.titulo+'</div><div class="alerta-sub">'+a.sub+'</div></div></div>';
-    }).join('');
-  }
-
-  // Atividade recente
-  var recentes = (visitas||[]).slice(0,5);
-  if(!recentes.length) {
-    document.getElementById('atividade-home').innerHTML = '<div class="empty">Nenhuma atividade hoje</div>';
-  } else {
-    document.getElementById('atividade-home').innerHTML = recentes.map(function(v){
-      return '<div class="ativ-card">'+
-        '<div class="ativ-header"><div class="ativ-nome">'+v.estabelecimento+'</div>'+
-        '<span class="ativ-badge '+(v.tem_lead?'badge-warn':'badge-ok')+'">'+
-        (v.tem_lead?'🔔 Lead':'✓ Visita')+'</span></div>'+
-        '<div class="ativ-meta">🌸 Nicolle · '+(v.objetivo||'')+' · '+fmtD(v.created_at)+'</div>'+
-      '</div>';
-    }).join('');
-  }
+// ============================================================
+// AUTH
+// ============================================================
+function sair(){
+  sessionStorage.clear();
+  localStorage.removeItem('vv_auth');
+  localStorage.removeItem('vv_perfil');
+  localStorage.removeItem('vv_user');
+  location.href = '/index.html';
 }
 
-function kpiCard(cor, val, lbl, pct) {
-  return '<div class="kpi '+cor+'"><div class="kpi-val">'+val+'</div><div class="kpi-lbl">'+lbl+'</div>'+
-    (pct!==null?'<div class="kpi-bar"><div class="kpi-fill" style="width:'+Math.min(100,pct)+'%;background:currentColor"></div></div>':'')+
-  '</div>';
-}
-
-// ── REPS ───────────────────────────────────────────
-async function renderReps() {
-  var hoje = new Date();
-  var inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
-
-  var rc = await fetch(SB_POS_URL+'/rest/v1/contatos?select=rep,cod_cliente&data_hora=gte.'+inicioMes, {headers:HQ});
-  var contatos = await rc.json();
-
-  var rl = await fetch(SB_POS_URL+'/rest/v1/leads?select=*&order=created_at.desc', {headers:HQ});
-  var leads = await rl.json();
-
-  // Agrupar contatos por rep
-  var porRep = {};
-  (contatos||[]).forEach(function(c){
-    if(!porRep[c.rep]) porRep[c.rep] = new Set();
-    porRep[c.rep].add(c.cod_cliente);
-  });
-
-  var reps = ['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
-  var areas = {PAULA:'Guarulhos 1',MAURO:'Zona Leste 1',SUANE:'Zona Leste 2',VANESSA:'Zona Norte 2',LUIZ:'Zona Leste 3',PAULO:'Zona Norte 3',NAYARA:'Alto Tietê 1'};
-
-  document.getElementById('reps-perf').innerHTML = reps.map(function(rep){
-    var conts = (porRep[rep]||new Set()).size;
-    var cor = conts >= 20 ? 'badge-ok' : conts >= 10 ? 'badge-warn' : 'badge-err';
-    return '<div class="rep-row">'+
-      '<div class="rep-avatar">'+rep[0]+'</div>'+
-      '<div class="rep-info"><div class="rep-nome">'+rep+'</div><div class="rep-area">'+areas[rep]+'</div></div>'+
-      '<div class="rep-stats">'+
-        '<div class="rep-stat-val">'+conts+'</div>'+
-        '<div class="rep-stat-lbl">contatados</div>'+
-        '<span class="ativ-badge '+cor+'" style="font-size:9px;">'+
-        (conts>=20?'Ótimo':conts>=10?'Regular':'Baixo')+'</span>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-
-  // Leads por rep
-  var leadsAbertos = (leads||[]).filter(function(l){ return l.status_lead==='aberto'; });
-  if(!leadsAbertos.length) {
-    document.getElementById('reps-leads').innerHTML = '<div class="empty">Nenhum lead aberto</div>';
-  } else {
-    document.getElementById('reps-leads').innerHTML = leadsAbertos.map(function(l){
-      return '<div class="ativ-card">'+
-        '<div class="ativ-header">'+
-          '<div class="ativ-nome">'+(l.estabelecimento||'')+'</div>'+
-          '<span class="ativ-badge badge-warn">🔔 Aberto</span>'+
-        '</div>'+
-        '<div class="ativ-meta">Rep: '+(l.rep_responsavel||'—')+' · '+fmtD(l.created_at)+(l.obs?' · '+l.obs:'')+'</div>'+
-      '</div>';
-    }).join('');
-  }
-}
-
-// ── PROMOTORA ──────────────────────────────────────
-async function renderPromotora() {
-  var hoje = new Date();
-  var inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
-
-  var rv = await fetch(SB_PROM_URL+'/rest/v1/visitas?select=*&created_at=gte.'+inicioMes+'&order=created_at.desc', {headers:HP});
-  var visitas = await rv.json();
-
-  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&order=created_at.desc', {headers:HP});
-  var amostras = await ra.json();
-
-  var leads = (visitas||[]).filter(function(v){ return v.tem_lead; }).length;
-  var amPend = (amostras||[]).filter(function(a){ return a.status==='pendente'; }).length;
-
-  document.getElementById('kpis-prom').innerHTML =
-    kpiCard('pink', (visitas||[]).length, 'Visitas no mês', null) +
-    kpiCard('yellow', leads, 'Leads gerados', null) +
-    kpiCard('blue', (amostras||[]).length, 'Amostras deixadas', null) +
-    kpiCard('red', amPend, 'Sem feedback', null);
-
-  // Visitas recentes
-  document.getElementById('prom-visitas').innerHTML = (visitas||[]).slice(0,10).map(function(v){
-    return '<div class="vis-card '+(v.tem_lead?'lead':'')+'">'+
-      '<div class="vis-nome">'+v.estabelecimento+(v.tem_lead?' 🔔':'')+'</div>'+
-      '<div class="vis-meta">'+(v.objetivo||'')+' · '+(v.cidade||'')+' · '+fmtD(v.created_at)+'</div>'+
-      '<div class="vis-resultado" style="color:#374151;">'+(v.resultado||'')+(v.obs?' — '+v.obs:'')+'</div>'+
-    '</div>';
-  }).join('') || '<div class="empty">Nenhuma visita no mês</div>';
-
-  // Amostras sem feedback
-  var pendentes = (amostras||[]).filter(function(a){ return a.status==='pendente'; });
-  document.getElementById('prom-amostras').innerHTML = pendentes.map(function(a){
-    var dias = Math.floor((hoje-new Date(a.created_at))/86400000);
-    var urgente = dias >= 45;
-    return '<div class="alerta '+(urgente?'vermelho':'amarelo')+'">'+
-      '<div class="alerta-icon">🧪</div>'+
-      '<div><div class="alerta-titulo">'+a.produto+' · '+a.quantidade+'un</div>'+
-      '<div class="alerta-sub">'+a.estabelecimento_nome+' · '+dias+' dias'+(a.contato_nome?' · '+a.contato_nome:'')+'</div></div>'+
-    '</div>';
-  }).join('') || '<div class="empty">✅ Todas amostras com feedback</div>';
-}
-
-// ── BI ─────────────────────────────────────────────
-async function renderBI() {
-  var hoje = new Date();
-  var inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
-
-  // Usar contatos como proxy de atividade por rep
-  var rc = await fetch(SB_POS_URL+'/rest/v1/contatos?select=rep,cod_cliente&data_hora=gte.'+inicioMes, {headers:HQ});
-  var contatos = await rc.json();
-
-  var rl = await fetch(SB_POS_URL+'/rest/v1/leads?select=rep_responsavel,status_lead', {headers:HQ});
-  var leads = await rl.json();
-
-  var reps = ['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'];
-  var porRep = {};
-  (contatos||[]).forEach(function(c){ if(!porRep[c.rep]) porRep[c.rep]=new Set(); porRep[c.rep].add(c.cod_cliente); });
-  var leadsPorRep = {};
-  (leads||[]).forEach(function(l){ if(l.rep_responsavel) { if(!leadsPorRep[l.rep_responsavel]) leadsPorRep[l.rep_responsavel]=0; if(l.status_lead==='aberto') leadsPorRep[l.rep_responsavel]++; } });
-
-  document.getElementById('bi-content').innerHTML =
-    '<div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Atividade do mês por rep</div>'+
-    reps.map(function(rep){
-      var conts = (porRep[rep]||new Set()).size;
-      var leadsA = leadsPorRep[rep]||0;
-      var pct = Math.min(100, Math.round(conts/50*100));
-      return '<div class="bi-row">'+
-        '<div><div class="bi-rep">'+rep+'</div>'+
-        '<div class="bi-meta">'+conts+' contatados · '+leadsA+' leads abertos</div></div>'+
-        '<div style="text-align:right;">'+
-          '<div style="background:#f3f4f6;border-radius:4px;height:6px;width:80px;margin-bottom:3px;">'+
-            '<div style="background:#CC0000;height:6px;border-radius:4px;width:'+pct+'%;"></div></div>'+
-          '<div style="font-size:10px;color:#9ca3af;">'+pct+'% meta</div>'+
-        '</div>'+
-      '</div>';
-    }).join('');
-}
-
-// ── ALERTAS ────────────────────────────────────────
-async function renderAlertas() {
-  var hoje = new Date();
-  var alertas = [];
-
-  var ra = await fetch(SB_PROM_URL+'/rest/v1/amostras?select=*&status=eq.pendente', {headers:HP});
-  var amostras = await ra.json();
-  (amostras||[]).forEach(function(a){
-    var dias = Math.floor((hoje-new Date(a.created_at))/86400000);
-    if(dias>=45) alertas.push({tipo:'vermelho',icon:'🧪',titulo:'Amostra +45 dias sem feedback',sub:a.produto+' · '+a.estabelecimento_nome+' · '+dias+' dias'});
-    else if(dias>=30) alertas.push({tipo:'amarelo',icon:'🧪',titulo:'Amostra sem feedback — '+a.produto,sub:a.estabelecimento_nome+' · '+dias+' dias'});
-  });
-
-  var rl = await fetch(SB_POS_URL+'/rest/v1/leads?select=*&status_lead=eq.aberto&order=created_at.asc', {headers:HQ});
-  var leads = await rl.json();
-  (leads||[]).forEach(function(l){
-    var dias = Math.floor((hoje-new Date(l.created_at))/86400000);
-    if(dias>=7) alertas.push({tipo:'vermelho',icon:'🔔',titulo:'Lead aberto há '+dias+' dias — '+(l.estabelecimento||''),sub:'Rep: '+(l.rep_responsavel||'—')});
-    else alertas.push({tipo:'amarelo',icon:'🔔',titulo:'Lead aberto — '+(l.estabelecimento||''),sub:'Rep: '+(l.rep_responsavel||'—')+' · '+fmtD(l.created_at)});
-  });
-
-  var rc = await fetch(SB_POS_URL+'/rest/v1/contatos?select=rep&data_hora=gte.'+new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-3).toISOString(), {headers:HQ});
-  var conts = await rc.json();
-  var repsAtivos = new Set((conts||[]).map(function(c){return c.rep;}));
-  ['PAULA','MAURO','SUANE','VANESSA','LUIZ','PAULO','NAYARA'].forEach(function(rep){
-    if(!repsAtivos.has(rep)) alertas.push({tipo:'amarelo',icon:'👤',titulo:rep+' sem contatos nos últimos 3 dias',sub:'Verificar atividade'});
-  });
-
-  if(!alertas.length) {
-    document.getElementById('alertas-todos').innerHTML = '<div class="empty" style="padding:60px;">✅ Nenhum alerta no momento</div>';
-  } else {
-    document.getElementById('alertas-todos').innerHTML = alertas.map(function(a){
-      return '<div class="alerta '+a.tipo+'"><div class="alerta-icon">'+a.icon+'</div><div><div class="alerta-titulo">'+a.titulo+'</div><div class="alerta-sub">'+a.sub+'</div></div></div>';
-    }).join('');
-  }
-}
-
-// ── INIT ───────────────────────────────────────────
-window.addEventListener('load', function() {
+(function checkAuth(){
   var auth = sessionStorage.getItem('vv_auth');
   var perfil = sessionStorage.getItem('vv_perfil');
-  if(auth !== 'ok' || perfil !== 'gestor') {
-    window.location.href = '/';
+  if(auth !== 'ok' || perfil !== 'gestor'){
+    location.href = '/index.html';
+  }
+})();
+
+// ============================================================
+// SUPABASE
+// ============================================================
+function sbFetch(path){
+  return fetch(SB_URL+'/rest/v1/'+path, {
+    headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY }
+  }).then(r=>r.json());
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function fmt(v){ return v >= 1000 ? 'R$ '+(v/1000).toFixed(1).replace('.',',')+'k' : 'R$ '+v.toFixed(2).replace('.',','); }
+function fmtFull(v){ return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2}); }
+function pct(a,b){ return b ? ((a/b)*100).toFixed(1)+'%' : '—'; }
+function mesLabel(ano,mes){ const ns=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']; return ns[mes-1]+'/'+String(ano).slice(2); }
+function diasUteisAte(ano, mes){
+  var hoje = new Date(); var dias = 0;
+  for(var d=1; d<=hoje.getDate(); d++){
+    var dw = new Date(ano,mes-1,d).getDay();
+    if(dw!==0&&dw!==6) dias++;
+  }
+  return dias;
+}
+function diasUteisMes(ano, mes){
+  var ultimo = new Date(ano,mes,0).getDate(); var dias = 0;
+  for(var d=1; d<=ultimo; d++){
+    var dw = new Date(ano,mes-1,d).getDay();
+    if(dw!==0&&dw!==6) dias++;
+  }
+  return dias;
+}
+function diasUteisPassados(){
+  var hoje = new Date();
+  return diasUteisAte(hoje.getFullYear(), hoje.getMonth()+1);
+}
+function totalDiasUteis(){
+  var hoje = new Date();
+  return diasUteisMes(hoje.getFullYear(), hoje.getMonth()+1);
+}
+
+// Retorna lista de {ano, mes} dos últimos N meses (do mais antigo ao mais recente)
+function ultMeses(n){
+  var meses = [];
+  var d = new Date();
+  for(var i=n-1; i>=0; i--){
+    var m = new Date(d.getFullYear(), d.getMonth()-i, 1);
+    meses.push({ano:m.getFullYear(), mes:m.getMonth()+1});
+  }
+  return meses;
+}
+
+// Parseia data "DD/MM/YYYY" -> {ano, mes}
+function parseMesHist(dataStr){
+  var p = (dataStr||'').split('/');
+  if(p.length!==3) return null;
+  return {dia:parseInt(p[0]), mes:parseInt(p[1]), ano:parseInt(p[2])};
+}
+
+// Extrai faturamento do hist (estrutura {cod:{pedidos:[{data,itens:[{val}]}]}}) por ano/mes
+function fatMes(hist, ano, mes){
+  if(!hist||typeof hist !== 'object') return 0;
+  var total = 0;
+  Object.values(hist).forEach(function(cli){
+    (cli.pedidos||[]).forEach(function(ped){
+      var dm = parseMesHist(ped.data);
+      if(dm && dm.ano===ano && dm.mes===mes){
+        (ped.itens||[]).forEach(function(item){ total += (item.val||0); });
+      }
+    });
+  });
+  return total;
+}
+
+// Extrai clientes únicos ativos no hist por ano/mes
+function clientesAtivosMes(hist, ano, mes){
+  var s = new Set();
+  if(!hist||typeof hist !== 'object') return s;
+  Object.keys(hist).forEach(function(cod){
+    (hist[cod].pedidos||[]).forEach(function(ped){
+      var dm = parseMesHist(ped.data);
+      if(dm && dm.ano===ano && dm.mes===mes) s.add(cod);
+    });
+  });
+  return s;
+}
+
+// Extrai labs únicos ativos no hist por ano/mes
+function labsAtivosMes(hist, ano, mes){
+  var s = new Set();
+  if(!hist||typeof hist !== 'object') return s;
+  Object.values(hist).forEach(function(cli){
+    (cli.pedidos||[]).forEach(function(ped){
+      var dm = parseMesHist(ped.data);
+      if(dm && dm.ano===ano && dm.mes===mes){
+        (ped.itens||[]).forEach(function(item){ if(item.lab) s.add(item.lab); });
+      }
+    });
+  });
+  return s;
+}
+
+// ============================================================
+// NAVEGAÇÃO
+// ============================================================
+var _screenAtual = 'visao-geral';
+var _screenCarregadas = {};
+
+function navegarPara(id, el){
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  var sc = document.getElementById('screen-'+id);
+  if(sc) sc.classList.add('active');
+  if(el) el.classList.add('active');
+  _screenAtual = id;
+  if(!_screenCarregadas[id]){
+    _screenCarregadas[id] = true;
+    var fn = { 'campo':renderCampo, 'roteiro':renderRoteiro, 'estoque':renderEstoque, 'pdv':renderPDV, 'alertas':renderAlertas }[id];
+    if(fn) fn();
+  }
+}
+
+// ============================================================
+// DADOS LOCAIS (hist_*.js)
+// ============================================================
+var _hoje = new Date();
+var _anoAtual = _hoje.getFullYear();
+var _mesAtual = _hoje.getMonth()+1;
+var _meses6 = ultMeses(6);
+
+// Agrega faturamento de todos os reps por mês
+function fatTotalMes(ano, mes){
+  return REPS.reduce(function(acc,rep){ return acc + fatMes(HISTS[rep],ano,mes); }, 0);
+}
+
+// Faturamento por lab no hist de um rep
+function fatPorLab(hist, ano, mes){
+  var m = {};
+  if(!hist||typeof hist !== 'object') return m;
+  Object.values(hist).forEach(function(cli){
+    (cli.pedidos||[]).forEach(function(ped){
+      var dm = parseMesHist(ped.data);
+      if(dm && dm.ano===ano && dm.mes===mes){
+        (ped.itens||[]).forEach(function(item){
+          if(item.lab) m[item.lab] = (m[item.lab]||0) + (item.val||0);
+        });
+      }
+    });
+  });
+  return m;
+}
+
+// Faturamento por produto no hist
+function fatPorProduto(hist, ano, mes){
+  var m = {};
+  if(!hist||typeof hist !== 'object') return m;
+  Object.keys(hist).forEach(function(cod){
+    (hist[cod].pedidos||[]).forEach(function(ped){
+      var dm = parseMesHist(ped.data);
+      if(dm && dm.ano===ano && dm.mes===mes){
+        (ped.itens||[]).forEach(function(item){
+          if(item.prod){
+            if(!m[item.prod]) m[item.prod] = {valor:0, lab:item.lab||'', clientes:new Set()};
+            m[item.prod].valor += (item.val||0);
+            m[item.prod].clientes.add(cod);
+          }
+        });
+      }
+    });
+  });
+  return m;
+}
+
+function fatTotalPorLab(ano, mes){
+  var m = {};
+  REPS.forEach(function(rep){
+    var lm = fatPorLab(HISTS[rep], ano, mes);
+    Object.keys(lm).forEach(function(lab){ m[lab] = (m[lab]||0) + lm[lab]; });
+  });
+  return m;
+}
+
+function clientesPorLab(ano, mes){
+  var m = {};
+  REPS.forEach(function(rep){
+    var hist = HISTS[rep];
+    if(!hist||typeof hist !== 'object') return;
+    Object.keys(hist).forEach(function(cod){
+      (hist[cod].pedidos||[]).forEach(function(ped){
+        var dm = parseMesHist(ped.data);
+        if(dm && dm.ano===ano && dm.mes===mes){
+          (ped.itens||[]).forEach(function(item){
+            if(item.lab){
+              if(!m[item.lab]) m[item.lab] = new Set();
+              m[item.lab].add(cod);
+            }
+          });
+        }
+      });
+    });
+  });
+  return m;
+}
+
+// ============================================================
+// VISÃO GERAL
+// ============================================================
+function renderVisaoGeral(){
+  // Label do mês
+  var label = mesLabel(_anoAtual, _mesAtual);
+  document.getElementById('mes-ref-label').textContent = label;
+  document.getElementById('equipe-mes-ref').textContent = label;
+
+  // KPIs
+  var fatAtual = fatTotalMes(_anoAtual, _mesAtual);
+  var _metas = getMetas(_anoAtual, _mesAtual);
+  var metaTotal = Object.values(_metas).reduce(function(a,b){return a+b;},0);
+  var duTotal = totalDiasUteis();
+  var duPassados = diasUteisPassados();
+  var projecao = duPassados > 0 ? (fatAtual / duPassados) * duTotal : 0;
+
+  // Mês anterior e mesmo mês ano anterior
+  var mAnt = _mesAtual === 1 ? 12 : _mesAtual - 1;
+  var aAnt = _mesAtual === 1 ? _anoAtual - 1 : _anoAtual;
+  var fatAnt = fatTotalMes(aAnt, mAnt);
+  var fatAAnt = fatTotalMes(_anoAtual - 1, _mesAtual);
+
+  var kpis = [
+    {lbl:'Faturamento '+mesLabel(_anoAtual,_mesAtual), val:fmtFull(fatAtual), cor:'red',
+     sub: projecao > 0 ? '→ '+fmtFull(projecao)+' projetado' : '', subCor:''},
+    {lbl:'Meta do mês', val:fmtFull(metaTotal), cor:'blue',
+     sub: pct(fatAtual,metaTotal)+' atingido', subCor: fatAtual/metaTotal > .8 ? 'up' : 'down'},
+    {lbl:'vs mês anterior', val: fatAnt > 0 ? (((fatAtual-fatAnt)/fatAnt)*100).toFixed(1)+'%' : '—', cor:'green',
+     sub: fmtFull(fatAnt), subCor: fatAtual >= fatAnt ? 'up' : 'down'},
+    {lbl:'vs '+mesLabel(_anoAtual-1,_mesAtual), val: fatAAnt > 0 ? (((fatAtual-fatAAnt)/fatAAnt)*100).toFixed(1)+'%' : 'Sem dados', cor:'yellow',
+     sub: fatAAnt > 0 ? fmtFull(fatAAnt) : 'Histórico insuficiente', subCor: fatAtual >= fatAAnt ? 'up' : 'down'},
+  ];
+  document.getElementById('kpis-geral-wrap').style.display='none';
+  document.getElementById('kpis-geral').style.display='';
+  document.getElementById('kpis-geral').innerHTML = kpis.map(function(k){
+    return '<div class="kpi '+k.cor+'"><div class="kpi-val">'+k.val+'</div><div class="kpi-lbl">'+k.lbl+'</div>'
+      +(k.sub ? '<div class="kpi-sub '+k.subCor+'">'+k.sub+'</div>' : '')+'</div>';
+  }).join('');
+
+  // Gráfico 6 meses
+  var vals6 = _meses6.map(function(m){ return fatTotalMes(m.ano, m.mes); });
+  var maxVal = Math.max.apply(null, vals6) || 1;
+  var chartHtml = vals6.map(function(v, i){
+    var m = _meses6[i];
+    var h = Math.max(4, Math.round((v/maxVal)*100));
+    var isAtual = m.ano===_anoAtual && m.mes===_mesAtual;
+    return '<div class="chart-bar-col">'
+      +'<div class="chart-bar-val">'+fmt(v)+'</div>'
+      +'<div class="chart-bar'+(isAtual?' active':'') +'" style="height:'+h+'px;"></div>'
+      +'<div class="chart-bar-lbl">'+mesLabel(m.ano,m.mes)+'</div>'
+      +'</div>';
+  }).join('');
+  document.getElementById('chart-6meses').innerHTML = chartHtml;
+
+  // Tabela metas
+  var rows = REPS.map(function(rep){
+    var fat = fatMes(HISTS[rep], _anoAtual, _mesAtual);
+    var meta = _metas[rep] || 0;
+    var p = meta > 0 ? fat/meta : 0;
+    var pStr = (p*100).toFixed(1)+'%';
+    var barCor = p>=1 ? 'green' : p>=.8 ? 'yellow' : 'red';
+    return '<tr>'
+      +'<td><strong>'+rep+'</strong></td>'
+      +'<td class="r">'+fmtFull(fat)+'</td>'
+      +'<td class="r">'+fmtFull(meta)+'</td>'
+      +'<td class="r"><span class="pill '+(p>=1?'green':p>=.8?'yellow':'red')+'">'+pStr+'</span></td>'
+      +'<td style="min-width:120px;"><div class="bar-wrap"><div class="bar-fill '+barCor+'" style="width:'+Math.min(100,p*100).toFixed(0)+'%"></div></div></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('tbody-metas').innerHTML = rows;
+}
+
+// ============================================================
+// EQUIPE
+// ============================================================
+function renderEquipe(){
+  var sel = document.getElementById('equipe-mes-sel');
+  if(!sel) return;
+  var val = sel.value || (_anoAtual+'-'+String(_mesAtual).padStart(2,'0'));
+  var partes = val.split('-');
+  var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
+
+  var rows = REPS.map(function(rep){
+    var fat = fatMes(HISTS[rep], ano, mes);
+    var _metasEq = getMetas(ano, mes);
+    var meta = _metasEq[rep] || 0;
+    var p = meta > 0 ? fat/meta : 0;
+    var cliAtivos = clientesAtivosMes(HISTS[rep], ano, mes).size;
+    var labsAtivos = labsAtivosMes(HISTS[rep], ano, mes).size;
+    var barCor = p>=1?'green':p>=.8?'yellow':'red';
+    return '<tr>'
+      +'<td><strong>'+rep+'</strong></td>'
+      +'<td class="r">'+fmtFull(fat)+'</td>'
+      +'<td class="r">'+fmtFull(meta)+'</td>'
+      +'<td class="r"><span class="pill '+barCor+'">'+((p*100).toFixed(1))+'%</span></td>'
+      +'<td class="r">'+cliAtivos+'</td>'
+      +'<td class="r">'+labsAtivos+'</td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('tbody-equipe').innerHTML = rows;
+
+  renderPositivacaoRep();
+}
+
+function renderPositivacaoRep(){
+  var repFilt = (document.getElementById('positiv-rep-sel')||{}).value || '';
+  var labFilt = (document.getElementById('positiv-lab-sel')||{}).value || '';
+
+  var rows = [];
+  REPS.forEach(function(rep){
+    if(repFilt && rep !== repFilt) return;
+    var labsAtual = {};
+    var labsAnt = {};
+    var mAnt2 = _mesAtual===1?12:_mesAtual-1;
+    var aAnt2 = _mesAtual===1?_anoAtual-1:_anoAtual;
+    var hist2 = HISTS[rep];
+    if(hist2 && typeof hist2 === 'object'){
+      Object.keys(hist2).forEach(function(cod){
+        (hist2[cod].pedidos||[]).forEach(function(ped){
+          var dm = parseMesHist(ped.data);
+          if(!dm) return;
+          (ped.itens||[]).forEach(function(item){
+            if(!item.lab) return;
+            if(dm.ano===_anoAtual && dm.mes===_mesAtual){
+              if(!labsAtual[item.lab]) labsAtual[item.lab]=new Set();
+              labsAtual[item.lab].add(cod);
+            }
+            if(dm.ano===aAnt2 && dm.mes===mAnt2){
+              if(!labsAnt[item.lab]) labsAnt[item.lab]=new Set();
+              labsAnt[item.lab].add(cod);
+            }
+          });
+        });
+      });
+    }
+    var labs = new Set([...Object.keys(labsAtual), ...Object.keys(labsAnt)]);
+    labs.forEach(function(lab){
+      if(labFilt && lab !== labFilt) return;
+      var atual = (labsAtual[lab]||new Set()).size;
+      var ant = (labsAnt[lab]||new Set()).size;
+      var delta = atual - ant;
+      rows.push({rep,lab,atual,ant,delta});
+    });
+  });
+
+  rows.sort(function(a,b){ return a.rep.localeCompare(b.rep) || a.lab.localeCompare(b.lab); });
+
+  document.getElementById('tbody-positiv-rep').innerHTML = rows.map(function(r){
+    var deltaStr = r.delta > 0 ? '<span class="pill green">+'+r.delta+'</span>' : r.delta < 0 ? '<span class="pill red">'+r.delta+'</span>' : '<span class="pill gray">0</span>';
+    return '<tr><td>'+r.rep+'</td><td>'+r.lab+'</td><td class="r">'+r.atual+'</td><td class="r">'+r.ant+'</td><td class="r">'+deltaStr+'</td></tr>';
+  }).join('') || '<tr><td colspan="5" class="vazio">Nenhum dado</td></tr>';
+}
+
+// ============================================================
+// LABORATÓRIOS
+// ============================================================
+function renderLaboratorios(){
+  var fatAtual = fatTotalPorLab(_anoAtual, _mesAtual);
+  var mAnt = _mesAtual===1?12:_mesAtual-1;
+  var aAnt = _mesAtual===1?_anoAtual-1:_anoAtual;
+  var fatAnt = fatTotalPorLab(aAnt, mAnt);
+  var cliAtual = clientesPorLab(_anoAtual, _mesAtual);
+  var totalAtual = Object.values(fatAtual).reduce(function(a,b){return a+b;},0) || 1;
+
+  var labs = Object.keys(fatAtual).filter(isLabExclusivo).sort(function(a,b){ return fatAtual[b]-fatAtual[a]; });
+  document.getElementById('tbody-labs').innerHTML = labs.map(function(lab){
+    var fa = fatAtual[lab]||0;
+    var fant = fatAnt[lab]||0;
+    var delta = fant > 0 ? (((fa-fant)/fant)*100).toFixed(1) : '—';
+    var deltaEl = typeof delta === 'string' && delta !== '—'
+      ? '<span class="pill '+(parseFloat(delta)>=0?'green':'red')+'">'+delta+'%</span>' : '—';
+    var part = ((fa/totalAtual)*100).toFixed(1);
+    var cli = cliAtual[lab] ? cliAtual[lab].size : 0;
+    return '<tr><td>'+lab+'</td><td class="r">'+fmtFull(fa)+'</td><td class="r">'+part+'%</td>'
+      +'<td class="r">'+fmtFull(fant)+'</td><td class="r">'+deltaEl+'</td><td class="r">'+cli+'</td></tr>';
+  }).join('') || '<tr><td colspan="6" class="vazio">Sem dados</td></tr>';
+
+  // Positivação por lab — 6 meses
+  _meses6.forEach(function(m,i){
+    var el = document.getElementById('pl-m'+i);
+    if(el) el.textContent = mesLabel(m.ano,m.mes);
+  });
+
+  var todosLabs = new Set();
+  _meses6.forEach(function(m){
+    Object.keys(clientesPorLab(m.ano,m.mes)).filter(isLabExclusivo).forEach(function(l){ todosLabs.add(l); });
+  });
+
+  var rowsLab = Array.from(todosLabs).sort().map(function(lab){
+    var vals = _meses6.map(function(m){ return (clientesPorLab(m.ano,m.mes)[lab]||new Set()).size; });
+    var primeiro = vals[0], ultimo = vals[vals.length-1];
+    var delta6 = primeiro > 0 ? (((ultimo-primeiro)/primeiro)*100).toFixed(0) : '—';
+    var deltaEl = delta6 !== '—' ? '<span class="pill '+(parseFloat(delta6)>=0?'green':'red')+'">'+delta6+'%</span>' : '—';
+    return '<tr><td>'+lab+'</td>'+vals.map(function(v){ return '<td class="r">'+v+'</td>'; }).join('')+'<td class="r">'+deltaEl+'</td></tr>';
+  }).join('');
+  document.getElementById('tbody-positiv-lab').innerHTML = rowsLab || '<tr><td colspan="8" class="vazio">Sem dados</td></tr>';
+
+  // Cobertura labs por rep
+  var todosLabsAtual = Object.keys(fatAtual).filter(isLabExclusivo);
+  var header = '<th>Rep</th>'+todosLabsAtual.map(function(l){ return '<th class="r" style="font-size:9px;max-width:60px;word-break:break-word;">'+l+'</th>'; }).join('');
+  document.getElementById('lab-rep-header').innerHTML = header;
+
+  var rowsRep = REPS.map(function(rep){
+    var labsRep = fatPorLab(HISTS[rep], _anoAtual, _mesAtual);
+    return '<tr><td><strong>'+rep+'</strong></td>'+todosLabsAtual.map(function(lab){
+      var v = labsRep[lab]||0;
+      return '<td class="r">'+(v>0?'<span class="semaforo verde"></span>':'<span class="semaforo vermelho"></span>')+'</td>';
+    }).join('')+'</tr>';
+  }).join('');
+  document.getElementById('tbody-lab-rep').innerHTML = rowsRep;
+}
+
+// ============================================================
+// PRODUTOS
+// ============================================================
+function renderProdutos(){
+  // Agregar todos os hists por produto
+  var prodAtual = {};
+  var prodMeses = {};
+  REPS.forEach(function(rep){
+    var hist = HISTS[rep];
+    if(!hist||typeof hist !== 'object') return;
+    Object.keys(hist).forEach(function(cod){
+      (hist[cod].pedidos||[]).forEach(function(ped){
+        var dm = parseMesHist(ped.data);
+        if(!dm) return;
+        (ped.itens||[]).forEach(function(item){
+          var k = item.prod;
+          if(!k) return;
+          if(dm.ano===_anoAtual && dm.mes===_mesAtual){
+            if(!prodAtual[k]) prodAtual[k] = {valor:0, lab:item.lab||'', clientes:new Set()};
+            prodAtual[k].valor += (item.val||0);
+            prodAtual[k].clientes.add(cod);
+          }
+          _meses6.forEach(function(m){
+            if(dm.ano===m.ano && dm.mes===m.mes){
+              if(!prodMeses[k]) prodMeses[k] = {meses:{}, lab:item.lab||''};
+              var mk = m.ano+'-'+m.mes;
+              prodMeses[k].meses[mk] = (prodMeses[k].meses[mk]||0) + (item.val||0);
+            }
+          });
+        });
+      });
+    });
+  });
+
+  // Média 6 meses por produto
+  var media6 = {};
+  Object.keys(prodMeses).forEach(function(k){
+    var vals = Object.values(prodMeses[k].meses);
+    media6[k] = vals.reduce(function(a,b){return a+b;},0) / 6;
+  });
+
+  // Projeção do mês atual
+  var du = diasUteisPassados(), duTotal = totalDiasUteis();
+  function projetar(v){ return du > 0 ? (v/du)*duTotal : v; }
+
+  // Produtos em queda (projeção < 80% da média)
+  var queda = Object.keys(prodAtual).filter(function(k){
+    var proj = projetar(prodAtual[k].valor);
+    return media6[k] > 0 && proj < media6[k]*0.8;
+  }).sort(function(a,b){
+    var da = projetar(prodAtual[a].valor)/media6[a];
+    var db = projetar(prodAtual[b].valor)/media6[b];
+    return da - db;
+  }).slice(0,30);
+
+  document.getElementById('tbody-queda').innerHTML = queda.map(function(k){
+    var fat = prodAtual[k].valor;
+    var proj = projetar(fat);
+    var med = media6[k]||1;
+    var pct_val = ((proj/med)*100).toFixed(0);
+    var cor = parseInt(pct_val)<50?'vermelho':'amarelo';
+    return '<tr>'
+      +'<td>'+k+'</td><td>'+prodAtual[k].lab+'</td>'
+      +'<td class="r">'+fmtFull(fat)+'</td>'
+      +'<td class="r">'+fmtFull(proj)+'</td>'
+      +'<td class="r">'+fmtFull(med)+'</td>'
+      +'<td class="r"><span class="pill red">'+pct_val+'%</span></td>'
+      +'<td><span class="semaforo '+cor+'"></span></td>'
+      +'</tr>';
+  }).join('') || '<tr><td colspan="7" class="vazio">Nenhum produto em queda significativa</td></tr>';
+
+  // Produtos em alta (projeção > 120% da média)
+  var alta = Object.keys(prodAtual).filter(function(k){
+    var proj = projetar(prodAtual[k].valor);
+    return media6[k] > 0 && proj > media6[k]*1.2;
+  }).sort(function(a,b){
+    var da = projetar(prodAtual[b].valor)/media6[b];
+    var db = projetar(prodAtual[a].valor)/media6[a];
+    return da - db;
+  }).slice(0,20);
+
+  document.getElementById('tbody-alta').innerHTML = alta.map(function(k){
+    var fat = prodAtual[k].valor;
+    var proj = projetar(fat);
+    var med = media6[k]||1;
+    var pct_val = ((proj/med)*100).toFixed(0);
+    return '<tr>'
+      +'<td>'+k+'</td><td>'+prodAtual[k].lab+'</td>'
+      +'<td class="r">'+fmtFull(fat)+'</td>'
+      +'<td class="r">'+fmtFull(proj)+'</td>'
+      +'<td class="r">'+fmtFull(med)+'</td>'
+      +'<td class="r"><span class="pill green">+'+pct_val+'%</span></td>'
+      +'</tr>';
+  }).join('') || '<tr><td colspan="6" class="vazio">Nenhum produto em alta significativa</td></tr>';
+
+  // Curva ABC
+  renderABC();
+
+  // Concentração
+  var concentr = [];
+  Object.keys(prodAtual).forEach(function(k){
+    var total = prodAtual[k].clientes.size;
+    if(total < 2) return;
+    // aproximação: se 1 cliente representa > 60%, é concentrado
+    // sem dados individuais por cliente por produto neste nível, pulamos para próxima versão
+  });
+
+  // Recompra — clientes que compraram em meses anteriores mas não no atual
+  var compraram = {};
+  var recompraram = {};
+  REPS.forEach(function(rep){
+    var hist = HISTS[rep];
+    if(!hist||typeof hist !== 'object') return;
+    Object.keys(hist).forEach(function(cod){
+      (hist[cod].pedidos||[]).forEach(function(ped){
+        var dm = parseMesHist(ped.data);
+        if(!dm) return;
+        (ped.itens||[]).forEach(function(item){
+          if(!item.prod) return;
+          if(!compraram[item.prod]) compraram[item.prod] = new Set();
+          compraram[item.prod].add(cod);
+          if(dm.ano===_anoAtual && dm.mes===_mesAtual){
+            if(!recompraram[item.prod]) recompraram[item.prod] = new Set();
+            recompraram[item.prod].add(cod);
+          }
+        });
+      });
+    });
+  });
+
+  var recompraRows = Object.keys(compraram).filter(function(k){
+    return compraram[k].size >= 3;
+  }).map(function(k){
+    var total = compraram[k].size;
+    var rec = (recompraram[k]||new Set()).size;
+    var taxa = total > 0 ? ((rec/total)*100).toFixed(0) : 0;
+    var lab = (prodMeses[k]||{}).lab || '';
+    return {k:k, total:total, rec:rec, taxa:parseInt(taxa), lab:lab};
+  }).filter(function(r){ return r.taxa < 40; })
+    .sort(function(a,b){ return a.taxa - b.taxa; })
+    .slice(0,20);
+
+  document.getElementById('tbody-recompra').innerHTML = recompraRows.map(function(r){
+    return '<tr><td>'+r.k+'</td><td>'+r.lab+'</td>'
+      +'<td class="r">'+r.total+'</td>'
+      +'<td class="r">'+r.rec+'</td>'
+      +'<td class="r"><span class="pill '+(r.taxa<20?'red':'yellow')+'">'+r.taxa+'%</span></td>'
+      +'</tr>';
+  }).join('') || '<tr><td colspan="5" class="vazio">Dados insuficientes</td></tr>';
+}
+
+function renderABC(){
+  var sel = document.getElementById('abc-mes-sel');
+  var val = sel ? sel.value : (_anoAtual+'-'+String(_mesAtual).padStart(2,'0'));
+  var partes = val.split('-');
+  var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
+
+  var prods = {};
+  REPS.forEach(function(rep){
+    var hist = HISTS[rep];
+    if(!hist||typeof hist !== 'object') return;
+    Object.values(hist).forEach(function(cli){
+      (cli.pedidos||[]).forEach(function(ped){
+        var dm = parseMesHist(ped.data);
+        if(!dm||dm.ano!==ano||dm.mes!==mes) return;
+        (ped.itens||[]).forEach(function(item){
+          if(!item.prod) return;
+          if(!prods[item.prod]) prods[item.prod] = {valor:0, lab:item.lab||''};
+          prods[item.prod].valor += (item.val||0);
+        });
+      });
+    });
+  });
+
+  var lista = Object.keys(prods).map(function(k){ return {nome:k, valor:prods[k].valor, lab:prods[k].lab}; });
+  lista.sort(function(a,b){ return b.valor-a.valor; });
+  var total = lista.reduce(function(acc,p){ return acc+p.valor; },0) || 1;
+  var acum = 0;
+
+  document.getElementById('tbody-abc').innerHTML = lista.slice(0,50).map(function(p,i){
+    acum += p.valor;
+    var partPct = (p.valor/total*100).toFixed(1);
+    var acumPct = (acum/total*100).toFixed(1);
+    var curva = parseFloat(acumPct) <= 80 ? 'A' : parseFloat(acumPct) <= 95 ? 'B' : 'C';
+    var corCurva = curva==='A'?'green':curva==='B'?'yellow':'gray';
+    return '<tr><td>'+(i+1)+'</td><td>'+p.nome+'</td><td>'+p.lab+'</td>'
+      +'<td class="r">'+fmtFull(p.valor)+'</td>'
+      +'<td class="r">'+partPct+'%</td>'
+      +'<td class="r">'+acumPct+'%</td>'
+      +'<td><span class="pill '+corCurva+'">'+curva+'</span></td>'
+      +'</tr>';
+  }).join('') || '<tr><td colspan="7" class="vazio">Sem dados</td></tr>';
+}
+
+// ============================================================
+// ALERTAS
+// ============================================================
+var _alertas = [];
+
+async function renderAlertas(){
+  var lista = document.getElementById('lista-alertas-completa');
+  lista.innerHTML = '<div class="loading">Carregando alertas...</div>';
+  _alertas = [];
+
+  // 1. Vencimento próximo < 6 meses
+  try {
+    var val = typeof VALIDADE_ESTOQUE !== 'undefined' ? VALIDADE_ESTOQUE : null;
+    if(val){
+      var hoje = new Date();
+      var em6m = new Date(hoje.getFullYear(), hoje.getMonth()+6, hoje.getDate());
+      Object.entries(val).forEach(function([prod, info]){
+        var dt = parseDt(info.validade);
+        if(dt && dt > hoje && dt <= em6m){
+          var dias = Math.round((dt-hoje)/(1000*60*60*24));
+          _alertas.push({tipo:'vencimento', cor:'amarelo', ico:'⏳', titulo:'Vencimento próximo: '+prod, sub:'Lote '+info.lote+' — vence em '+dias+' dias ('+info.validade+')'});
+        }
+      });
+    }
+  } catch(e){}
+
+  // 2. Amostras sem feedback > 45 dias
+  try {
+    var amostras = await sbFetch("amostras?select=estabelecimento_nome,produto,created_at,feedback&order=created_at.desc&limit=200");
+    if(Array.isArray(amostras)){
+      var hoje = new Date();
+      amostras.forEach(function(a){
+        if(!a.feedback || a.feedback.trim() === ''){
+          var criado = new Date(a.created_at);
+          var dias = Math.round((hoje-criado)/(1000*60*60*24));
+          if(dias >= 45){
+            _alertas.push({tipo:'amostra', cor:'vermelho', ico:'🧪', titulo:'Amostra sem feedback há '+dias+' dias', sub:(a.estabelecimento_nome||'?')+' — '+( a.produto||'?')});
+          }
+        }
+      });
+    }
+  } catch(e){}
+
+  // 3. Nicolle sem visita > 2 dias úteis
+  try {
+    var visitas = await sbFetch("visitas?select=created_at&order=created_at.desc&limit=1");
+    if(Array.isArray(visitas) && visitas.length){
+      var ultima = new Date(visitas[0].created_at);
+      var duSem = diasUteisEntre(ultima, new Date());
+      if(duSem >= 2){
+        _alertas.push({tipo:'nicolle', cor:'vermelho', ico:'🗺️', titulo:'Nicolle sem visita há '+duSem+' dias úteis', sub:'Última visita: '+ultima.toLocaleDateString('pt-BR')});
+      }
+    } else {
+      _alertas.push({tipo:'nicolle', cor:'vermelho', ico:'🗺️', titulo:'Nicolle sem visitas recentes', sub:'Nenhuma visita encontrada no sistema'});
+    }
+  } catch(e){ _alertas.push({tipo:'nicolle', cor:'amarelo', ico:'🗺️', titulo:'Não foi possível verificar visitas', sub:'Erro ao consultar Supabase'}); }
+
+  // 4. Reps sem contagem de estoque > 2 dias úteis
+  try {
+    var contagens = await sbFetch("contagens_estoque?select=rep,created_at&order=created_at.desc&limit=500");
+    if(Array.isArray(contagens)){
+      var ultimaPorRep = {};
+      contagens.forEach(function(c){ 
+        var repNorm = (c.rep||'').toUpperCase().trim();
+        if(repNorm && !ultimaPorRep[repNorm]) ultimaPorRep[repNorm] = new Date(c.created_at); 
+      });
+      REPS.forEach(function(rep){
+        var ult = ultimaPorRep[rep];
+        if(!ult){
+          _alertas.push({tipo:'estoque', cor:'amarelo', ico:'📦', titulo:rep+' — sem contagem de estoque recente', sub:'Nenhuma contagem registrada'});
+        } else {
+          var du = diasUteisEntre(ult, new Date());
+          if(du >= 2){
+            _alertas.push({tipo:'estoque', cor:'amarelo', ico:'📦', titulo:rep+' — sem contagem há '+du+' dias úteis', sub:'Última: '+ult.toLocaleDateString('pt-BR')});
+          }
+        }
+      });
+    }
+  } catch(e){}
+
+  // Alerta de roteiro pendente removido — funcionalidade cancelada
+
+  // Render
+  if(_alertas.length === 0){
+    lista.innerHTML = '<div class="alerta verde"><span class="alerta-ico">✅</span><div class="alerta-body"><div class="alerta-title">Tudo em ordem</div><div class="alerta-sub">Nenhum alerta no momento.</div></div></div>';
+  } else {
+    lista.innerHTML = _alertas.map(function(a){
+      return '<div class="alerta '+a.cor+'"><span class="alerta-ico">'+a.ico+'</span>'
+        +'<div class="alerta-body"><div class="alerta-title">'+a.titulo+'</div><div class="alerta-sub">'+a.sub+'</div></div>'
+        +'</div>';
+    }).join('');
+  }
+
+  // Badge
+  var criticos = _alertas.filter(function(a){ return a.cor==='vermelho'; }).length;
+  var badge = document.getElementById('badge-alertas');
+  if(criticos > 0){
+    badge.textContent = criticos;
+    badge.style.display = '';
+  }
+
+  // Resumo na visão geral
+  var resumo = document.getElementById('alertas-resumo');
+  if(resumo){
+    var top = _alertas.slice(0,3);
+    resumo.innerHTML = top.map(function(a){
+      return '<div class="alerta '+a.cor+'" onclick="navegarPara(\'alertas\',document.querySelector(\'[onclick*=alertas]\'))" style="cursor:pointer;">'
+        +'<span class="alerta-ico">'+a.ico+'</span>'
+        +'<div class="alerta-body"><div class="alerta-title">'+a.titulo+'</div><div class="alerta-sub">'+a.sub+'</div></div>'
+        +'</div>';
+    }).join('') + (_alertas.length > 3 ? '<div style="text-align:center;font-size:11px;color:var(--muted);padding:6px;">+'+(_alertas.length-3)+' alertas — <a href="#" onclick="navegarPara(\'alertas\',null);return false;" style="color:var(--red);">ver todos</a></div>' : '');
+  }
+}
+
+function parseDt(str){
+  if(!str) return null;
+  var p = str.split('/');
+  if(p.length===3) return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+  return null;
+}
+
+function diasUteisEntre(d1, d2){
+  var dias = 0;
+  var cur = new Date(d1);
+  while(cur < d2){
+    cur.setDate(cur.getDate()+1);
+    var dw = cur.getDay();
+    if(dw!==0&&dw!==6) dias++;
+  }
+  return dias;
+}
+
+// ============================================================
+// CAMPO (NICOLLE)
+// ============================================================
+var _visitas = [], _amostras = [];
+
+async function renderCampo(){
+  // KPIs
+  var mesInput = document.getElementById('campo-mes');
+  if(!mesInput.value){
+    mesInput.value = _anoAtual+'-'+String(_mesAtual).padStart(2,'0');
+  }
+  var partes = mesInput.value.split('-');
+  var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
+  var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01';
+  var fim = ano+'-'+String(mes).padStart(2,'0')+'-31';
+
+  try {
+    _visitas = await sbFetch("visitas?select=*&created_at=gte."+inicio+"T00:00:00&created_at=lte."+fim+"T23:59:59&order=created_at.desc");
+    if(!Array.isArray(_visitas)) _visitas = [];
+  } catch(e){ _visitas = []; }
+
+  try {
+    _amostras = await sbFetch("amostras?select=*&created_at=gte."+inicio+"T00:00:00&created_at=lte."+fim+"T23:59:59&order=created_at.desc");
+    if(!Array.isArray(_amostras)) _amostras = [];
+  } catch(e){ _amostras = []; }
+
+  // KPIs
+  var estabsVisitados = new Set(_visitas.map(function(v){ return v.estabelecimento||''; })).size;
+  var leads = _visitas.filter(function(v){ return (v.resultado||'').toLowerCase().includes('acionar'); }).length;
+  var semFeedback = _amostras.filter(function(a){ return !a.feedback||a.feedback.trim()===''; }).length;
+
+  document.getElementById('kpis-campo').innerHTML = [
+    {lbl:'Visitas registradas', val:_visitas.length, cor:'blue'},
+    {lbl:'Estabelecimentos visitados', val:estabsVisitados, cor:'green'},
+    {lbl:'Leads gerados', val:leads, cor:'red'},
+    {lbl:'Amostras s/ feedback', val:semFeedback, cor:'yellow'},
+  ].map(function(k){
+    return '<div class="kpi '+k.cor+'"><div class="kpi-val">'+k.val+'</div><div class="kpi-lbl">'+k.lbl+'</div></div>';
+  }).join('');
+
+  // Tipos para filtro
+  var tipos = [...new Set(_visitas.map(function(v){ return v.tipo||''; }).filter(Boolean))];
+  var tipoSel = document.getElementById('campo-tipo-sel');
+  var tipoAtual = tipoSel.value;
+  tipoSel.innerHTML = '<option value="">Todos os tipos</option>'+tipos.map(function(t){ return '<option value="'+t+'"'+(tipoAtual===t?' selected':'')+'>'+t+'</option>'; }).join('');
+
+  // Tabela visitas
+  var tipoFilt = tipoSel.value;
+  var visFilt = _visitas.filter(function(v){ return !tipoFilt || v.tipo===tipoFilt; });
+  document.getElementById('tbody-campo-visitas').innerHTML = visFilt.map(function(v){
+    var dt = new Date(v.created_at).toLocaleDateString('pt-BR');
+    return '<tr><td>'+( v.estabelecimento||'—')+'</td><td>'+( v.tipo||'—')+'</td>'
+      +'<td>'+(v.objetivo||'—')+'</td><td>'+(v.resultado||'—')+'</td><td>'+dt+'</td></tr>';
+  }).join('') || '<tr><td colspan="5" class="vazio">Sem visitas no período</td></tr>';
+
+  // Tabela amostras
+  var hoje = new Date();
+  document.getElementById('tbody-campo-amostras').innerHTML = _amostras.map(function(a){
+    var dt = new Date(a.created_at).toLocaleDateString('pt-BR');
+    var dias = Math.round((hoje-new Date(a.created_at))/(1000*60*60*24));
+    var fb = a.feedback||'';
+    var fbEl = fb ? '<span class="pill green">✓</span>' : '<span class="pill red">Pendente</span>';
+    var diasEl = !fb ? (dias >= 45 ? '<span class="pill red">'+dias+' dias</span>' : '<span class="pill yellow">'+dias+' dias</span>') : '—';
+    return '<tr><td>'+(a.estabelecimento_nome||'—')+'</td><td>'+(a.produto||'—')+'</td>'
+      +'<td>'+dt+'</td><td>'+fbEl+'</td><td>'+diasEl+'</td></tr>';
+  }).join('') || '<tr><td colspan="5" class="vazio">Sem amostras no período</td></tr>';
+}
+
+// ============================================================
+// ROTEIRO
+// ============================================================
+var _roteiros = [], _visitas_realizadas = [];
+
+async function renderRoteiro(){
+  var content = document.getElementById('roteiro-content');
+  content.innerHTML = '<div class="loading">Carregando...</div>';
+
+  try {
+    _roteiros = await sbFetch("roteiros?select=*&order=rep.asc");
+    if(!Array.isArray(_roteiros)) _roteiros = [];
+  } catch(e){ _roteiros = []; }
+
+  // Preencher filtro de reps
+  var repSel = document.getElementById('rot-rep-sel');
+  var repAtual = repSel.value;
+  var repsNoRoteiro = [...new Set(_roteiros.map(function(r){ return r.rep||''; }).filter(Boolean))];
+  repSel.innerHTML = '<option value="">Todos os reps</option>'+repsNoRoteiro.map(function(r){ return '<option value="'+r+'"'+(repAtual===r?' selected':'')+'>'+r+'</option>'; }).join('');
+
+  var repFilt = repSel.value;
+  var statusFilt = document.getElementById('rot-status-sel').value;
+
+  var filtrado = _roteiros.filter(function(r){
+    return (!repFilt || r.rep===repFilt) && (!statusFilt || r.status===statusFilt);
+  });
+
+  if(!filtrado.length){
+    content.innerHTML = '<div class="vazio"><span class="vazio-ico">📋</span>Nenhum roteiro encontrado</div>';
     return;
   }
-  renderHome();
-});
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW falhou:', e); });
-  });
+
+  // Agrupar por rep
+  var porRep = {};
+  filtrado.forEach(function(r){ if(!porRep[r.rep]) porRep[r.rep]=[]; porRep[r.rep].push(r); });
+
+  var diasSemana = ['Seg','Ter','Qua','Qui','Sex'];
+  var html = Object.keys(porRep).map(function(rep){
+    var rows = porRep[rep];
+    var status = rows[0] ? rows[0].status : '—';
+    var statusEl = status==='aprovado'?'<span class="pill green">Aprovado</span>':status==='pendente'?'<span class="pill yellow">Pendente</span>':'<span class="pill gray">Rascunho</span>';
+    var tblRows = rows.map(function(r){
+      var cli = BASE_CLIENTES ? (BASE_CLIENTES.find(function(c){ return c.cod==r.cod_cli; })||{}) : {};
+      var sem = Array.isArray(r.semanas_mes) ? r.semanas_mes.join(', ') : (r.semanas_mes||'');
+      return '<tr><td>'+(cli.nome||r.cod_cli||'—')+'</td>'
+        +'<td>'+(diasSemana[(r.dia_semana||1)-1]||r.dia_semana||'—')+'</td>'
+        +'<td>'+(r.frequencia||'—')+'</td>'
+        +'<td>'+sem+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<div class="sec"><div class="sec-title"><span>👤</span> '+rep+' &nbsp;'+statusEl+'</div>'
+      +'<div class="tbl-wrap"><table class="tbl">'
+      +'<thead><tr><th>Cliente</th><th>Dia</th><th>Frequência</th><th>Semanas</th></tr></thead>'
+      +'<tbody>'+tblRows+'</tbody></table></div></div>';
+  }).join('');
+
+  content.innerHTML = html;
 }
+
+// ============================================================
+// ESTOQUE
+// ============================================================
+var _contagens = [];
+
+async function renderEstoque(){
+  var content = document.getElementById('estoque-content');
+  content.innerHTML = '<div class="loading">Carregando...</div>';
+
+  var mesInput = document.getElementById('est-mes');
+  if(!mesInput.value) mesInput.value = _anoAtual+'-'+String(_mesAtual).padStart(2,'0');
+
+  var partes = mesInput.value.split('-');
+  var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
+  var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01';
+  var fim = ano+'-'+String(mes).padStart(2,'0')+'-31';
+
+  try {
+    _contagens = await sbFetch("contagens_estoque?select=*&created_at=gte."+inicio+"T00:00:00&created_at=lte."+fim+"T23:59:59&order=created_at.desc&limit=500");
+    if(!Array.isArray(_contagens)) _contagens = [];
+  } catch(e){ _contagens = []; }
+
+  var repSel = document.getElementById('est-rep-sel');
+  var repAtual = repSel.value;
+  var repsEst = [...new Set(_contagens.map(function(c){ return c.rep||''; }).filter(Boolean))];
+  repSel.innerHTML = '<option value="">Todos os reps</option>'+repsEst.map(function(r){ return '<option value="'+r+'"'+(repAtual===r?' selected':'')+'>'+r+'</option>'; }).join('');
+
+  var repFilt = repSel.value;
+  var busca = (document.getElementById('est-busca').value||'').toLowerCase();
+
+  var filtrado = _contagens.filter(function(c){
+    return (!repFilt || c.rep===repFilt)
+      && (!busca || (c.nome_cli||'').toLowerCase().includes(busca));
+  });
+
+  if(!filtrado.length){
+    content.innerHTML = '<div class="vazio"><span class="vazio-ico">📦</span>Nenhuma contagem encontrada</div>';
+    return;
+  }
+
+  // Agrupar por rep + cliente + data
+  var grupos = {};
+  filtrado.forEach(function(c){
+    var dt = (c.created_at||'').slice(0,10);
+    var k = (c.rep||'?')+'|'+(c.cod_cli||'?')+'|'+dt;
+    if(!grupos[k]) grupos[k]={rep:c.rep,cli:c.nome_cli||'Cliente '+c.cod_cli,dt,produtos:[]};
+    grupos[k].produtos.push({produto:c.produto,qtde:c.qtde_estoque});
+  });
+
+  var html = Object.values(grupos).map(function(g){
+    var prodRows = g.produtos.map(function(p){
+      return '<tr><td>'+p.produto+'</td><td class="r">'+p.qtde+'</td></tr>';
+    }).join('');
+    return '<div class="sec"><div class="sec-title"><span>📦</span> '+g.rep+' — '+g.cli+' <span style="font-size:10px;font-weight:400;color:var(--muted2);">'+new Date(g.dt).toLocaleDateString('pt-BR')+'</span></div>'
+      +'<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Produto</th><th class="r">Qtde</th></tr></thead>'
+      +'<tbody>'+prodRows+'</tbody></table></div></div>';
+  }).join('');
+
+  content.innerHTML = html;
+}
+
+// ============================================================
+// PDV
+// ============================================================
+var _pdv = [];
+
+async function renderPDV(){
+  var mesInput = document.getElementById('pdv-mes');
+  if(!mesInput.value) mesInput.value = _anoAtual+'-'+String(_mesAtual).padStart(2,'0');
+  var partes = mesInput.value.split('-');
+  var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
+  var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01';
+  var fim = ano+'-'+String(mes).padStart(2,'0')+'-31';
+
+  try {
+    _pdv = await sbFetch("pdv_agenda?select=*&data_pdv=gte."+inicio+"&data_pdv=lte."+fim+"&order=data_pdv.asc");
+    if(!Array.isArray(_pdv)) _pdv = [];
+  } catch(e){ _pdv = []; }
+
+  var repSel = document.getElementById('pdv-rep-sel');
+  var repAtual = repSel.value;
+  var repsPdv = [...new Set(_pdv.map(function(p){ return p.rep||''; }).filter(Boolean))];
+  repSel.innerHTML = '<option value="">Todos os reps</option>'+repsPdv.map(function(r){ return '<option value="'+r+'"'+(repAtual===r?' selected':'')+'>'+r+'</option>'; }).join('');
+
+  var repFilt = repSel.value;
+  var statusFilt = document.getElementById('pdv-status-sel').value;
+
+  var filtrado = _pdv.filter(function(p){
+    return (!repFilt || p.rep===repFilt) && (!statusFilt || p.status===statusFilt);
+  });
+
+  var statusPill = {pendente:'yellow', confirmado:'green', bloqueado:'red', cancelado:'gray'};
+  document.getElementById('tbody-pdv').innerHTML = filtrado.map(function(p){
+    var dt = new Date(p.data_pdv+'T12:00:00').toLocaleDateString('pt-BR');
+    var cor = statusPill[p.status]||'gray';
+    return '<tr><td>'+dt+'</td><td>'+(p.rep||'—')+'</td><td>'+(p.cliente_nome||'—')+'</td>'
+      +'<td><span class="pill '+cor+'">'+(p.status||'—')+'</span></td>'
+      +'<td>'+(p.obs||'—')+'</td></tr>';
+  }).join('') || '<tr><td colspan="5" class="vazio">Sem agendamentos no período</td></tr>';
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function populaSeletores(){
+  // Seletor de meses para equipe e ABC
+  var opts = _meses6.map(function(m){
+    return '<option value="'+m.ano+'-'+String(m.mes).padStart(2,'0')+'">'+mesLabel(m.ano,m.mes)+'/'+m.ano+'</option>';
+  }).reverse().join('');
+  ['equipe-mes-sel','abc-mes-sel'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.innerHTML = opts;
+  });
+
+  // Seletor de reps para positivação
+  var repOpts = REPS.map(function(r){ return '<option value="'+r+'">'+r+'</option>'; }).join('');
+  var repSel = document.getElementById('positiv-rep-sel');
+  if(repSel) repSel.innerHTML = '<option value="">Todos</option>'+repOpts;
+
+  // Seletor de labs para positivação
+  var labsSet = new Set();
+  REPS.forEach(function(rep){
+    var hist = HISTS[rep];
+    if(!hist||typeof hist!=='object') return;
+    Object.values(hist).forEach(function(cli){
+      (cli.pedidos||[]).forEach(function(ped){
+        (ped.itens||[]).forEach(function(item){ if(item.lab) labsSet.add(item.lab); });
+      });
+    });
+  });
+  var labOpts = Array.from(labsSet).sort().map(function(l){ return '<option value="'+l+'">'+l+'</option>'; }).join('');
+  var labSel = document.getElementById('positiv-lab-sel');
+  if(labSel) labSel.innerHTML = '<option value="">Todos</option>'+labOpts;
+}
+
+function exibirSyncInfo(){
+  if(typeof SINCRONIZADO_EM !== 'undefined'){
+    var el = document.getElementById('sync-info-gestor');
+    if(el) el.textContent = 'Atualizado: '+SINCRONIZADO_EM;
+  }
+}
+
+window.addEventListener('load', function(){
+  exibirSyncInfo();
+  // Carregar todos os hists em sequência antes de renderizar
+  carregarHists(function(){
+    populaSeletores();
+    renderVisaoGeral();
+    renderLaboratorios();
+    renderProdutos();
+    renderAlertas();
+  });
+});
 </script>
 </body>
 </html>

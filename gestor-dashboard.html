@@ -1314,7 +1314,8 @@ async function renderAlertas(){
 
   // 2. Amostras sem feedback > 45 dias
   try {
-    var amostras = await sbFetch("amostras?select=estabelecimento_nome,produto,created_at,feedback&order=created_at.desc&limit=200");
+    var resAA = sb ? await sb.from('amostras').select('estabelecimento_nome,produto,created_at,feedback').order('created_at',{ascending:false}).limit(200) : {data:[]};
+    var amostras = resAA.data || [];
     if(Array.isArray(amostras)){
       var hoje = new Date();
       amostras.forEach(function(a){
@@ -1331,7 +1332,8 @@ async function renderAlertas(){
 
   // 3. Nicolle sem visita > 2 dias úteis
   try {
-    var visitas = await sbFetch("visitas?select=created_at&order=created_at.desc&limit=1");
+    var resVA = sb ? await sb.from('visitas').select('created_at').order('created_at',{ascending:false}).limit(1) : {data:[]};
+    var visitas = resVA.data || [];
     if(Array.isArray(visitas) && visitas.length){
       var ultima = new Date(visitas[0].created_at);
       var duSem = diasUteisEntre(ultima, new Date());
@@ -1432,16 +1434,29 @@ async function renderCampo(){
   var partes = mesInput.value.split('-');
   var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
   var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01';
-  var fim = ano+'-'+String(mes).padStart(2,'0')+'-31';
+  var ultimoDia = new Date(ano, mes, 0).getDate();
+  var fim = ano+'-'+String(mes).padStart(2,'0')+'-'+String(ultimoDia).padStart(2,'0');
 
   try {
-    _visitas = await sbFetch("visitas?select=*&created_at=gte."+inicio+"T00:00:00&created_at=lte."+fim+"T23:59:59&order=created_at.desc");
-    if(!Array.isArray(_visitas)) _visitas = [];
+    if(sb){
+      var resV = await sb.from('visitas')
+        .select('*')
+        .gte('created_at', inicio+'T00:00:00')
+        .lte('created_at', fim+'T23:59:59')
+        .order('created_at', {ascending:false});
+      _visitas = resV.data || [];
+    } else { _visitas = []; }
   } catch(e){ _visitas = []; }
 
   try {
-    _amostras = await sbFetch("amostras?select=*&created_at=gte."+inicio+"T00:00:00&created_at=lte."+fim+"T23:59:59&order=created_at.desc");
-    if(!Array.isArray(_amostras)) _amostras = [];
+    if(sb){
+      var resA = await sb.from('amostras')
+        .select('*')
+        .gte('created_at', inicio+'T00:00:00')
+        .lte('created_at', fim+'T23:59:59')
+        .order('created_at', {ascending:false});
+      _amostras = resA.data || [];
+    } else { _amostras = []; }
   } catch(e){ _amostras = []; }
 
   // KPIs
@@ -1560,7 +1575,8 @@ async function renderEstoque(){
   var partes = mesInput.value.split('-');
   var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
   var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01';
-  var fim = ano+'-'+String(mes).padStart(2,'0')+'-31';
+  var ultimoDia = new Date(ano, mes, 0).getDate();
+  var fim = ano+'-'+String(mes).padStart(2,'0')+'-'+String(ultimoDia).padStart(2,'0');
 
   try {
     _contagens = await sbFetch("contagens_estoque?select=*&created_at=gte."+inicio+"T00:00:00&created_at=lte."+fim+"T23:59:59&order=created_at.desc&limit=500");
@@ -1617,7 +1633,8 @@ async function renderPDV(){
   var partes = mesInput.value.split('-');
   var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
   var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01';
-  var fim = ano+'-'+String(mes).padStart(2,'0')+'-31';
+  var ultimoDia = new Date(ano, mes, 0).getDate();
+  var fim = ano+'-'+String(mes).padStart(2,'0')+'-'+String(ultimoDia).padStart(2,'0');
 
   try {
     _pdv = await sbFetch("pdv_agenda?select=*&data_pdv=gte."+inicio+"&data_pdv=lte."+fim+"&order=data_pdv.asc");
@@ -1678,6 +1695,14 @@ function populaSeletores(){
   var labOpts = Array.from(labsSet).sort().map(function(l){ return '<option value="'+l+'">'+l+'</option>'; }).join('');
   var labSel = document.getElementById('positiv-lab-sel');
   if(labSel) labSel.innerHTML = '<option value="">Todos</option>'+labOpts;
+
+  // Setar mês atual como selecionado e renderizar equipe
+  var anoMesAtual = _anoAtual+'-'+String(_mesAtual).padStart(2,'0');
+  ['equipe-mes-sel','abc-mes-sel'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value = anoMesAtual;
+  });
+  renderEquipe();
 }
 
 function exibirSyncInfo(){

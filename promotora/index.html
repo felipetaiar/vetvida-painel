@@ -1844,7 +1844,8 @@ async function salvarVisita() {
     cidade, tipo, contato, objetivo, resultado, obs,
     fornecedores, especialidades, tem_lead,
     data_retorno: retorno || null,
-    promotora_id: 'Nicolle'
+    promotora_id: 'Nicolle',
+    area: areaVenda || null
   };
 
   let data = null;
@@ -1860,9 +1861,11 @@ async function salvarVisita() {
       if(novoEstab) { ESTABELECIMENTOS.push(novoEstab); renderDropdown(); }
     }
     if (!data || !data.id) {
+      console.error('Visita salva mas data.id ausente:', data);
       mostrarToast('⚠ Visita salva mas sem ID retornado — amostras podem não vincular');
     }
-    await persistirAmostrasDaVisita(estab, data ? data.id : null);
+    const visitaIdFinal = (data && data.id) ? data.id : null;
+    await persistirAmostrasDaVisita(estab, visitaIdFinal);
     mostrarToast('✓ Visita registrada!');
     // Notificar rep da area do cliente
     try{

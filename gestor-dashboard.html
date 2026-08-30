@@ -458,7 +458,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="screen" id="screen-campo">
       <div class="sec">
         <div class="sec-title"><span>🗺️</span> Campo — Nicolle</div>
-        <div class="kpi-grid cols4" id="kpis-campo"></div>
+        <div class="kpi-grid cols4" id="kpis-campo" style="grid-template-columns:repeat(5,1fr);"></div>
       </div>
       <div class="sec">
         <div class="sec-title"><span>📍</span> Visitas do mês</div>
@@ -468,18 +468,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <option value="">Todos os tipos</option>
           </select>
         </div>
-        <div class="tbl-wrap">
-          <table class="tbl">
-            <thead><tr>
-              <th>Estabelecimento</th>
-              <th>Tipo</th>
-              <th>Objetivo</th>
-              <th>Resultado</th>
-              <th>Data</th>
-            </tr></thead>
-            <tbody id="tbody-campo-visitas"></tbody>
-          </table>
-        </div>
+        <div id="cards-visitas"></div>
       </div>
       <div class="sec">
         <div class="sec-title"><span>🧪</span> Amostras distribuídas</div>
@@ -1461,14 +1450,19 @@ async function renderCampo(){
     } else { _amostras = []; }
   } catch(e){ _amostras = []; }
 
-  // KPIs
-  var estabsVisitados = new Set(_visitas.map(function(v){ return v.estabelecimento||''; })).size;
-  var leads = _visitas.filter(function(v){ return (v.resultado||'').toLowerCase().includes('acionar'); }).length;
-  var semFeedback = _amostras.filter(function(a){ return !a.feedback||a.feedback.trim()===''; }).length;
+  // KPIs — mesmos critérios do painel da Nicolle
+  var estabsSet = new Set(_visitas.map(function(v){ return (v.estabelecimento||'').trim().toLowerCase(); }).filter(Boolean));
+  var vetsSet = new Set();
+  _visitas.forEach(function(v){
+    (v.contato||'').split(',').forEach(function(n){ var t=n.trim().toLowerCase(); if(t) vetsSet.add(t); });
+  });
+  var leads = _visitas.filter(function(v){ return v.tem_lead === true; }).length;
+  var semFeedback = _amostras.filter(function(a){ return !a.feedback && !a.status_feedback; }).length;
 
   document.getElementById('kpis-campo').innerHTML = [
     {lbl:'Visitas registradas', val:_visitas.length, cor:'blue'},
-    {lbl:'Estabelecimentos visitados', val:estabsVisitados, cor:'green'},
+    {lbl:'Estabelecimentos visitados', val:estabsSet.size, cor:'green'},
+    {lbl:'Veterinários contatados', val:vetsSet.size, cor:'green'},
     {lbl:'Leads gerados', val:leads, cor:'red'},
     {lbl:'Amostras s/ feedback', val:semFeedback, cor:'yellow'},
   ].map(function(k){
@@ -1484,11 +1478,34 @@ async function renderCampo(){
   // Tabela visitas
   var tipoFilt = tipoSel.value;
   var visFilt = _visitas.filter(function(v){ return !tipoFilt || v.tipo===tipoFilt; });
-  document.getElementById('tbody-campo-visitas').innerHTML = visFilt.map(function(v){
-    var dt = new Date(v.created_at).toLocaleDateString('pt-BR');
-    return '<tr><td>'+( v.estabelecimento||'—')+'</td><td>'+( v.tipo||'—')+'</td>'
-      +'<td>'+(v.objetivo||'—')+'</td><td>'+(v.resultado||'—')+'</td><td>'+dt+'</td></tr>';
-  }).join('') || '<tr><td colspan="5" class="vazio">Sem visitas no período</td></tr>';
+  
+  if(!visFilt.length){
+    document.getElementById('cards-visitas').innerHTML = '<div class="vazio"><span class="vazio-ico">📍</span>Sem visitas no período</div>';
+    return;
+  }
+
+  document.getElementById('cards-visitas').innerHTML = visFilt.map(function(v, i){
+    var dt = new Date(v.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    var leadBadge = v.tem_lead ? '<span class="pill green" style="margin-left:6px;">🎯 Lead</span>' : '';
+    var fornecs = Array.isArray(v.fornecedores) ? v.fornecedores.join(', ') : (v.fornecedores||'');
+    var obs = v.obs ? '<div style="margin-top:8px;padding:8px;background:#f9fafb;border-radius:6px;font-size:12px;color:#374151;"><strong>Obs:</strong> '+v.obs+'</div>' : '';
+    var retorno = v.data_retorno ? '<div style="font-size:11px;color:var(--blue);margin-top:4px;">📅 Retorno: '+v.data_retorno+'</div>' : '';
+    var especs = Array.isArray(v.especialidades) && v.especialidades.length ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">Especialidades: '+v.especialidades.join(', ')+'</div>' : '';
+    return '<div style="background:var(--white);border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:3px solid '+(v.tem_lead?'var(--green)':'var(--border)')+';">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+      +'<div><strong style="font-size:13px;">'+( v.estabelecimento||'—')+'</strong>'+leadBadge+'</div>'
+      +'<span style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:8px;">'+dt+'</span>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:3px;">'+(v.tipo||'')+(v.cidade?' · '+v.cidade:'')+'</div>'
+      +'<div style="font-size:12px;margin-top:6px;display:flex;gap:16px;flex-wrap:wrap;">'
+      +(v.objetivo?'<span>🎯 '+(v.objetivo)+'</span>':'')
+      +(v.resultado?'<span>✅ '+(v.resultado)+'</span>':'')
+      +(v.contato?'<span>👤 '+(v.contato)+'</span>':'')
+      +'</div>'
+      +(fornecs?'<div style="font-size:11px;color:var(--muted);margin-top:4px;">Labs: '+fornecs+'</div>':'')
+      +especs+retorno+obs
+      +'</div>';
+  }).join('');
 
   // Tabela amostras
   var hoje = new Date();

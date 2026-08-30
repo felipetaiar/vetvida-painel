@@ -1433,16 +1433,12 @@ async function renderCampo(){
   }
   var partes = mesInput.value.split('-');
   var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
-  // Início e fim do mês em UTC considerando UTC-3 (Brasília)
-  // Para pegar corretamente, usamos 03:00 UTC = 00:00 Brasília
-  var inicioBrasilia = new Date(ano, mes-1, 1, 0, 0, 0);
+  // Início e fim do mês em UTC (Brasília = UTC-3)
+  // 00:00 Brasília = 03:00 UTC, 23:59 Brasília = 02:59 UTC do dia seguinte
   var ultimoDia = new Date(ano, mes, 0).getDate();
-  var fimBrasilia = new Date(ano, mes-1, ultimoDia, 23, 59, 59);
-  // Converter para UTC subtraindo 3h
-  var inicioUTC = new Date(inicioBrasilia.getTime() + 3*60*60*1000);
-  var fimUTC = new Date(fimBrasilia.getTime() + 3*60*60*1000);
-  var inicio = inicioUTC.toISOString().slice(0,19);
-  var fim = fimUTC.toISOString().slice(0,19);
+  var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01T03:00:00';
+  var fimD = new Date(ano, mes-1, ultimoDia+1, 3, 0, 0);
+  var fim = fimD.getFullYear()+'-'+String(fimD.getMonth()+1).padStart(2,'0')+'-'+String(fimD.getDate()).padStart(2,'0')+'T02:59:59';
 
   try {
     if(sb){
@@ -1581,16 +1577,12 @@ async function renderEstoque(){
 
   var partes = mesInput.value.split('-');
   var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
-  // Início e fim do mês em UTC considerando UTC-3 (Brasília)
-  // Para pegar corretamente, usamos 03:00 UTC = 00:00 Brasília
-  var inicioBrasilia = new Date(ano, mes-1, 1, 0, 0, 0);
+  // Início e fim do mês em UTC (Brasília = UTC-3)
+  // 00:00 Brasília = 03:00 UTC, 23:59 Brasília = 02:59 UTC do dia seguinte
   var ultimoDia = new Date(ano, mes, 0).getDate();
-  var fimBrasilia = new Date(ano, mes-1, ultimoDia, 23, 59, 59);
-  // Converter para UTC subtraindo 3h
-  var inicioUTC = new Date(inicioBrasilia.getTime() + 3*60*60*1000);
-  var fimUTC = new Date(fimBrasilia.getTime() + 3*60*60*1000);
-  var inicio = inicioUTC.toISOString().slice(0,19);
-  var fim = fimUTC.toISOString().slice(0,19);
+  var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01T03:00:00';
+  var fimD = new Date(ano, mes-1, ultimoDia+1, 3, 0, 0);
+  var fim = fimD.getFullYear()+'-'+String(fimD.getMonth()+1).padStart(2,'0')+'-'+String(fimD.getDate()).padStart(2,'0')+'T02:59:59';
 
   try {
     _contagens = await sbFetch("contagens_estoque?select=*&created_at=gte."+inicio+"T00:00:00&created_at=lte."+fim+"T23:59:59&order=created_at.desc&limit=500");
@@ -1646,16 +1638,12 @@ async function renderPDV(){
   if(!mesInput.value) mesInput.value = _anoAtual+'-'+String(_mesAtual).padStart(2,'0');
   var partes = mesInput.value.split('-');
   var ano = parseInt(partes[0]), mes = parseInt(partes[1]);
-  // Início e fim do mês em UTC considerando UTC-3 (Brasília)
-  // Para pegar corretamente, usamos 03:00 UTC = 00:00 Brasília
-  var inicioBrasilia = new Date(ano, mes-1, 1, 0, 0, 0);
+  // Início e fim do mês em UTC (Brasília = UTC-3)
+  // 00:00 Brasília = 03:00 UTC, 23:59 Brasília = 02:59 UTC do dia seguinte
   var ultimoDia = new Date(ano, mes, 0).getDate();
-  var fimBrasilia = new Date(ano, mes-1, ultimoDia, 23, 59, 59);
-  // Converter para UTC subtraindo 3h
-  var inicioUTC = new Date(inicioBrasilia.getTime() + 3*60*60*1000);
-  var fimUTC = new Date(fimBrasilia.getTime() + 3*60*60*1000);
-  var inicio = inicioUTC.toISOString().slice(0,19);
-  var fim = fimUTC.toISOString().slice(0,19);
+  var inicio = ano+'-'+String(mes).padStart(2,'0')+'-01T03:00:00';
+  var fimD = new Date(ano, mes-1, ultimoDia+1, 3, 0, 0);
+  var fim = fimD.getFullYear()+'-'+String(fimD.getMonth()+1).padStart(2,'0')+'-'+String(fimD.getDate()).padStart(2,'0')+'T02:59:59';
 
   try {
     _pdv = await sbFetch("pdv_agenda?select=*&data_pdv=gte."+inicio+"&data_pdv=lte."+fim+"&order=data_pdv.asc");

@@ -15,6 +15,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>VetVida — Gestor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.supabase={createClient:()=>null}"></script>
 <script src="/rep/dados.js"></script>
 <script src="/rep/base_clientes.js"></script>
 <script src="/rep/hist_paula.js"></script>
@@ -50,7 +51,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .layout{display:flex;flex:1;min-height:0;}
 
 /* SIDEBAR */
-.sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;flex-shrink:0;}
+.sidebar{width:var(--sidebar);background:var(--white);border-right:1px solid var(--border);display:none;flex-direction:column;position:fixed;top:52px;left:0;bottom:0;z-index:300;overflow-y:auto;box-shadow:4px 0 16px rgba(0,0,0,.15);}
+.sidebar.open{display:flex;}
 .sidebar::-webkit-scrollbar{width:4px;}
 .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .nav-section{padding:12px 10px 4px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);}
@@ -165,8 +167,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .overlay-menu.open{display:block;}
   .btn-menu{display:flex;}
 }
-.btn-menu{display:none;background:rgba(255,255,255,.18);border:none;color:white;padding:5px 8px;border-radius:8px;font-size:18px;cursor:pointer;line-height:1;margin-right:4px;}
-@media(max-width:640px){.btn-menu{display:flex;align-items:center;}}
+.btn-menu{display:flex;align-items:center;background:rgba(255,255,255,.18);border:none;color:white;padding:5px 8px;border-radius:8px;font-size:18px;cursor:pointer;line-height:1;margin-right:4px;}
 </style>
 </head>
 <body>
@@ -578,6 +579,8 @@ function toggleMenu(){
 // ============================================================
 const SB_URL  = 'https://wpmvczohuhywwnefwumf.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+var sb = null;
+try { sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null; } catch(e){}
 
 const REPS = ['PAULA','MAURO','SUANE','NAYARA','VANESSA','DIEGO'];
 const LABS_EXCLUSIVOS = ['BIOGENESIS BAGÓ','DECHRA','VANSIL','HOMEOPET','LABYES','BIOGENESIS BAGO','BIOGENESIS'];
@@ -636,7 +639,32 @@ function sair(){
 // ============================================================
 // SUPABASE
 // ============================================================
-function sbFetch(path){
+async function sbFetch(path){
+  // Tenta via SDK primeiro (respeita RLS)
+  var parts = path.split('?');
+  var table = parts[0];
+  var query = parts[1] || '';
+  if(sb){
+    try {
+      var q = sb.from(table).select('*');
+      // Aplicar filtros básicos da query string
+      var params = new URLSearchParams(query);
+      if(params.get('order')){
+        var ord = params.get('order').split('.');
+        q = q.order(ord[0], {ascending: ord[1] !== 'desc'});
+      }
+      if(params.get('limit')) q = q.limit(parseInt(params.get('limit')));
+      // Filtros eq/gte/lte
+      params.forEach(function(v, k){
+        if(k.endsWith('.eq')) q = q.eq(k.replace('.eq',''), v);
+        if(k.endsWith('.gte')) q = q.gte(k.replace('.gte',''), v);
+        if(k.endsWith('.lte')) q = q.lte(k.replace('.lte',''), v);
+      });
+      var res = await q;
+      if(!res.error) return res.data || [];
+    } catch(e){}
+  }
+  // Fallback REST
   return fetch(SB_URL+'/rest/v1/'+path, {
     headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY }
   }).then(r=>r.json());
@@ -1610,7 +1638,7 @@ async function renderPDV(){
 function populaSeletores(){
   // Seletor de meses para equipe e ABC
   var opts = _meses6.map(function(m){
-    return '<option value="'+m.ano+'-'+String(m.mes).padStart(2,'0')+'">'+mesLabel(m.ano,m.mes)+'/'+m.ano+'</option>';
+    return '<option value="'+m.ano+'-'+String(m.mes).padStart(2,'0')+'">'+mesLabel(m.ano,m.mes)+'</option>';
   }).reverse().join('');
   ['equipe-mes-sel','abc-mes-sel'].forEach(function(id){
     var el = document.getElementById(id);

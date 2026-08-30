@@ -577,10 +577,17 @@ function toggleMenu(){
 // ============================================================
 // CONFIG
 // ============================================================
-const SB_URL  = 'https://wpmvczohuhywwnefwumf.supabase.co';
-const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+// Supabase: visitas e amostras (promotora)
+const SB_URL  = 'https://waiujqbzncemkpznvnct.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhaXVqcWJ6bmNlbWtwem52bmN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNjgwMjEsImV4cCI6MjA5NDk0NDAyMX0.JYAoQh7Oyauzk_EXeH2NHRSjyYPx-UQNfKDv-0r-eyI';
 var sb = null;
 try { sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null; } catch(e){}
+
+// Supabase: contagens, roteiros, PDV (rep)
+const SB2_URL = 'https://wpmvczohuhywwnefwumf.supabase.co';
+const SB2_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXZjem9odWh5d3duZWZ3dW1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MzM5OTIsImV4cCI6MjA5NzQwOTk5Mn0.iKlH9SEKrw3SdLGC6kEYz99LQgmaNOSj2xblF0Bmtg4';
+var sb2 = null;
+try { sb2 = window.supabase ? window.supabase.createClient(SB2_URL, SB2_KEY) : null; } catch(e){}
 
 const REPS = ['PAULA','MAURO','SUANE','NAYARA','VANESSA','DIEGO'];
 const LABS_EXCLUSIVOS = ['BIOGENESIS BAGÓ','DECHRA','VANSIL','HOMEOPET','LABYES','BIOGENESIS BAGO','BIOGENESIS'];
@@ -639,14 +646,16 @@ function sair(){
 // ============================================================
 // SUPABASE
 // ============================================================
+var SB2_TABLES = ['contagens_estoque','roteiros','pdv_agenda'];
 async function sbFetch(path){
-  // Tenta via SDK primeiro (respeita RLS)
   var parts = path.split('?');
   var table = parts[0];
   var query = parts[1] || '';
-  if(sb){
+  // Usar cliente correto por tabela
+  var cliente = SB2_TABLES.includes(table) ? sb2 : sb;
+  if(cliente){
     try {
-      var q = sb.from(table).select('*');
+      var q = cliente.from(table).select('*');
       // Aplicar filtros básicos da query string
       var params = new URLSearchParams(query);
       if(params.get('order')){
@@ -665,8 +674,10 @@ async function sbFetch(path){
     } catch(e){}
   }
   // Fallback REST
-  return fetch(SB_URL+'/rest/v1/'+path, {
-    headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY }
+  var fbUrl = SB2_TABLES.includes(table) ? SB2_URL : SB_URL;
+  var fbKey = SB2_TABLES.includes(table) ? SB2_KEY : SB_KEY;
+  return fetch(fbUrl+'/rest/v1/'+path, {
+    headers:{ apikey:fbKey, Authorization:'Bearer '+fbKey }
   }).then(r=>r.json());
 }
 
@@ -776,6 +787,9 @@ function navegarPara(id, el){
   if(sc) sc.classList.add('active');
   if(el) el.classList.add('active');
   _screenAtual = id;
+  // Fechar menu ao navegar
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('overlay-menu').classList.remove('open');
   if(!_screenCarregadas[id]){
     _screenCarregadas[id] = true;
     var fn = { 'campo':renderCampo, 'roteiro':renderRoteiro, 'estoque':renderEstoque, 'pdv':renderPDV, 'alertas':renderAlertas }[id];

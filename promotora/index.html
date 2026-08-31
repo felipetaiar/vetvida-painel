@@ -1898,8 +1898,7 @@ async function salvarVisita() {
           estabelecimento: estab, cidade, tipo, contato,
           obs: obs||'', fornecedores: Array.isArray(fornecedores) ? fornecedores.join(', ') : (fornecedores||''),
           data_retorno: retorno||null, status_lead: 'aberto',
-          rep_area: repArea, rep_responsavel: repResp,
-          visita_id: data ? data.id : null
+          rep_area: repArea, rep_responsavel: repResp
         })
       });
     } catch(e) { console.warn('Lead pipeline:', e); }

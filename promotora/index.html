@@ -1896,10 +1896,10 @@ async function salvarVisita() {
         },
         body: JSON.stringify({
           estabelecimento: estab, cidade, tipo, contato,
-          obs: obs||'', fornecedores: fornecedores.join(', '),
+          obs: obs||'', fornecedores: Array.isArray(fornecedores) ? fornecedores.join(', ') : (fornecedores||''),
           data_retorno: retorno||null, status_lead: 'aberto',
           rep_area: repArea, rep_responsavel: repResp,
-          visita_id: (data && data.id) ? data.id : null
+          visita_id: data ? data.id : null
         })
       });
     } catch(e) { console.warn('Lead pipeline:', e); }

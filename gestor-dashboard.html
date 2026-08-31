@@ -1483,7 +1483,7 @@ async function renderCampo(){
   // Preencher filtro de área
   var areaSel = document.getElementById('campo-area-sel');
   var areaAtual = areaSel.value;
-  var areas = [...new Set(_visitas.map(function(v){ return v.cidade||v.area_venda||v.area||''; }).filter(Boolean))].sort();
+  var areas = [...new Set(_visitas.map(function(v){ return v.area||''; }).filter(Boolean))].sort();
   areaSel.innerHTML = '<option value="">Todas as regiões</option>'+areas.map(function(a){
     return '<option value="'+a+'"'+(areaAtual===a?' selected':'')+'>'+a+'</option>';
   }).join('');
@@ -1494,7 +1494,7 @@ async function renderCampo(){
 
   var visFilt = _visitas.filter(function(v){
     if(tipoFilt && v.tipo !== tipoFilt) return false;
-    if(areaFilt && (v.cidade||v.area_venda||v.area||'') !== areaFilt) return false;
+    if(areaFilt && (v.area||'') !== areaFilt) return false;
     if(busca && !(v.estabelecimento||'').toLowerCase().includes(busca)) return false;
     return true;
   });

@@ -1899,7 +1899,7 @@ async function salvarVisita() {
           obs: obs||'', fornecedores: fornecedores.join(', '),
           data_retorno: retorno||null, status_lead: 'aberto',
           rep_area: repArea, rep_responsavel: repResp,
-          visita_id: visitaIdFinal || null
+          visita_id: (data && data.id) ? data.id : null
         })
       });
     } catch(e) { console.warn('Lead pipeline:', e); }

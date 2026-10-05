@@ -7,4 +7,4 @@ var ANO_REF = 2026;
 var MES_NOME = "Outubro";
 var MES_ANT = "Setembro";
 var LABS_LIST = ["DECHRA", "HOMEOPET", "VANSIL", "LABYES", "BIOGENESIS BAGÓ"];
-var SINCRONIZADO_EM = "05/10/2026 18:30";
+var SINCRONIZADO_EM = "05/10/2026 19:00";

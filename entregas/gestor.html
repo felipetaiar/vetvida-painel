@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vet Vida — Entregas (Gestor)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+:root{--red:#CC0000;--red-s:rgba(204,0,0,.08);--bg:#f5f6f8;--sf:#fff;--bd:#e5e7eb;--tx:#1f2937;--tx2:#6b7280;--tx3:#9ca3af;--grn:#16a34a;--grn-s:rgba(22,163,74,.1);--amb:#d97706;--amb-s:rgba(217,119,6,.1);--r:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+.hdr{background:var(--sf);border-bottom:3px solid var(--red);padding:10px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:600;flex-wrap:wrap}
+.hdr img{height:36px}.hdr h1{font-size:16px;font-weight:800}.hdr p{font-size:11px;color:var(--tx2)}
+.hdr .dir{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hdr input,.hdr a,.hdr button{font-family:inherit;font-size:12px;border:1px solid var(--bd);border-radius:8px;padding:6px 10px;background:var(--sf);color:var(--tx);text-decoration:none;cursor:pointer}
+.cont{max-width:1300px;margin:0 auto;padding:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--sf);border-radius:var(--r);padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.kpi .v{font-size:24px;font-weight:800}.kpi .l{font-size:11px;color:var(--tx2);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.lay{display:grid;grid-template-columns:380px 1fr;gap:14px}
+@media(max-width:900px){.lay{grid-template-columns:1fr}}
+.card{background:var(--sf);border-radius:var(--r);padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:14px}
+.card h2{font-size:13px;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+#mapa{height:520px;border-radius:10px}
+.mot{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.mot .top{display:flex;justify-content:space-between;align-items:baseline}.mot b{font-size:15px}
+.mot .s{font-size:12px;color:var(--tx2)}
+.prog{height:8px;background:#eef0f3;border-radius:6px;overflow:hidden;margin:6px 0;display:flex}.prog i{display:block;height:100%}
+.rom{font-size:12px;color:var(--tx2);margin-top:4px;display:flex;justify-content:space-between;gap:6px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:11px;color:var(--tx2);text-transform:uppercase;letter-spacing:.3px;padding:8px 6px;border-bottom:2px solid var(--bd);white-space:nowrap}
+td{padding:8px 6px;border-bottom:1px solid #f1f3f6;vertical-align:top}
+tr.oc td{background:#fffbeb}
+.st{font-size:11px;font-weight:800;padding:2px 8px;border-radius:12px;white-space:nowrap}
+.st.pendente{background:#f1f3f6;color:var(--tx2)}.st.entregue{background:var(--grn-s);color:var(--grn)}.st.ocorrencia{background:var(--amb-s);color:var(--amb)}
+.thumb{width:46px;height:46px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--bd)}
+.pin{color:#fff;border:2px solid #fff;border-radius:50%;width:24px!important;height:24px!important;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.vazio{padding:30px;text-align:center;color:var(--tx2)}
+.filtros{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.filtros button{font-family:inherit;font-size:12px;font-weight:700;border:1px solid var(--bd);background:var(--sf);border-radius:20px;padding:5px 12px;cursor:pointer;color:var(--tx2)}
+.filtros button.on{background:var(--red);border-color:var(--red);color:#fff}
+.foto-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:900;cursor:zoom-out}
+.foto-bg img{max-width:94vw;max-height:90vh;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <img src="/logo.jpg" alt="Vet Vida">
+  <div><h1>Entregas</h1><p id="atualizado">Carregando…</p></div>
+  <div class="dir">
+    <input type="date" id="dia" onchange="carregar()">
+    <button onclick="carregar()">🔄 Atualizar</button>
+    <a href="/entregas/">📱 Ver como motorista</a>
+    <a href="/gestor-dashboard.html">← Painel</a>
+  </div>
+</div>
+
+<div class="cont">
+  <div class="kpis" id="kpis"></div>
+  <div class="lay">
+    <div>
+      <div class="card"><h2>Motoristas</h2><div id="motoristas"></div></div>
+      <div class="card"><h2>Ocorrências</h2><div id="ocorrencias"></div></div>
+    </div>
+    <div>
+      <div class="card"><h2>Mapa</h2><div id="mapa"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Paradas</h2>
+    <div class="filtros" id="filtros"></div>
+    <div style="overflow-x:auto"><table><thead><tr>
+      <th>#</th><th>Cliente</th><th>Bairro / cidade</th><th>Motorista</th><th>Rota</th><th>NF</th><th>Status</th><th>Hora</th><th>Recebedor / obs.</th><th>Foto</th>
+    </tr></thead><tbody id="tbody"></tbody></table></div>
+  </div>
+</div>
+<div class="foto-bg" id="foto-bg" onclick="this.style.display='none'"><img id="foto-big" alt=""></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/entregas/comum.js"></script>
+<script>
+var SESS = entSessao();
+var ROMS = [], PARADAS = [], FILTRO = 'todas', MAPA = null, CAMADA = null, PRIMEIRA = true;
+var NOME_MOT = {};
+Object.keys(ENT.MOTORISTAS).forEach(function (u) { NOME_MOT[ENT.MOTORISTAS[u].cd] = ENT.MOTORISTAS[u].nome; });
+var CORES_MOT = ['#2563eb', '#7c3aed', '#0891b2', '#db2777'];
+
+if (!SESS.ok || SESS.perfil !== 'gestor') { window.location.href = '/'; }
+
+(function init() {
+  var d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
+  document.getElementById('dia').value = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+  carregar();
+  setInterval(carregar, 60000);
+})();
+
+function inicioDia() { var v = document.getElementById('dia').value.split('-'); return new Date(+v[0], +v[1] - 1, +v[2]); }
+function mesmoDia(a, b) { a = new Date(a); return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+
+// Romaneios do dia escolhido: montados nele, finalizados nele, ou ainda abertos (se o dia for hoje)
+function carregar() {
+  var dia = inicioDia(), ini = new Date(dia); ini.setDate(ini.getDate() - 7);
+  var fim = new Date(dia); fim.setDate(fim.getDate() + 1);
+  var ehHoje = mesmoDia(new Date(), dia);
+  sbGet('entregas_romaneios?dt_montagem=gte.' + encodeURIComponent(ini.toISOString()) +
+        '&dt_montagem=lt.' + encodeURIComponent(fim.toISOString()) + '&order=dt_montagem.asc')
+    .then(function (roms) {
+      ROMS = roms.filter(function (r) {
+        return mesmoDia(r.dt_montagem, dia) || (r.finalizado_em && mesmoDia(r.finalizado_em, dia)) ||
+               (r.iniciado_em && mesmoDia(r.iniciado_em, dia)) || (ehHoje && r.status_app !== 'finalizado');
+      });
+      if (!ROMS.length) return [];
+      return sbGet('entregas_paradas?nu_rom=in.(' + ROMS.map(function (r) { return r.nu_rom; }).join(',') + ')&order=ordem.asc.nullslast');
+    })
+    .then(function (ps) {
+      PARADAS = ps;
+      document.getElementById('atualizado').textContent = 'Atualizado às ' + fmtHora(new Date()) + ' · atualiza a cada minuto';
+      renderTudo();
+    })
+    .catch(function (e) {
+      console.error(e);
+      document.getElementById('atualizado').textContent = 'Erro ao carregar: ' + e.message;
+    });
+}
+
+function romDe(p) { return ROMS.find(function (r) { return r.nu_rom === p.nu_rom; }) || {}; }
+
+function renderTudo() { renderKpis(); renderMotoristas(); renderOcorrencias(); renderTabela(); renderMapa(); }
+
+function renderKpis() {
+  var t = PARADAS.length;
+  var e = PARADAS.filter(function (p) { return p.status === 'entregue'; }).length;
+  var o = PARADAS.filter(function (p) { return p.status === 'ocorrencia'; }).length;
+  var semFoto = PARADAS.filter(function (p) { return p.status === 'entregue' && !p.foto_url; }).length;
+  var semCoord = PARADAS.filter(function (p) { return !temCoord(p); }).length;
+  var k = [
+    [ROMS.length, 'Romaneios'], [t, 'Paradas'], [e, 'Entregues'], [o, 'Ocorrências'],
+    [t - e - o, 'Pendentes'], [semFoto, 'Entregues sem foto'], [semCoord, 'Sem localização']
+  ];
+  document.getElementById('kpis').innerHTML = k.map(function (x) {
+    return '<div class="kpi"><div class="v">' + x[0] + '</div><div class="l">' + x[1] + '</div></div>';
+  }).join('');
+}
+
+function renderMotoristas() {
+  var porMot = {};
+  ROMS.forEach(function (r) { (porMot[r.cd_motor] = porMot[r.cd_motor] || []).push(r); });
+  var cds = Object.keys(porMot);
+  if (!cds.length) { document.getElementById('motoristas').innerHTML = '<div class="vazio">Nenhum romaneio neste dia.</div>'; return; }
+  document.getElementById('motoristas').innerHTML = cds.map(function (cd) {
+    var nus = porMot[cd].map(function (r) { return r.nu_rom; });
+    var ps = PARADAS.filter(function (p) { return nus.indexOf(p.nu_rom) >= 0; });
+    var e = ps.filter(function (p) { return p.status === 'entregue'; }).length;
+    var o = ps.filter(function (p) { return p.status === 'ocorrencia'; }).length;
+    var ult = ps.map(function (p) { return p.baixa_em; }).filter(Boolean).sort().pop();
+    var t = ps.length || 1;
+    return '<div class="mot"><div class="top"><b>' + esc(NOME_MOT[cd] || cd) + '</b><span class="s">' + (e + o) + ' / ' + ps.length + '</span></div>' +
+      '<div class="prog"><i style="width:' + (e / t * 100) + '%;background:var(--grn)"></i><i style="width:' + (o / t * 100) + '%;background:var(--amb)"></i></div>' +
+      '<div class="s">' + e + ' entregue' + (e === 1 ? '' : 's') + (o ? ' · ' + o + ' ocorrência' + (o > 1 ? 's' : '') : '') +
+      (ult ? ' · última baixa ' + fmtHora(ult) : ' · nenhuma baixa ainda') + '</div>' +
+      porMot[cd].map(function (r) {
+        var st = r.status_app === 'finalizado' ? '✅ finalizado ' + fmtHora(r.finalizado_em) : r.status_app === 'em_rota' ? '🚚 em rota desde ' + fmtHora(r.iniciado_em) : '⏸ não iniciado';
+        return '<div class="rom"><span><b>' + esc(r.rota) + '</b> · rom. ' + r.nu_rom + ' · ' + (r.qtde_paradas || 0) + ' paradas' +
+               (r.km_estimado ? ' · ~' + Math.round(r.km_estimado) + ' km' : '') + '</span><span>' + st + '</span></div>';
+      }).join('') + '</div>';
+  }).join('');
+}
+
+function renderOcorrencias() {
+  var oc = PARADAS.filter(function (p) { return p.status === 'ocorrencia'; });
+  document.getElementById('ocorrencias').innerHTML = oc.length ? oc.map(function (p) {
+    return '<div class="mot"><div class="top"><b style="font-size:13px">' + esc(p.fantasia) + '</b><span class="s">' + fmtHora(p.baixa_em) + '</span></div>' +
+      '<div class="s"><b style="color:var(--amb)">' + esc(p.ocorrencia_tipo || '') + '</b>' + (p.obs ? ' — ' + esc(p.obs) : '') + '</div>' +
+      '<div class="s">' + esc(NOME_MOT[romDe(p).cd_motor] || '') + ' · ' + esc(romDe(p).rota || '') + ' · NF ' + (p.notas || []).map(function (n) { return n.nu_nf; }).join(', ') + '</div></div>';
+  }).join('') : '<div class="vazio" style="padding:14px">Nenhuma ocorrência.</div>';
+}
+
+function renderTabela() {
+  var cont = { todas: PARADAS.length, pendente: 0, entregue: 0, ocorrencia: 0 };
+  PARADAS.forEach(function (p) { cont[p.status] = (cont[p.status] || 0) + 1; });
+  document.getElementById('filtros').innerHTML = [['todas', 'Todas'], ['pendente', 'Pendentes'], ['entregue', 'Entregues'], ['ocorrencia', 'Ocorrências']].map(function (f) {
+    return '<button class="' + (FILTRO === f[0] ? 'on' : '') + '" onclick="FILTRO=\'' + f[0] + '\';renderTabela()">' + f[1] + ' (' + (cont[f[0]] || 0) + ')</button>';
+  }).join('');
+  var lista = PARADAS.filter(function (p) { return FILTRO === 'todas' || p.status === FILTRO; }).slice().sort(function (a, b) {
+    var ra = romDe(a), rb = romDe(b);
+    return String(ra.cd_motor).localeCompare(String(rb.cd_motor)) || (a.ordem || 9999) - (b.ordem || 9999);
+  });
+  document.getElementById('tbody').innerHTML = lista.length ? lista.map(function (p) {
+    var r = romDe(p);
+    var st = { pendente: 'Pendente', entregue: 'Entregue', ocorrencia: 'Ocorrência' }[p.status] || p.status;
+    var det = p.status === 'entregue' ? esc(p.recebedor || '—') : p.status === 'ocorrencia' ? '<b>' + esc(p.ocorrencia_tipo || '') + '</b>' : (p.eta ? 'previsão ' + fmtHora(p.eta) : '');
+    if (p.obs) det += '<br><span style="color:var(--tx2)">' + esc(p.obs) + '</span>';
+    return '<tr class="' + (p.status === 'ocorrencia' ? 'oc' : '') + '"><td>' + (p.ordem || '—') + '</td>' +
+      '<td><b>' + esc(p.fantasia) + '</b><br><span style="color:var(--tx3)">cód. ' + p.cd_clien + (temCoord(p) ? '' : ' · sem localização') + '</span></td>' +
+      '<td>' + esc(p.bairro || '') + '<br><span style="color:var(--tx2)">' + esc(p.municipio || '') + '</span></td>' +
+      '<td>' + esc(NOME_MOT[r.cd_motor] || r.cd_motor || '') + '</td><td>' + esc(r.rota || '') + '</td>' +
+      '<td>' + (p.notas || []).map(function (n) { return n.nu_nf; }).join('<br>') + '</td>' +
+      '<td><span class="st ' + p.status + '">' + st + '</span></td>' +
+      '<td>' + (p.baixa_em ? fmtHora(p.baixa_em) : '') + '</td><td>' + det + '</td>' +
+      '<td>' + (p.foto_url ? '<img class="thumb" loading="lazy" src="' + esc(p.foto_url) + '" onclick="verFoto(this.src)">' : '') + '</td></tr>';
+  }).join('') : '<tr><td colspan="10" class="vazio">Nada para mostrar.</td></tr>';
+}
+
+function renderMapa() {
+  if (typeof L === 'undefined') return;
+  if (!MAPA) {
+    MAPA = L.map('mapa');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(MAPA);
+    CAMADA = L.layerGroup().addTo(MAPA);
+  }
+  CAMADA.clearLayers();
+  var bounds = [], corMot = {};
+  Object.keys(ENT.MOTORISTAS).forEach(function (u, i) { corMot[ENT.MOTORISTAS[u].cd] = CORES_MOT[i % CORES_MOT.length]; });
+  var linhas = {};
+  PARADAS.slice().sort(function (a, b) { return (a.ordem || 9999) - (b.ordem || 9999); }).forEach(function (p) {
+    if (!temCoord(p)) return;
+    var r = romDe(p), cor = p.status === 'entregue' ? '#16a34a' : p.status === 'ocorrencia' ? '#d97706' : (corMot[r.cd_motor] || '#CC0000');
+    var html = p.status === 'entregue' ? '✔' : p.status === 'ocorrencia' ? '!' : (p.ordem || '•');
+    CAMADA.addLayer(L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: '<div class="pin" style="background:' + cor + '">' + html + '</div>', iconSize: [24, 24] }) })
+      .bindPopup('<b>' + esc(p.fantasia) + '</b><br>' + esc(enderecoTexto(p)) + '<br>' + esc(NOME_MOT[r.cd_motor] || '') + ' · ' + esc(r.rota || '') +
+                 (p.baixa_em ? '<br>Baixa ' + fmtHora(p.baixa_em) : p.eta ? '<br>Previsão ' + fmtHora(p.eta) : '') +
+                 (p.foto_url ? '<br><a href="' + esc(p.foto_url) + '" target="_blank">Ver canhoto</a>' : '')));
+    bounds.push([p.lat, p.lng]);
+    (linhas[r.cd_motor] = linhas[r.cd_motor] || []).push([p.lat, p.lng]);
+  });
+  Object.keys(linhas).forEach(function (cd) {
+    if (linhas[cd].length > 1) CAMADA.addLayer(L.polyline(linhas[cd], { color: corMot[cd] || '#CC0000', weight: 2, opacity: .5, dashArray: '5 6' }));
+  });
+  if (PRIMEIRA || !bounds.length) {
+    if (bounds.length) MAPA.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 }); else MAPA.setView([-23.55, -46.6], 10);
+    PRIMEIRA = !bounds.length;
+  }
+}
+function verFoto(src) { document.getElementById('foto-big').src = src; document.getElementById('foto-bg').style.display = 'flex'; }
+</script>
+</body>
+</html>

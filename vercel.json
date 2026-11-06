@@ -12,6 +12,10 @@
     {
       "source": "/bi",
       "destination": "/bi/index.html"
+    },
+    {
+      "source": "/entregas",
+      "destination": "/entregas/index.html"
     }
   ],
   "github": {

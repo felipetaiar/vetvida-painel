@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#CC0000">
+<link rel="manifest" href="/entregas/manifest.json">
+<link rel="apple-touch-icon" href="/rep/icon-192.png">
+<title>Vet Vida — Entregas</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+:root{--red:#CC0000;--red-d:#a30000;--red-s:rgba(204,0,0,.08);--bg:#f5f6f8;--sf:#fff;--bd:#e5e7eb;--tx:#1f2937;--tx2:#6b7280;--tx3:#9ca3af;--grn:#16a34a;--grn-s:rgba(22,163,74,.1);--amb:#d97706;--amb-s:rgba(217,119,6,.1);--blu:#2563eb;--r:12px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button{font-family:inherit;cursor:pointer}
+.hdr{background:var(--sf);border-bottom:3px solid var(--red);padding:10px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:500}
+.hdr img{height:32px}
+.hdr .t{flex:1;min-width:0}.hdr h1{font-size:15px;font-weight:800}.hdr p{font-size:11px;color:var(--tx2)}
+.hdr select{border:1px solid var(--bd);border-radius:8px;padding:5px 6px;font-size:12px;font-family:inherit}
+.btn-sair{background:none;border:1px solid var(--bd);color:var(--tx2);border-radius:20px;padding:5px 10px;font-size:11px}
+.fila{background:#fef3c7;color:#92400e;font-size:12px;font-weight:600;padding:6px 14px;display:none}
+.cont{max-width:720px;margin:0 auto;padding:12px}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--sf);border-top:1px solid var(--bd);display:flex;z-index:600;padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{flex:1;background:none;border:none;padding:10px 0 12px;font-size:11px;font-weight:700;color:var(--tx3);display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button span{font-size:20px}.tabs button.on{color:var(--red)}
+.resumo{background:var(--sf);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.resumo .lin{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.resumo .big{font-size:22px;font-weight:800}.resumo .sub{font-size:12px;color:var(--tx2)}
+.prog{height:8px;background:#eef0f3;border-radius:6px;overflow:hidden;margin:8px 0 4px}.prog i{display:block;height:100%;background:var(--grn);transition:width .3s}
+.acoes{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.btn{text-decoration:none;border:none;border-radius:10px;padding:12px 14px;font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-p{background:var(--red);color:#fff}.btn-p:active{background:var(--red-d)}
+.btn-s{background:var(--sf);color:var(--tx);border:1.5px solid var(--bd)}
+.btn-g{background:var(--grn);color:#fff}.btn-a{background:var(--amb);color:#fff}
+.btn-blk{flex:1}
+.btn:disabled{opacity:.5}
+.prox{background:var(--sf);border-radius:var(--r);border:2px solid var(--red);padding:14px;margin-bottom:12px;box-shadow:0 4px 14px rgba(204,0,0,.08)}
+.prox .tag{font-size:11px;font-weight:800;color:var(--red);text-transform:uppercase;letter-spacing:.5px}
+.prox h2{font-size:19px;font-weight:800;margin:4px 0 2px}
+.prox .end{font-size:14px;color:var(--tx2);margin-bottom:6px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.chip{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:#f1f3f6;color:var(--tx2)}
+.chip.r{background:var(--red-s);color:var(--red)}.chip.a{background:var(--amb-s);color:var(--amb)}.chip.g{background:var(--grn-s);color:var(--grn)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sec{font-size:12px;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px;margin:16px 2px 8px}
+.item{background:var(--sf);border-radius:var(--r);padding:11px 12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.num{flex:0 0 30px;height:30px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+.num.ok{background:var(--grn)}.num.oc{background:var(--amb)}.num.sc{background:var(--tx3)}
+.item .inf{flex:1;min-width:0}.item h3{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .s{font-size:12px;color:var(--tx2);margin-top:1px}
+.item .lado{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.ico{background:#f1f3f6;border:none;border-radius:8px;width:38px;height:34px;font-size:16px}
+.vazio{text-align:center;padding:40px 20px;color:var(--tx2)}.vazio b{display:block;font-size:16px;color:var(--tx);margin-bottom:6px}
+.carga{background:var(--sf);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center;border:2px solid transparent}
+.carga.on{border-color:var(--red)}
+.carga input{width:22px;height:22px;accent-color:var(--red)}
+.carga h3{font-size:15px;font-weight:800}.carga .s{font-size:12px;color:var(--tx2)}
+.tog{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tx2);margin:6px 2px 12px}
+.tog input{width:18px;height:18px;accent-color:var(--red)}
+#mapa{height:calc(100vh - 150px);border-radius:var(--r);overflow:hidden}
+.pin{background:var(--red);color:#fff;border:2px solid #fff;border-radius:50%;width:28px!important;height:28px!important;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.pin.ok{background:var(--grn)}.pin.oc{background:var(--amb)}.pin.eu{background:var(--blu);width:18px!important;height:18px!important}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;display:none;align-items:flex-end;justify-content:center}
+.modal{background:var(--sf);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+.modal h2{font-size:18px;font-weight:800;margin-bottom:2px}.modal .s{font-size:13px;color:var(--tx2);margin-bottom:12px}
+.fg{margin-bottom:12px}.fg label{display:block;font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.fg input[type=text],.fg textarea,.fg select{width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:11px 12px;font-size:15px;font-family:inherit}
+.fg textarea{min-height:64px;resize:vertical}
+.foto-btn{width:100%;border:2px dashed var(--bd);background:#fafafa;border-radius:12px;padding:18px;font-size:14px;font-weight:700;color:var(--tx2)}
+.foto-prev{width:100%;border-radius:12px;margin-top:8px;display:none}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;z-index:1000;display:none;max-width:90%;text-align:center}
+.carreg{text-align:center;padding:30px;color:var(--tx2);font-size:14px}
+.ordem-ctrl{display:flex;flex-direction:column;gap:4px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <img src="/logo.jpg" alt="Vet Vida">
+  <div class="t"><h1>Entregas</h1><p id="hdr-sub">Carregando…</p></div>
+  <select id="sel-mot" style="display:none" onchange="trocarMotorista(this.value)"></select>
+  <button class="btn-sair" onclick="entSair()">Sair</button>
+</div>
+<div class="fila" id="fila-aviso"></div>
+
+<div class="cont">
+  <div id="v-rota"></div>
+  <div id="v-mapa" style="display:none"><div id="mapa"></div></div>
+  <div id="v-cargas" style="display:none"></div>
+</div>
+
+<nav class="tabs">
+  <button id="tb-rota" class="on" onclick="mostrar('rota')"><span>🧭</span>Rota</button>
+  <button id="tb-mapa" onclick="mostrar('mapa')"><span>🗺️</span>Mapa</button>
+  <button id="tb-cargas" onclick="mostrar('cargas')"><span>📦</span>Cargas</button>
+</nav>
+
+<!-- Modal de baixa -->
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)fecharModal()">
+  <div class="modal">
+    <h2 id="m-tit">Confirmar entrega</h2>
+    <div class="s" id="m-sub"></div>
+    <div class="fg" id="fg-tipo" style="display:none">
+      <label>Motivo</label>
+      <select id="m-tipo"></select>
+    </div>
+    <div class="fg" id="fg-receb">
+      <label>Quem recebeu</label>
+      <input type="text" id="m-receb" placeholder="Nome de quem recebeu" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label id="m-foto-lbl">Foto do canhoto</label>
+      <input type="file" id="m-foto" accept="image/*" capture="environment" style="display:none" onchange="fotoEscolhida(this)">
+      <button class="foto-btn" type="button" onclick="document.getElementById('m-foto').click()">📷 <span id="m-foto-txt">Tirar foto</span></button>
+      <img id="m-foto-prev" class="foto-prev" alt="">
+    </div>
+    <div class="fg">
+      <label>Observação</label>
+      <textarea id="m-obs" placeholder="Opcional"></textarea>
+    </div>
+    <div class="grid2">
+      <button class="btn btn-s" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-g" id="m-ok" onclick="confirmarBaixa()">Confirmar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/entregas/comum.js"></script>
+<script>
+// ── Estado (globais declaradas no topo) ──────────────────────────────────────
+var SESS = entSessao();
+var IS_GESTOR = SESS.perfil === 'gestor';
+var MOT = null;            // {cd, nome}
+var ROMS = [];             // romaneios abertos do motorista
+var SEL = {};              // nu_rom -> true (cargas incluídas na rota)
+var PARADAS = [];          // paradas das cargas selecionadas
+var POS = null;            // posição GPS atual {lat,lng}
+var VOLTAR = localStorage.getItem('vv_ent_voltar') === '1';
+var EDITANDO = false;
+var VIEW = 'rota';
+var MAPA = null, CAMADA = null;
+var MODAL = null;          // {modo, parada, foto}
+var FILA_KEY = 'vv_ent_fila';
+
+if (!SESS.ok || (SESS.perfil !== 'motorista' && !IS_GESTOR)) { window.location.href = '/'; }
+
+// ── Inicialização ───────────────────────────────────────────────────────────
+(function init() {
+  if (IS_GESTOR) {
+    var s = document.getElementById('sel-mot'); s.style.display = '';
+    Object.keys(ENT.MOTORISTAS).forEach(function (u) {
+      var o = document.createElement('option'); o.value = u; o.textContent = ENT.MOTORISTAS[u].nome; s.appendChild(o);
+    });
+    var salvo = localStorage.getItem('vv_ent_mot_gestor') || Object.keys(ENT.MOTORISTAS)[0];
+    s.value = salvo; MOT = ENT.MOTORISTAS[salvo];
+  } else {
+    MOT = ENT.MOTORISTAS[SESS.user];
+    if (!MOT) { document.getElementById('v-rota').innerHTML = '<div class="vazio"><b>Usuário sem motorista vinculado</b>Fale com o Felipe.</div>'; return; }
+  }
+  try { SEL = JSON.parse(localStorage.getItem('vv_ent_sel_' + MOT.cd) || '{}'); } catch (e) { SEL = {}; }
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(function (p) {
+      POS = { lat: p.coords.latitude, lng: p.coords.longitude };
+      if (VIEW === 'mapa') desenharMapa();
+    }, function () {}, { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 });
+  }
+  carregar();
+  processarFila();
+  setInterval(processarFila, 30000);
+  setInterval(function () { if (!MODAL && !EDITANDO) carregar(true); }, 120000);
+  window.addEventListener('online', processarFila);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !MODAL && !EDITANDO) carregar(true); });
+})();
+
+function trocarMotorista(u) {
+  localStorage.setItem('vv_ent_mot_gestor', u);
+  MOT = ENT.MOTORISTAS[u];
+  try { SEL = JSON.parse(localStorage.getItem('vv_ent_sel_' + MOT.cd) || '{}'); } catch (e) { SEL = {}; }
+  carregar();
+}
+
+function carregar(silencioso) {
+  if (!silencioso) document.getElementById('v-rota').innerHTML = '<div class="carreg">Carregando cargas…</div>';
+  return sbGet('entregas_romaneios?cd_motor=eq.' + encodeURIComponent(MOT.cd) +
+               '&or=' + encodeURIComponent('(status_app.neq.finalizado,finalizado_em.gte."' + isoDiasAtras(0) + '")') + '&dt_montagem=gte.' + encodeURIComponent(isoDiasAtras(ENT.DIAS_JANELA)) +
+               '&order=dt_montagem.asc')
+    .then(function (roms) {
+      ROMS = roms;
+      var ids = {}; roms.forEach(function (r) { ids[r.nu_rom] = true; });
+      // remove da seleção cargas que já não existem; inclui novas automaticamente
+      Object.keys(SEL).forEach(function (k) { if (!ids[k]) delete SEL[k]; });
+      roms.forEach(function (r) { if (SEL[r.nu_rom] === undefined) SEL[r.nu_rom] = true; });
+      salvarSel();
+      var sel = roms.filter(function (r) { return SEL[r.nu_rom]; }).map(function (r) { return r.nu_rom; });
+      if (!sel.length) return [];
+      return sbGet('entregas_paradas?nu_rom=in.(' + sel.join(',') + ')&order=ordem.asc.nullslast,nu_rom.asc');
+    })
+    .then(function (ps) {
+      PARADAS = aplicarFilaLocal(ps || []);
+      atualizarHeader();
+      render();
+    })
+    .catch(function (e) {
+      console.error(e);
+      if (!silencioso) document.getElementById('v-rota').innerHTML = '<div class="vazio"><b>Sem conexão</b>' + esc(e.message) + '<br><br><button class="btn btn-p" onclick="carregar()">Tentar de novo</button></div>';
+    });
+}
+function salvarSel() { localStorage.setItem('vv_ent_sel_' + MOT.cd, JSON.stringify(SEL)); }
+
+function atualizarHeader() {
+  var hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+  document.getElementById('hdr-sub').textContent = MOT.nome + ' · ' + hoje;
+}
+
+// ── Navegação entre telas ───────────────────────────────────────────────────
+function mostrar(v) {
+  VIEW = v;
+  ['rota', 'mapa', 'cargas'].forEach(function (x) {
+    document.getElementById('v-' + x).style.display = x === v ? '' : 'none';
+    document.getElementById('tb-' + x).classList.toggle('on', x === v);
+  });
+  render();
+}
+function render() {
+  if (VIEW === 'rota') renderRota();
+  else if (VIEW === 'mapa') desenharMapa();
+  else renderCargas();
+}
+
+function pendentes() {
+  return PARADAS.filter(function (p) { return p.status === 'pendente'; }).sort(function (a, b) {
+    var oa = a.ordem == null ? 9999 : a.ordem, ob = b.ordem == null ? 9999 : b.ordem;
+    return oa - ob || a.nu_rom - b.nu_rom;
+  });
+}
+function concluidas() {
+  return PARADAS.filter(function (p) { return p.status !== 'pendente'; }).sort(function (a, b) {
+    return new Date(b.baixa_em || 0) - new Date(a.baixa_em || 0);
+  });
+}
+function rotaDe(p) { var r = ROMS.find(function (x) { return x.nu_rom === p.nu_rom; }); return r ? r.rota : ''; }
+
+// ── Tela ROTA ───────────────────────────────────────────────────────────────
+function renderRota() {
+  var el = document.getElementById('v-rota');
+  if (!ROMS.length) { el.innerHTML = '<div class="vazio"><b>Nenhuma carga aberta</b>Quando um romaneio for montado para você no sistema, ele aparece aqui.</div>'; return; }
+  if (!PARADAS.length) { el.innerHTML = '<div class="vazio"><b>Nenhuma carga selecionada</b>Escolha as cargas na aba Cargas.</div>'; return; }
+
+  var pend = pendentes(), conc = concluidas();
+  var ent = PARADAS.filter(function (p) { return p.status === 'entregue'; }).length;
+  var oc = PARADAS.filter(function (p) { return p.status === 'ocorrencia'; }).length;
+  var tot = PARADAS.length, pct = Math.round((ent + oc) / tot * 100);
+  var semOrdem = pend.some(function (p) { return p.ordem == null; });
+  var romsSel = ROMS.filter(function (r) { return SEL[r.nu_rom]; });
+  var otim = romsSel.map(function (r) { return r.otimizado_em; }).filter(Boolean).sort().pop();
+  var km = romsSel.reduce(function (s, r) { return s + (r.km_estimado || 0); }, 0);
+
+  var h = '<div class="resumo"><div class="lin"><div><div class="big">' + (ent + oc) + ' / ' + tot + '</div>' +
+    '<div class="sub">' + ent + ' entregue' + (ent === 1 ? '' : 's') + (oc ? ' · ' + oc + ' ocorrência' + (oc > 1 ? 's' : '') : '') + '</div></div>' +
+    '<div style="text-align:right"><div class="sub">' + romsSel.map(function (r) { return esc(r.rota); }).join(' + ') + '</div>' +
+    (otim ? '<div class="sub">Otimizada às ' + fmtHora(otim) + (km ? ' · ~' + Math.round(km) + ' km' : '') + '</div>' : '') + '</div></div>' +
+    '<div class="prog"><i style="width:' + pct + '%"></i></div></div>';
+
+  h += '<div class="acoes">';
+  if (EDITANDO) {
+    h += '<button class="btn btn-p btn-blk" onclick="salvarOrdem()">💾 Salvar ordem</button><button class="btn btn-s" onclick="EDITANDO=false;carregar(true)">Cancelar</button>';
+  } else if (pend.length) {
+    h += '<button class="btn btn-p btn-blk" id="btn-otim" onclick="otimizar()">⚡ ' + (semOrdem ? 'Otimizar rota' : 'Reotimizar') + '</button>' +
+         '<button class="btn btn-s" onclick="abrirRotaMaps()" title="Abrir próximas paradas no Google Maps">🗺️ Maps</button>' +
+         '<button class="btn btn-s" onclick="EDITANDO=true;renderRota()" title="Editar ordem">↕️</button>';
+  }
+  h += '</div>';
+  if (pend.length && !EDITANDO) {
+    h += '<label class="tog"><input type="checkbox" ' + (VOLTAR ? 'checked' : '') + ' onchange="VOLTAR=this.checked;localStorage.setItem(\'vv_ent_voltar\',VOLTAR?\'1\':\'0\')"> Terminar a rota de volta na Vet Vida</label>';
+  }
+
+  if (!pend.length) {
+    h += '<div class="vazio"><b>🎉 Rota concluída</b>Todas as paradas tiveram baixa.</div>';
+  } else if (EDITANDO) {
+    h += '<div class="sec">Arraste com as setas</div>';
+    pend.forEach(function (p, i) {
+      h += '<div class="item"><div class="num">' + (i + 1) + '</div><div class="inf"><h3>' + esc(p.fantasia) + '</h3><div class="s">' + esc(p.bairro || '') + ' · ' + esc(p.municipio || '') + '</div></div>' +
+           '<div class="ordem-ctrl"><button class="ico" onclick="mover(\'' + p.id + '\',-1)">▲</button><button class="ico" onclick="mover(\'' + p.id + '\',1)">▼</button></div></div>';
+    });
+  } else {
+    var px = pend[0];
+    h += '<div class="prox"><div class="tag">Próxima parada' + (px.ordem != null ? ' · nº ' + (conc.length + 1) : '') + (px.eta ? ' · previsão ' + fmtHora(px.eta) : '') + '</div>' +
+      '<h2>' + esc(px.fantasia) + '</h2>' +
+      '<div class="end">' + esc(enderecoTexto(px)) + '</div>' +
+      chips(px) +
+      '<div class="grid2" style="margin-bottom:8px">' +
+        '<a class="btn btn-s" href="' + linkGoogleMaps(px) + '" target="_blank" rel="noopener">📍 Google Maps</a>' +
+        '<a class="btn btn-s" href="' + linkWaze(px) + '" target="_blank" rel="noopener">🚗 Waze</a></div>' +
+      '<div class="grid2">' +
+        '<button class="btn btn-g" onclick="abrirModal(\'entregue\',\'' + px.id + '\')">✔ Entregue</button>' +
+        '<button class="btn btn-a" onclick="abrirModal(\'ocorrencia\',\'' + px.id + '\')">⚠ Ocorrência</button></div>' +
+      (px.telefone ? '<a class="btn btn-s" style="width:100%;margin-top:8px" href="tel:' + esc(px.telefone) + '">📞 Ligar ' + esc(fmtTel(px.telefone)) + '</a>' : '') +
+      '</div>';
+    if (semOrdem) h += '<div class="sub" style="margin:-4px 2px 10px;font-size:12px;color:var(--amb)">⚠ Ordem ainda não otimizada — toque em <b>Otimizar rota</b>.</div>';
+
+    if (pend.length > 1) {
+      h += '<div class="sec">Depois (' + (pend.length - 1) + ')</div>';
+      pend.slice(1).forEach(function (p, i) {
+        h += '<div class="item"><div class="num' + (temCoord(p) ? '' : ' sc') + '">' + (conc.length + i + 2) + '</div>' +
+          '<div class="inf"><h3>' + esc(p.fantasia) + '</h3><div class="s">' + esc(p.bairro || '') + ' · ' + esc(p.municipio || '') + (p.eta ? ' · ~' + fmtHora(p.eta) : '') + '</div>' +
+          (temCoord(p) ? '' : '<div class="s" style="color:var(--amb)">Sem localização no mapa</div>') + '</div>' +
+          '<div class="lado"><a class="ico" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="' + linkGoogleMaps(p) + '" target="_blank" rel="noopener">📍</a>' +
+          '<button class="ico" onclick="abrirModal(\'entregue\',\'' + p.id + '\')">✔</button></div></div>';
+      });
+    }
+  }
+
+  if (conc.length && !EDITANDO) {
+    h += '<div class="sec">Concluídas (' + conc.length + ')</div>';
+    conc.forEach(function (p) {
+      var ok = p.status === 'entregue';
+      h += '<div class="item"><div class="num ' + (ok ? 'ok' : 'oc') + '">' + (ok ? '✔' : '!') + '</div>' +
+        '<div class="inf"><h3>' + esc(p.fantasia) + '</h3><div class="s">' + (ok ? 'Entregue' + (p.recebedor ? ' a ' + esc(p.recebedor) : '') : esc(p.ocorrencia_tipo || 'Ocorrência')) +
+        ' · ' + fmtHora(p.baixa_em) + (p._fila ? ' · ⏳ enviando' : '') + '</div></div>' +
+        '<div class="lado"><button class="ico" title="Reabrir" onclick="reabrir(\'' + p.id + '\')">↩</button></div></div>';
+    });
+  }
+  el.innerHTML = h;
+}
+
+function chips(p) {
+  var c = '<div class="meta"><span class="chip r">' + esc(rotaDe(p)) + '</span>' +
+    '<span class="chip">' + (p.qtde_nf || 0) + ' NF' + ((p.qtde_nf || 0) > 1 ? 's' : '') + ': ' + (p.notas || []).map(function (n) { return n.nu_nf; }).join(', ') + '</span>' +
+    (p.peso ? '<span class="chip">' + Number(p.peso).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' kg</span>' : '') +
+    (p.reentrega ? '<span class="chip a">Reentrega</span>' : '') +
+    (temCoord(p) ? '' : '<span class="chip a">Sem localização</span>') + '</div>';
+  return c;
+}
+function fmtTel(t) { t = String(t); return t.length >= 10 ? '(' + t.slice(0, 2) + ') ' + t.slice(2, -4) + '-' + t.slice(-4) : t; }
+
+// ── Otimização ──────────────────────────────────────────────────────────────
+function origemAtual() {
+  if (POS) return POS;
+  var r = ROMS.find(function (x) { return SEL[x.nu_rom] && x.dep_lat; });
+  return r ? { lat: r.dep_lat, lng: r.dep_lng } : null;
+}
+function otimizar() {
+  var origem = origemAtual();
+  if (!origem) { toast('Ative a localização do celular para otimizar a rota.'); return; }
+  var b = document.getElementById('btn-otim'); if (b) { b.disabled = true; b.textContent = 'Otimizando…'; }
+  var pend = pendentes();
+  var dep = ROMS.find(function (x) { return SEL[x.nu_rom] && x.dep_lat; });
+  var retorno = VOLTAR ? (dep ? { lat: dep.dep_lat, lng: dep.dep_lng } : origem) : null;
+  roteirizar(origem, pend, retorno, new Date()).then(function (res) {
+    var base = concluidas().length;
+    var updates = res.ordem.map(function (p, i) {
+      p.ordem = base + i + 1;
+      p.eta = res.etas[i] ? res.etas[i].toISOString() : null;
+      return sbPatch('entregas_paradas', 'id=eq.' + encodeURIComponent(p.id), { ordem: p.ordem, eta: p.eta });
+    });
+    var agora = new Date().toISOString();
+    ROMS.filter(function (r) { return SEL[r.nu_rom]; }).forEach(function (r) {
+      var share = pend.filter(function (p) { return p.nu_rom === r.nu_rom; }).length / Math.max(1, pend.length);
+      r.otimizado_em = agora; r.km_estimado = Math.round(res.km * share * 10) / 10; r.min_estimado = Math.round(res.min * share);
+      updates.push(sbPatch('entregas_romaneios', 'nu_rom=eq.' + r.nu_rom, { otimizado_em: agora, km_estimado: r.km_estimado, min_estimado: r.min_estimado }));
+    });
+    return Promise.all(updates).then(function () {
+      var msg = 'Rota otimizada: ~' + res.km + ' km, ~' + fmtDur(res.min) + (res.fonte === 'google' ? ' (com trânsito)' : ' (estimativa)');
+      if (res.semCoord) msg += ' · ' + res.semCoord + ' sem localização no fim';
+      toast(msg);
+      renderRota();
+    });
+  }).catch(function (e) {
+    console.error(e); toast('Erro ao otimizar: ' + e.message); renderRota();
+  });
+}
+function abrirRotaMaps() {
+  var l = linkRotaGoogle(pendentes());
+  if (!l) { toast('Nenhuma parada com localização.'); return; }
+  window.open(l, '_blank');
+}
+
+// ── Edição manual de ordem ──────────────────────────────────────────────────
+function mover(id, dir) {
+  var pend = pendentes();
+  pend.forEach(function (p, i) { if (p.ordem == null) p.ordem = 1000 + i; });
+  var i = pend.findIndex(function (p) { return p.id === id; }), j = i + dir;
+  if (j < 0 || j >= pend.length) return;
+  var t = pend[i].ordem; pend[i].ordem = pend[j].ordem; pend[j].ordem = t;
+  if (pend[i].ordem === pend[j].ordem) pend[i].ordem += dir;
+  renderRota();
+}
+function salvarOrdem() {
+  var base = concluidas().length, pend = pendentes();
+  Promise.all(pend.map(function (p, i) {
+    p.ordem = base + i + 1; p.eta = null;
+    return sbPatch('entregas_paradas', 'id=eq.' + encodeURIComponent(p.id), { ordem: p.ordem, eta: null });
+  })).then(function () { EDITANDO = false; toast('Ordem salva'); renderRota(); })
+    .catch(function (e) { toast('Erro ao salvar: ' + e.message); });
+}
+
+// ── Tela CARGAS ─────────────────────────────────────────────────────────────
+function renderCargas() {
+  var el = document.getElementById('v-cargas');
+  if (!ROMS.length) { el.innerHTML = '<div class="vazio"><b>Nenhuma carga aberta</b>Os romaneios montados para você nos últimos ' + ENT.DIAS_JANELA + ' dias aparecem aqui.</div>'; return; }
+  var h = '<div class="sec">Cargas na rota de hoje</div>';
+  ROMS.forEach(function (r) {
+    var on = !!SEL[r.nu_rom];
+    h += '<label class="carga' + (on ? ' on' : '') + '"><input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="alternarCarga(' + r.nu_rom + ',this.checked)">' +
+      '<div style="flex:1"><h3>' + esc(r.rota) + ' <span style="font-weight:600;color:var(--tx2);font-size:12px">· romaneio ' + r.nu_rom + '</span></h3>' +
+      '<div class="s">' + esc(r.rota_desc || '') + '</div>' +
+      '<div class="s">Montado ' + fmtData(r.dt_montagem) + ' ' + fmtHora(r.dt_montagem) + ' · ' + (r.qtde_paradas || 0) + ' parada' + (r.qtde_paradas === 1 ? '' : 's') +
+      (r.status_app === 'em_rota' ? ' · <b style="color:var(--grn)">em rota</b>' : '') + '</div></div></label>';
+  });
+  h += '<div class="sub" style="font-size:12px;color:var(--tx2);margin:8px 2px">As cargas marcadas são juntadas numa única rota. Depois de mudar, toque em Otimizar na aba Rota.</div>';
+  h += '<button class="btn btn-s" style="width:100%;margin-top:6px" onclick="carregar()">🔄 Atualizar</button>';
+  el.innerHTML = h;
+}
+function alternarCarga(nu, on) { SEL[nu] = on; salvarSel(); carregar(true).then(function () { renderCargas(); }); }
+
+// ── Tela MAPA ───────────────────────────────────────────────────────────────
+function desenharMapa() {
+  if (VIEW !== 'mapa' || typeof L === 'undefined') return;
+  if (!MAPA) {
+    MAPA = L.map('mapa', { zoomControl: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(MAPA);
+    CAMADA = L.layerGroup().addTo(MAPA);
+  }
+  setTimeout(function () { MAPA.invalidateSize(); }, 50);
+  CAMADA.clearLayers();
+  var bounds = [], conc = concluidas().length, linha = [];
+  var orig = origemAtual(); if (orig) linha.push([orig.lat, orig.lng]);
+  pendentes().forEach(function (p, i) {
+    if (!temCoord(p)) return;
+    var m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: 'pin', html: String(conc + i + 1), iconSize: [28, 28] }) })
+      .bindPopup('<b>' + esc(p.fantasia) + '</b><br>' + esc(enderecoTexto(p)) + (p.eta ? '<br>Previsão ' + fmtHora(p.eta) : '') +
+                 '<br><a href="' + linkGoogleMaps(p) + '" target="_blank">Navegar</a>');
+    CAMADA.addLayer(m); bounds.push([p.lat, p.lng]); linha.push([p.lat, p.lng]);
+  });
+  concluidas().forEach(function (p) {
+    if (!temCoord(p)) return;
+    CAMADA.addLayer(L.marker([p.lat, p.lng], { icon: L.divIcon({ className: 'pin ' + (p.status === 'entregue' ? 'ok' : 'oc'), html: p.status === 'entregue' ? '✔' : '!', iconSize: [28, 28] }) })
+      .bindPopup('<b>' + esc(p.fantasia) + '</b><br>' + (p.status === 'entregue' ? 'Entregue ' : esc(p.ocorrencia_tipo || '') + ' ') + fmtHora(p.baixa_em)));
+    bounds.push([p.lat, p.lng]);
+  });
+  if (linha.length > 1) CAMADA.addLayer(L.polyline(linha, { color: '#CC0000', weight: 3, opacity: .6, dashArray: '6 6' }));
+  if (POS) { CAMADA.addLayer(L.marker([POS.lat, POS.lng], { icon: L.divIcon({ className: 'pin eu', html: '', iconSize: [18, 18] }) })); bounds.push([POS.lat, POS.lng]); }
+  if (bounds.length) MAPA.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+  else MAPA.setView([-23.55, -46.6], 11);
+}
+
+// ── Baixa (entregue / ocorrência) ───────────────────────────────────────────
+function abrirModal(modo, id) {
+  var p = PARADAS.find(function (x) { return x.id === id; }); if (!p) return;
+  MODAL = { modo: modo, parada: p, foto: null };
+  var oc = modo === 'ocorrencia';
+  document.getElementById('m-tit').textContent = oc ? 'Registrar ocorrência' : 'Confirmar entrega';
+  document.getElementById('m-sub').textContent = p.fantasia + ' · NF ' + (p.notas || []).map(function (n) { return n.nu_nf; }).join(', ');
+  document.getElementById('fg-tipo').style.display = oc ? '' : 'none';
+  document.getElementById('fg-receb').style.display = oc ? 'none' : '';
+  document.getElementById('m-foto-lbl').textContent = oc ? 'Foto (opcional)' : 'Foto do canhoto assinado';
+  document.getElementById('m-tipo').innerHTML = OCORRENCIAS.map(function (o) { return '<option>' + o + '</option>'; }).join('');
+  document.getElementById('m-receb').value = '';
+  document.getElementById('m-obs').value = '';
+  document.getElementById('m-foto').value = '';
+  document.getElementById('m-foto-txt').textContent = 'Tirar foto';
+  var pv = document.getElementById('m-foto-prev'); pv.style.display = 'none'; pv.src = '';
+  var b = document.getElementById('m-ok'); b.disabled = false; b.className = 'btn ' + (oc ? 'btn-a' : 'btn-g'); b.textContent = 'Confirmar';
+  document.getElementById('modal-bg').style.display = 'flex';
+}
+function fecharModal() { document.getElementById('modal-bg').style.display = 'none'; MODAL = null; }
+function fotoEscolhida(inp) {
+  if (!inp.files || !inp.files[0]) return;
+  document.getElementById('m-foto-txt').textContent = 'Processando…';
+  comprimirFoto(inp.files[0]).then(function (d) {
+    MODAL.foto = d;
+    var pv = document.getElementById('m-foto-prev'); pv.src = d; pv.style.display = 'block';
+    document.getElementById('m-foto-txt').textContent = 'Trocar foto';
+  }).catch(function (e) { toast(e.message); document.getElementById('m-foto-txt').textContent = 'Tirar foto'; });
+}
+function confirmarBaixa() {
+  if (!MODAL) return;
+  var p = MODAL.parada, oc = MODAL.modo === 'ocorrencia';
+  if (!oc && !MODAL.foto && !confirm('Confirmar a entrega sem foto do canhoto?')) return;
+  var dados = {
+    status: oc ? 'ocorrencia' : 'entregue',
+    ocorrencia_tipo: oc ? document.getElementById('m-tipo').value : null,
+    recebedor: oc ? null : (document.getElementById('m-receb').value.trim() || null),
+    obs: document.getElementById('m-obs').value.trim() || null,
+    baixa_em: new Date().toISOString(),
+    baixa_lat: POS ? POS.lat : null, baixa_lng: POS ? POS.lng : null
+  };
+  Object.assign(p, dados, { _fila: true });
+  enfileirar({ tipo: 'baixa', id: p.id, nu_rom: p.nu_rom, dados: dados, foto: MODAL.foto });
+  fecharModal();
+  toast(oc ? 'Ocorrência registrada' : 'Entrega registrada ✔');
+  renderRota();
+  processarFila();
+}
+function reabrir(id) {
+  var p = PARADAS.find(function (x) { return x.id === id; }); if (!p) return;
+  if (!confirm('Reabrir "' + p.fantasia + '" e voltar para pendente?')) return;
+  var dados = { status: 'pendente', ocorrencia_tipo: null, recebedor: null, obs: null, foto_url: null, baixa_em: null, baixa_lat: null, baixa_lng: null };
+  Object.assign(p, dados);
+  enfileirar({ tipo: 'baixa', id: p.id, nu_rom: p.nu_rom, dados: dados, foto: null });
+  renderRota(); processarFila();
+}
+
+// ── Fila offline ────────────────────────────────────────────────────────────
+function lerFila() { try { return JSON.parse(localStorage.getItem(FILA_KEY) || '[]'); } catch (e) { return []; } }
+function gravarFila(f) {
+  try { localStorage.setItem(FILA_KEY, JSON.stringify(f)); }
+  catch (e) { // sem espaço: descarta fotos mais antigas para não perder a baixa
+    f.forEach(function (op) { op.foto = null; }); localStorage.setItem(FILA_KEY, JSON.stringify(f));
+  }
+  var av = document.getElementById('fila-aviso');
+  av.style.display = f.length ? 'block' : 'none';
+  av.textContent = '⏳ ' + f.length + ' baixa' + (f.length > 1 ? 's' : '') + ' aguardando internet para enviar';
+}
+function enfileirar(op) { var f = lerFila(); op.criado = Date.now(); f.push(op); gravarFila(f); }
+function aplicarFilaLocal(ps) {
+  var f = lerFila();
+  f.forEach(function (op) { var p = ps.find(function (x) { return x.id === op.id; }); if (p) Object.assign(p, op.dados, { _fila: true }); });
+  return ps;
+}
+var PROCESSANDO = false;
+function processarFila() {
+  if (PROCESSANDO) return;
+  var f = lerFila(); gravarFila(f);
+  if (!f.length) return;
+  PROCESSANDO = true;
+  var op = f[0];
+  var passo = op.foto
+    ? sbUploadFoto(op.nu_rom + '/' + op.id + '-' + op.criado + '.jpg', dataUrlParaBlob(op.foto)).then(function (url) { op.dados.foto_url = url; })
+    : Promise.resolve();
+  passo.then(function () {
+    return sbPatch('entregas_paradas', 'id=eq.' + encodeURIComponent(op.id), op.dados);
+  }).then(function () {
+    return atualizarStatusRomaneio(op.nu_rom);
+  }).then(function () {
+    var f2 = lerFila(); f2.shift(); gravarFila(f2);
+    var p = PARADAS.find(function (x) { return x.id === op.id; }); if (p) { delete p._fila; if (op.dados.foto_url) p.foto_url = op.dados.foto_url; }
+    PROCESSANDO = false;
+    if (VIEW === 'rota' && !MODAL && !EDITANDO) renderRota();
+    if (f2.length) processarFila();
+  }).catch(function (e) {
+    console.warn('Fila: tentando depois —', e.message);
+    PROCESSANDO = false;
+  });
+}
+function atualizarStatusRomaneio(nu) {
+  return sbGet('entregas_paradas?select=status&nu_rom=eq.' + nu).then(function (ps) {
+    var pend = ps.filter(function (p) { return p.status === 'pendente'; }).length;
+    var r = ROMS.find(function (x) { return x.nu_rom === nu; }) || {};
+    var dados;
+    if (!pend && ps.length) dados = { status_app: 'finalizado', finalizado_em: new Date().toISOString() };
+    else if (r.status_app !== 'em_rota') dados = { status_app: 'em_rota', iniciado_em: r.iniciado_em || new Date().toISOString(), finalizado_em: null };
+    if (!dados) return;
+    Object.assign(r, dados);
+    return sbPatch('entregas_romaneios', 'nu_rom=eq.' + nu, dados);
+  });
+}
+
+function toast(msg) {
+  var t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(function () { t.style.display = 'none'; }, 3500);
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/entregas/sw.js').catch(function () {});
+</script>
+</body>
+</html>

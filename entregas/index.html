@@ -244,6 +244,7 @@ var NOTAS_CLI = {};        // cd_clien -> observação fixa do cliente
 var ORDENANDO = null;      // lista de ids na ordem tocada no mapa (modo "ordenar no mapa")
 var EDIT = null;           // parada aberta no editor
 var MAPA_FIT = null;       // romaneio cujo mapa já foi enquadrado
+var AVISO = null;          // {texto, ate} faixa "siga para a próxima" após uma baixa
 
 if (!SESS.ok || (SESS.perfil !== 'motorista' && !IS_GESTOR)) { window.location.href = '/'; }
 
@@ -423,7 +424,12 @@ function renderRota() {
     });
   } else {
     var px = pend[0];
-    h += cardParada(px, 'Próxima parada' + (px.ordem != null ? ' · nº ' + (conc.length + 1) : '') + (px.eta ? ' · previsão ' + fmtHora(px.eta) : ''), false);
+    if (AVISO && AVISO.ate > Date.now()) {
+      h += '<div style="background:var(--grn-s);border:1.5px solid var(--grn);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;display:flex;gap:10px;align-items:center">' +
+        '<div style="flex:1;font-size:13px"><b>' + esc(AVISO.texto) + '</b><br>Próxima: ' + esc(px.fantasia) + '</div>' +
+        '<a class="btn btn-g" style="padding:10px 12px" href="' + (navPreferido() === 'waze' ? linkWaze(px) : linkGoogleMaps(px)) + '" target="_blank" rel="noopener" onclick="AVISO=null">🚗 Seguir</a></div>';
+    }
+    h += cardParada(px, 'Próxima parada' + (px.ordem != null ? ' · nº ' + (conc.length + 1) : '') + (px.eta ? ' · previsão ' + fmtHora(px.eta) : ''), false, true);
     if (semOrdem) h += '<div class="sub" style="margin:-4px 2px 10px;font-size:12px;color:var(--amb)">⚠ Ordem ainda não otimizada — toque em <b>Otimizar rota</b>.</div>';
 
     if (pend.length > 1) {
@@ -431,7 +437,7 @@ function renderRota() {
       pend.slice(1).forEach(function (p, i) {
         var n = conc.length + i + 2;
         if (ABERTO === p.id) {
-          h += cardParada(p, 'Parada nº ' + n + (p.eta ? ' · previsão ' + fmtHora(p.eta) : ''), true);
+          h += cardParada(p, 'Parada nº ' + n + (p.eta ? ' · previsão ' + fmtHora(p.eta) : ''), true, false);
           return;
         }
         h += '<div class="item" style="cursor:pointer" onclick="abrirParada(\'' + p.id + '\')"><div class="num' + (temCoord(p) ? '' : ' sc') + '">' + n + '</div>' +
@@ -473,7 +479,7 @@ function chips(p) {
 function numerosNF(p) { return (p.notas || []).map(function (n) { return n.nf || n.nu_nf; }).join(', '); }
 
 // Card completo de uma parada (mesmo formato da "Próxima parada")
-function cardParada(p, titulo, fechavel) {
+function cardParada(p, titulo, fechavel, ehProxima) {
   return '<div class="prox" id="card-' + p.id + '">' +
     '<div class="tag" style="display:flex;justify-content:space-between;gap:8px"><span>' + titulo + '</span>' +
     (fechavel ? '<span style="cursor:pointer;color:var(--tx2)" onclick="abrirParada(null)">✕ fechar</span>' : '') + '</div>' +
@@ -484,13 +490,34 @@ function cardParada(p, titulo, fechavel) {
     (p.avulsa && p.obs && p.status === 'pendente' ? '<div style="font-size:13px;color:var(--tx2);margin-bottom:10px">💬 ' + esc(p.obs) + '</div>' : '') +
     (NOTAS_CLI[p.cd_clien] ? '<div style="background:#fef9c3;color:#713f12;border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:10px">📝 ' + esc(NOTAS_CLI[p.cd_clien]) + '</div>' : '') +
     '<div class="grid2" style="margin-bottom:8px">' +
-      '<a class="btn btn-s" href="' + linkGoogleMaps(p) + '" target="_blank" rel="noopener">📍 Google Maps</a>' +
-      '<a class="btn btn-s" href="' + linkWaze(p) + '" target="_blank" rel="noopener">🚗 Waze</a></div>' +
+      '<a class="btn btn-s" href="' + linkGoogleMaps(p) + '" target="_blank" rel="noopener" onclick="lembrarNav(\'maps\')">📍 Google Maps</a>' +
+      '<a class="btn btn-s" href="' + linkWaze(p) + '" target="_blank" rel="noopener" onclick="lembrarNav(\'waze\')">🚗 Waze</a></div>' +
     '<div class="grid2">' +
       '<button class="btn btn-g" onclick="abrirModal(\'entregue\',\'' + p.id + '\')">✔ Entregue</button>' +
       '<button class="btn btn-a" onclick="abrirModal(\'ocorrencia\',\'' + p.id + '\')">⚠ Ocorrência</button></div>' +
     (p.telefone ? '<a class="btn btn-s" style="width:100%;margin-top:8px" href="tel:' + esc(p.telefone) + '">📞 Ligar ' + esc(fmtTel(p.telefone)) + '</a>' : '') +
+    (ehProxima
+      ? (pendentes().length > 1 ? '<button class="btn btn-s" style="width:100%;margin-top:8px" onclick="pularParada(\'' + p.id + '\')">⏭ Pular — deixar esta para depois</button>' : '')
+      : '<button class="btn btn-p" style="width:100%;margin-top:8px" onclick="comecarPor(\'' + p.id + '\')">▶ Ir para esta agora</button>') +
     '</div>';
+}
+function navPreferido() { return localStorage.getItem('vv_ent_nav') || 'maps'; }
+function lembrarNav(app) { localStorage.setItem('vv_ent_nav', app); AVISO = null; }
+// "Ir para esta agora": esta vira a próxima e o resto é reotimizado a partir dela
+function comecarPor(id) {
+  var pend = pendentes(), alvo = pend.find(function (p) { return p.id === id; }); if (!alvo) return;
+  if (!temCoord(alvo)) { toast('Esta parada está sem localização: use ⋯ → Mudar ordem com setas.'); return; }
+  var resto = pend.filter(function (p) { return p.id !== id; });
+  var retorno = LOCAIS.fim === 'ultima' ? null : pontoDe(LOCAIS.fim);
+  var orden = ordemAutomatica(alvo, resto.filter(temCoord), retorno).ordem.concat(resto.filter(function (p) { return !temCoord(p); }));
+  ABERTO = null; AVISO = null;
+  recalcularOrdem([alvo].concat(orden), 'Indo para ' + alvo.fantasia).then(function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+}
+// "Pular": a próxima vai para o fim da fila
+function pularParada(id) {
+  var pend = pendentes(), alvo = pend.find(function (p) { return p.id === id; }); if (!alvo) return;
+  AVISO = null;
+  recalcularOrdem(pend.filter(function (p) { return p.id !== id; }).concat([alvo]), 'Parada deixada para o fim');
 }
 function abrirParada(id) {
   ABERTO = id; renderRota();
@@ -789,8 +816,10 @@ function confirmarBaixa() {
   Object.assign(p, dados, { _fila: true });
   enfileirar({ tipo: 'baixa', id: p.id, nu_rom: romDaParada(p), dados: dados, foto: MODAL.foto });
   fecharModal();
-  toast(oc ? 'Ocorrência registrada' : 'Entrega registrada ✔');
+  AVISO = { texto: oc ? 'Ocorrência registrada' : 'Entrega registrada ✔', ate: Date.now() + 10 * 60000 };
+  ABERTO = null;
   renderRota();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   processarFila();
 }
 function reabrir(id) {

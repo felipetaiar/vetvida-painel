@@ -294,22 +294,27 @@ function imprimirRota(rom, paradas, nomeMotorista) {
 
 // ── Geocodificação de endereço digitado (Google se houver chave; senão OpenStreetMap) ──
 function geocodificarEndereco(txt) {
-  if (ENT.GOOGLE_KEY) {
-    return fetch('https://maps.googleapis.com/maps/api/geocode/json?region=br&language=pt-BR&address=' +
-                 encodeURIComponent(txt) + '&key=' + ENT.GOOGLE_KEY)
+  // 1º Google (se a chave permitir); se recusar ou não achar, OpenStreetMap
+  var google = ENT.GOOGLE_KEY
+    ? fetch('https://maps.googleapis.com/maps/api/geocode/json?region=br&language=pt-BR&components=country:BR&address=' +
+            encodeURIComponent(txt) + '&key=' + ENT.GOOGLE_KEY)
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.status !== 'OK' || !j.results.length) { console.warn('Geocoding Google:', j.status, j.error_message || ''); return null; }
+          var g = j.results[0];
+          return { lat: g.geometry.location.lat, lng: g.geometry.location.lng, endereco: g.formatted_address };
+        })
+        .catch(function (e) { console.warn('Geocoding Google falhou:', e.message); return null; })
+    : Promise.resolve(null);
+  return google.then(function (res) {
+    if (res) return res;
+    return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&accept-language=pt-BR&q=' + encodeURIComponent(txt))
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        if (j.status !== 'OK' || !j.results.length) return null;
-        var g = j.results[0];
-        return { lat: g.geometry.location.lat, lng: g.geometry.location.lng, endereco: g.formatted_address };
+        if (!j.length) return null;
+        return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon), endereco: j[0].display_name.split(',').slice(0, 4).join(',') };
       });
-  }
-  return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(txt))
-    .then(function (r) { return r.json(); })
-    .then(function (j) {
-      if (!j.length) return null;
-      return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon), endereco: j[0].display_name.split(',').slice(0, 4).join(',') };
-    });
+  });
 }
 
 // ── Links de navegação ──────────────────────────────────────────────────────

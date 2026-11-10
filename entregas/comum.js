@@ -9,7 +9,7 @@ var ENT = {
 
   // Chave Google (Routes API). Vazia = otimização local (sem trânsito).
   // Restringir a chave no Google Cloud ao domínio painel.vetvidasp.com e à Routes API.
-  GOOGLE_KEY: '',
+  GOOGLE_KEY: 'AIzaSyAVDjeTnYwtHbPB7dM621ppJyqm9qwQBeU',
 
   // usuário de login -> código do motorista no ERP (tabela motor)
   MOTORISTAS: {

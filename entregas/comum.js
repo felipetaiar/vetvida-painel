@@ -138,7 +138,7 @@ function otimizarLocal(origem, paradas, retorno) {
 
 // ── Otimização Google (Routes API, com trânsito) ───────────────────────────
 // Retorna {ordem:[paradas], legsSeg:[segundos], km} ou lança erro.
-function otimizarGoogle(origem, ordemBase, retorno) {
+function otimizarGoogle(origem, ordemBase, retorno, manterOrdem) {
   var destino = retorno || ordemBase[ordemBase.length - 1];
   var inter = retorno ? ordemBase.slice() : ordemBase.slice(0, -1);
   if (inter.length > 25) return Promise.reject(new Error('Mais de 25 paradas: usando otimização local'));
@@ -147,7 +147,7 @@ function otimizarGoogle(origem, ordemBase, retorno) {
     origin: wp(origem), destination: wp(destino),
     intermediates: inter.map(wp),
     travelMode: 'DRIVE', routingPreference: 'TRAFFIC_AWARE',
-    optimizeWaypointOrder: inter.length > 1,
+    optimizeWaypointOrder: !manterOrdem && inter.length > 1,
     languageCode: 'pt-BR', units: 'METRIC'
   };
   return fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
@@ -179,11 +179,20 @@ function estimarLegs(origem, ordem, retorno) {
 }
 
 // Roteiriza: decide Google x local, calcula ETAs. Paradas sem coordenada vão ao final.
+// Refrigerados (vacinas/biológicos) vão primeiro; o resto é otimizado a partir da última parada refrigerada.
 function roteirizar(origem, paradas, retorno, inicio) {
   var com = paradas.filter(temCoord), sem = paradas.filter(function (p) { return !temCoord(p); });
-  var base = otimizarLocal(origem, com, retorno);
+  var frios = com.filter(function (p) { return p.refrigerado; }), resto = com.filter(function (p) { return !p.refrigerado; });
+  var base;
+  if (frios.length && resto.length) {
+    var f = otimizarLocal(origem, frios, null);
+    base = f.concat(otimizarLocal(f[f.length - 1], resto, retorno));
+  } else {
+    base = otimizarLocal(origem, com, retorno);
+  }
+  var manter = frios.length > 0 && resto.length > 0;
   var prom = (ENT.GOOGLE_KEY && base.length)
-    ? otimizarGoogle(origem, base, retorno).catch(function (e) {
+    ? otimizarGoogle(origem, base, retorno, manter).catch(function (e) {
         console.warn('Google falhou, usando local:', e.message);
         var est = estimarLegs(origem, base, retorno);
         return { ordem: base, legsSeg: est.legsSeg, km: est.km, fonte: 'local', aviso: e.message };
@@ -197,7 +206,7 @@ function roteirizar(origem, paradas, retorno, inicio) {
       t += ENT.MIN_POR_PARADA * 60000;
     });
     var totalMin = Math.round((t - (inicio || new Date()).getTime()) / 60000);
-    return { ordem: res.ordem.concat(sem), etas: etas, km: Math.round(res.km * 10) / 10, min: totalMin, fonte: res.fonte, aviso: res.aviso, semCoord: sem.length };
+    return { ordem: res.ordem.concat(sem), etas: etas, km: Math.round(res.km * 10) / 10, min: totalMin, fonte: res.fonte, aviso: res.aviso, semCoord: sem.length, frios: frios.length };
   });
 }
 

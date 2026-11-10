@@ -192,7 +192,7 @@ function renderTabela() {
     var det = p.status === 'entregue' ? esc(p.recebedor || '—') : p.status === 'ocorrencia' ? '<b>' + esc(p.ocorrencia_tipo || '') + '</b>' : (p.eta ? 'previsão ' + fmtHora(p.eta) : '');
     if (p.obs) det += '<br><span style="color:var(--tx2)">' + esc(p.obs) + '</span>';
     return '<tr class="' + (p.status === 'ocorrencia' ? 'oc' : '') + '"><td>' + (p.ordem || '—') + '</td>' +
-      '<td><b>' + esc(p.fantasia) + '</b><br><span style="color:var(--tx3)">cód. ' + p.cd_clien + (temCoord(p) ? '' : ' · sem localização') + '</span></td>' +
+      '<td><b>' + (p.refrigerado ? '❄️ ' : '') + esc(p.fantasia) + '</b><br><span style="color:var(--tx3)">cód. ' + p.cd_clien + (temCoord(p) ? '' : ' · sem localização') + '</span></td>' +
       '<td>' + esc(p.bairro || '') + '<br><span style="color:var(--tx2)">' + esc(p.municipio || '') + '</span></td>' +
       '<td>' + esc(NOME_MOT[r.cd_motor] || r.cd_motor || '') + '</td><td>' + esc(r.rota || '') + '</td>' +
       '<td>' + (p.notas || []).map(function (n) { return n.nf || n.nu_nf; }).join('<br>') + '</td>' +

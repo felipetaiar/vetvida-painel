@@ -328,7 +328,7 @@ function renderRota() {
           return;
         }
         h += '<div class="item" style="cursor:pointer" onclick="abrirParada(\'' + p.id + '\')"><div class="num' + (temCoord(p) ? '' : ' sc') + '">' + n + '</div>' +
-          '<div class="inf"><h3>' + esc(p.fantasia) + '</h3><div class="s">' + esc(p.bairro || '') + ' · ' + esc(p.municipio || '') + (p.eta ? ' · ~' + fmtHora(p.eta) : '') + '</div>' +
+          '<div class="inf"><h3>' + (p.refrigerado ? '❄️ ' : '') + esc(p.fantasia) + '</h3><div class="s">' + esc(p.bairro || '') + ' · ' + esc(p.municipio || '') + (p.eta ? ' · ~' + fmtHora(p.eta) : '') + '</div>' +
           (temCoord(p) ? '' : '<div class="s" style="color:var(--amb)">Sem localização no mapa</div>') + '</div>' +
           '<div class="lado"><span style="color:var(--tx3);font-size:18px">›</span></div></div>';
       });
@@ -352,6 +352,7 @@ function chips(p) {
   var c = '<div class="meta"><span class="chip r">' + esc(rotaDe(p)) + '</span>' +
     '<span class="chip">' + (p.qtde_nf || 0) + ' NF' + ((p.qtde_nf || 0) > 1 ? 's' : '') + ': ' + numerosNF(p) + '</span>' +
     (p.peso ? '<span class="chip">' + Number(p.peso).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' kg</span>' : '') +
+    (p.refrigerado ? '<span class="chip" style="background:#e0f2fe;color:#0369a1">❄️ Refrigerado</span>' : '') +
     (p.reentrega ? '<span class="chip a">Reentrega</span>' : '') +
     (temCoord(p) ? '' : '<span class="chip a">Sem localização</span>') + '</div>';
   return c;
@@ -470,6 +471,7 @@ function otimizar() {
     });
     return Promise.all(updates).then(function () {
       var msg = 'Rota otimizada: ~' + res.km + ' km, ~' + fmtDur(res.min) + (res.fonte === 'google' ? ' (com trânsito)' : ' (estimativa)');
+      if (res.frios) msg += ' · ' + res.frios + ' refrigerada' + (res.frios > 1 ? 's' : '') + ' primeiro';
       if (res.semCoord) msg += ' · ' + res.semCoord + ' sem localização no fim';
       toast(msg);
       renderRota();

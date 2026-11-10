@@ -61,6 +61,18 @@ function sbPatch(tabela, filtro, dados) {
     return true;
   });
 }
+function sbInsert(tabela, dados, upsertChave) {
+  return fetch(ENT.SUPABASE_URL + '/rest/v1/' + tabela + (upsertChave ? '?on_conflict=' + upsertChave : ''), {
+    method: 'POST', headers: sbHeaders((upsertChave ? 'resolution=merge-duplicates,' : '') + 'return=minimal'), body: JSON.stringify(dados)
+  }).then(function (r) {
+    if (!r.ok) return r.text().then(function (t) { throw new Error('Supabase ' + r.status + ': ' + t.slice(0, 200)); });
+    return true;
+  });
+}
+function sbDelete(tabela, filtro) {
+  return fetch(ENT.SUPABASE_URL + '/rest/v1/' + tabela + '?' + filtro, { method: 'DELETE', headers: sbHeaders('return=minimal') })
+    .then(function (r) { if (!r.ok) throw new Error('Supabase ' + r.status); return true; });
+}
 function sbUploadFoto(caminho, blob) {
   return fetch(ENT.SUPABASE_URL + '/storage/v1/object/canhotos/' + caminho, {
     method: 'POST',
@@ -136,12 +148,13 @@ function otimizarLocal(origem, paradas, retorno) {
   return rota;
 }
 
-// ── Otimização Google (Routes API, com trânsito) ───────────────────────────
-// Retorna {ordem:[paradas], legsSeg:[segundos], km} ou lança erro.
+// ── Google Routes API (trânsito + traçado) ─────────────────────────────────
+// manterOrdem=true: não reordena, só calcula tempos/traçado da ordem informada.
+// Retorna {ordem, legsSeg, km, polyline, fonte}.
 function otimizarGoogle(origem, ordemBase, retorno, manterOrdem) {
   var destino = retorno || ordemBase[ordemBase.length - 1];
   var inter = retorno ? ordemBase.slice() : ordemBase.slice(0, -1);
-  if (inter.length > 25) return Promise.reject(new Error('Mais de 25 paradas: usando otimização local'));
+  if (inter.length > 25) return Promise.reject(new Error('Mais de 25 paradas: usando cálculo local'));
   function wp(p) { return { location: { latLng: { latitude: p.lat, longitude: p.lng } } }; }
   var corpo = {
     origin: wp(origem), destination: wp(destino),
@@ -155,18 +168,19 @@ function otimizarGoogle(origem, ordemBase, retorno, manterOrdem) {
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': ENT.GOOGLE_KEY,
-      'X-Goog-FieldMask': 'routes.optimizedIntermediateWaypointIndex,routes.legs.duration,routes.legs.distanceMeters,routes.distanceMeters'
+      'X-Goog-FieldMask': 'routes.optimizedIntermediateWaypointIndex,routes.legs.duration,routes.distanceMeters,routes.polyline.encodedPolyline'
     },
     body: JSON.stringify(corpo)
   }).then(function (r) { return r.json(); }).then(function (j) {
     if (!j.routes || !j.routes.length) throw new Error((j.error && j.error.message) || 'Google não retornou rota');
     var rt = j.routes[0];
-    var idx = rt.optimizedIntermediateWaypointIndex || inter.map(function (_, i) { return i; });
-    if (idx.length && idx[0] === -1) idx = inter.map(function (_, i) { return i; });
+    var idx = rt.optimizedIntermediateWaypointIndex;
+    if (!idx || !idx.length || idx[0] === -1) idx = inter.map(function (_, i) { return i; });
     var ordem = idx.map(function (i) { return inter[i]; });
     if (!retorno) ordem.push(destino);
     var legs = (rt.legs || []).map(function (l) { return parseInt(String(l.duration || '0').replace('s', ''), 10) || 0; });
-    return { ordem: ordem, legsSeg: legs, km: (rt.distanceMeters || 0) / 1000, fonte: 'google' };
+    return { ordem: ordem, legsSeg: legs, km: (rt.distanceMeters || 0) / 1000,
+             polyline: rt.polyline ? rt.polyline.encodedPolyline : null, fonte: 'google' };
   });
 }
 
@@ -178,36 +192,104 @@ function estimarLegs(origem, ordem, retorno) {
   return { legsSeg: legs, km: km };
 }
 
-// Roteiriza: decide Google x local, calcula ETAs. Paradas sem coordenada vão ao final.
-// Refrigerados (vacinas/biológicos) vão primeiro; o resto é otimizado a partir da última parada refrigerada.
-function roteirizar(origem, paradas, retorno, inicio) {
+function minutosDe(hhmm) { if (!hhmm) return null; var p = String(hhmm).split(':'); return (+p[0]) * 60 + (+p[1] || 0); }
+
+// Calcula horários: respeita tempo na parada e espera abertura da janela; marca atrasos.
+function calcularEtas(ordem, legsSeg, inicio) {
+  var t = (inicio || new Date()).getTime(), etas = [], atrasos = 0;
+  ordem.forEach(function (p, i) {
+    t += (legsSeg[i] || 0) * 1000;
+    var d = new Date(t), min = d.getHours() * 60 + d.getMinutes();
+    var ji = minutosDe(p.janela_inicio), jf = minutosDe(p.janela_fim);
+    if (ji != null && min < ji) { t += (ji - min) * 60000; d = new Date(t); min = ji; }
+    p._atraso = jf != null && min > jf;
+    if (p._atraso) atrasos++;
+    etas.push(new Date(t));
+    t += (p.tempo_parada_min || ENT.MIN_POR_PARADA) * 60000;
+  });
+  if (legsSeg.length > ordem.length) t += legsSeg[ordem.length] * 1000; // volta ao ponto final
+  return { etas: etas, fim: new Date(t), atrasos: atrasos };
+}
+
+// Ordem automática em blocos: fixadas como primeira → refrigerados → demais → fixadas como última.
+function ordemAutomatica(origem, paradas, retorno) {
+  var blocos = [
+    paradas.filter(function (p) { return p.fixar === 'primeira'; }),
+    paradas.filter(function (p) { return p.fixar !== 'primeira' && p.fixar !== 'ultima' && p.refrigerado; }),
+    paradas.filter(function (p) { return p.fixar !== 'primeira' && p.fixar !== 'ultima' && !p.refrigerado; }),
+    paradas.filter(function (p) { return p.fixar === 'ultima'; })
+  ].filter(function (b) { return b.length; });
+  var ordem = [], ponto = origem;
+  blocos.forEach(function (b, i) {
+    var o = otimizarLocal(ponto, b, i === blocos.length - 1 ? retorno : null);
+    ordem = ordem.concat(o); ponto = o[o.length - 1];
+  });
+  return { ordem: ordem, blocos: blocos.length };
+}
+
+// Roteiriza. ordemFixa=true mantém a ordem recebida (inverter, ordem manual) e só recalcula tempos/traçado.
+function roteirizar(origem, paradas, retorno, inicio, ordemFixa) {
   var com = paradas.filter(temCoord), sem = paradas.filter(function (p) { return !temCoord(p); });
-  var frios = com.filter(function (p) { return p.refrigerado; }), resto = com.filter(function (p) { return !p.refrigerado; });
-  var base;
-  if (frios.length && resto.length) {
-    var f = otimizarLocal(origem, frios, null);
-    base = f.concat(otimizarLocal(f[f.length - 1], resto, retorno));
-  } else {
-    base = otimizarLocal(origem, com, retorno);
-  }
-  var manter = frios.length > 0 && resto.length > 0;
+  var base, manter = !!ordemFixa;
+  if (ordemFixa) { base = com; }
+  else { var a = ordemAutomatica(origem, com, retorno); base = a.ordem; manter = a.blocos > 1; }
+  var frios = com.filter(function (p) { return p.refrigerado; }).length;
+  function local() { var est = estimarLegs(origem, base, retorno); return { ordem: base, legsSeg: est.legsSeg, km: est.km, polyline: null, fonte: 'local' }; }
   var prom = (ENT.GOOGLE_KEY && base.length)
     ? otimizarGoogle(origem, base, retorno, manter).catch(function (e) {
         console.warn('Google falhou, usando local:', e.message);
-        var est = estimarLegs(origem, base, retorno);
-        return { ordem: base, legsSeg: est.legsSeg, km: est.km, fonte: 'local', aviso: e.message };
+        var r = local(); r.aviso = e.message; return r;
       })
-    : Promise.resolve((function () { var est = estimarLegs(origem, base, retorno); return { ordem: base, legsSeg: est.legsSeg, km: est.km, fonte: 'local' }; })());
+    : Promise.resolve(local());
   return prom.then(function (res) {
-    var t = (inicio || new Date()).getTime(), etas = [];
-    res.ordem.forEach(function (p, i) {
-      t += (res.legsSeg[i] || 0) * 1000;
-      etas.push(new Date(t));
-      t += ENT.MIN_POR_PARADA * 60000;
-    });
-    var totalMin = Math.round((t - (inicio || new Date()).getTime()) / 60000);
-    return { ordem: res.ordem.concat(sem), etas: etas, km: Math.round(res.km * 10) / 10, min: totalMin, fonte: res.fonte, aviso: res.aviso, semCoord: sem.length, frios: frios.length };
+    var c = calcularEtas(res.ordem, res.legsSeg, inicio);
+    var totalMin = Math.round((c.fim.getTime() - (inicio || new Date()).getTime()) / 60000);
+    return { ordem: res.ordem.concat(sem), etas: c.etas, fim: c.fim, km: Math.round(res.km * 10) / 10, min: totalMin,
+             fonte: res.fonte, aviso: res.aviso, semCoord: sem.length, frios: frios, atrasos: c.atrasos, polyline: res.polyline };
   });
+}
+
+// Decodifica o traçado do Google (encoded polyline) em [[lat,lng],...]
+function decodificarPolyline(str) {
+  var idx = 0, lat = 0, lng = 0, pts = [];
+  while (str && idx < str.length) {
+    var b, shift = 0, result = 0;
+    do { b = str.charCodeAt(idx++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+    shift = 0; result = 0;
+    do { b = str.charCodeAt(idx++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    pts.push([lat / 1e5, lng / 1e5]);
+  }
+  return pts;
+}
+
+// Romaneio "efetivo" de uma parada (pode ter sido transferida no app)
+function romDaParada(p) { return p.rom_app || p.nu_rom; }
+
+// Folha da rota para impressão
+function imprimirRota(rom, paradas, nomeMotorista) {
+  var linhas = paradas.map(function (p, i) {
+    var nfs = (p.notas || []).map(function (n) { return n.nf || n.nu_nf; }).join(', ');
+    var vol = p.volumes || p.volumes_erp || '';
+    return '<tr><td>' + (p.ordem || i + 1) + '</td><td><b>' + esc(p.fantasia) + '</b>' + (p.tipo === 'coleta' ? ' <i>(coleta)</i>' : '') +
+      (p.refrigerado ? ' ❄️' : '') + '<br><small>' + esc(enderecoTexto(p)) + '</small>' +
+      (p.janela_inicio || p.janela_fim ? '<br><small>Horário: ' + esc(p.janela_inicio || '') + '–' + esc(p.janela_fim || '') + '</small>' : '') + '</td>' +
+      '<td>' + esc(nfs) + '</td><td>' + esc(vol) + (p.posicao ? '<br><small>' + esc(p.posicao) + '</small>' : '') + '</td>' +
+      '<td>' + (p.eta ? fmtHora(p.eta) : '') + '</td><td style="width:28%"></td></tr>';
+  }).join('');
+  var w = window.open('', '_blank');
+  if (!w) { alert('Permita pop-ups para imprimir.'); return; }
+  w.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Rota ' + esc(rom.rota) + ' — romaneio ' + rom.nu_rom + '</title>' +
+    '<style>body{font-family:Arial,sans-serif;font-size:12px;margin:18px}h1{font-size:18px;margin:0}p{margin:4px 0 12px;color:#555}' +
+    'table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:6px;vertical-align:top;text-align:left}th{background:#f2f2f2}' +
+    '.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #CC0000;padding-bottom:6px;margin-bottom:8px}</style></head><body>' +
+    '<div class="top"><div><h1>Vet Vida — Rota ' + esc(rom.rota) + ' · romaneio ' + rom.nu_rom + '</h1></div><div>' + new Date().toLocaleDateString('pt-BR') + '</div></div>' +
+    '<p>Motorista: <b>' + esc(nomeMotorista || rom.cd_motor || '') + '</b> · ' + paradas.length + ' paradas' +
+    (rom.km_estimado ? ' · ~' + Math.round(rom.km_estimado) + ' km' : '') + '</p>' +
+    '<table><thead><tr><th>#</th><th>Cliente / endereço</th><th>NF</th><th>Vol.</th><th>Prev.</th><th>Recebido por / assinatura</th></tr></thead><tbody>' +
+    linhas + '</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.close();
 }
 
 // ── Geocodificação de endereço digitado (Google se houver chave; senão OpenStreetMap) ──

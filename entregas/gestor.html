@@ -172,7 +172,7 @@ function renderOcorrencias() {
   document.getElementById('ocorrencias').innerHTML = oc.length ? oc.map(function (p) {
     return '<div class="mot"><div class="top"><b style="font-size:13px">' + esc(p.fantasia) + '</b><span class="s">' + fmtHora(p.baixa_em) + '</span></div>' +
       '<div class="s"><b style="color:var(--amb)">' + esc(p.ocorrencia_tipo || '') + '</b>' + (p.obs ? ' — ' + esc(p.obs) : '') + '</div>' +
-      '<div class="s">' + esc(NOME_MOT[romDe(p).cd_motor] || '') + ' · ' + esc(romDe(p).rota || '') + ' · NF ' + (p.notas || []).map(function (n) { return n.nu_nf; }).join(', ') + '</div></div>';
+      '<div class="s">' + esc(NOME_MOT[romDe(p).cd_motor] || '') + ' · ' + esc(romDe(p).rota || '') + ' · NF ' + (p.notas || []).map(function (n) { return n.nf || n.nu_nf; }).join(', ') + '</div></div>';
   }).join('') : '<div class="vazio" style="padding:14px">Nenhuma ocorrência.</div>';
 }
 
@@ -195,7 +195,7 @@ function renderTabela() {
       '<td><b>' + esc(p.fantasia) + '</b><br><span style="color:var(--tx3)">cód. ' + p.cd_clien + (temCoord(p) ? '' : ' · sem localização') + '</span></td>' +
       '<td>' + esc(p.bairro || '') + '<br><span style="color:var(--tx2)">' + esc(p.municipio || '') + '</span></td>' +
       '<td>' + esc(NOME_MOT[r.cd_motor] || r.cd_motor || '') + '</td><td>' + esc(r.rota || '') + '</td>' +
-      '<td>' + (p.notas || []).map(function (n) { return n.nu_nf; }).join('<br>') + '</td>' +
+      '<td>' + (p.notas || []).map(function (n) { return n.nf || n.nu_nf; }).join('<br>') + '</td>' +
       '<td><span class="st ' + p.status + '">' + st + '</span></td>' +
       '<td>' + (p.baixa_em ? fmtHora(p.baixa_em) : '') + '</td><td>' + det + '</td>' +
       '<td>' + (p.foto_url ? '<img class="thumb" loading="lazy" src="' + esc(p.foto_url) + '" onclick="verFoto(this.src)">' : '') + '</td></tr>';

@@ -59,6 +59,8 @@ button{font-family:inherit;cursor:pointer}
 .tog{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tx2);margin:6px 2px 12px}
 .tog input{width:18px;height:18px;accent-color:var(--red)}
 #mapa{height:calc(100vh - 150px);border-radius:var(--r);overflow:hidden}
+#mapa-card{display:none;position:absolute;left:8px;right:8px;bottom:8px;z-index:800;max-height:70%;overflow:auto}#mapa-card .prox{margin:0}
+.ml-bloco{border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}.ml-bloco b{font-size:14px}.ml-bloco .s{margin:2px 0 8px!important}
 .pin{background:var(--red);color:#fff;border:2px solid #fff;border-radius:50%;width:28px!important;height:28px!important;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .pin.ok{background:var(--grn)}.pin.oc{background:var(--amb)}.pin.eu{background:var(--blu);width:18px!important;height:18px!important}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;display:none;align-items:flex-end;justify-content:center}
@@ -85,7 +87,7 @@ button{font-family:inherit;cursor:pointer}
 
 <div class="cont">
   <div id="v-rota"></div>
-  <div id="v-mapa" style="display:none"><div id="mapa"></div></div>
+  <div id="v-mapa" style="display:none;position:relative"><div id="mapa"></div><div id="mapa-card"></div></div>
   <div id="v-cargas" style="display:none"></div>
 </div>
 
@@ -124,6 +126,31 @@ button{font-family:inherit;cursor:pointer}
     </div>
   </div>
 </div>
+<!-- Modal de locais de início/término -->
+<div class="modal-bg" id="modal-locais" onclick="if(event.target===this)fecharLocais()">
+  <div class="modal">
+    <h2>Início e término da rota</h2>
+    <div class="s">Fica salvo neste celular.</div>
+    <div class="grid2">
+      <div class="fg"><label>Começar em</label><select id="ml-inicio"></select></div>
+      <div class="fg"><label>Terminar em</label><select id="ml-fim"></select></div>
+    </div>
+    <div class="ml-bloco">
+      <b>🏠 Casa</b><div class="s" id="ml-casa-atual"></div>
+      <div class="fg" style="margin-bottom:8px"><input type="text" id="ml-casa-end" placeholder="Rua, número, bairro, cidade"></div>
+      <div class="grid2"><button class="btn btn-s" onclick="definirLocal('casa','busca')">🔎 Buscar endereço</button><button class="btn btn-s" onclick="definirLocal('casa','gps')">📍 Estou em casa agora</button></div>
+    </div>
+    <div class="ml-bloco">
+      <b>🏢 Vet Vida</b><div class="s" id="ml-vv-atual"></div>
+      <div class="fg" style="margin-bottom:8px"><input type="text" id="ml-vv-end" placeholder="Rua, número, bairro, cidade"></div>
+      <div class="grid2"><button class="btn btn-s" onclick="definirLocal('vetvida','busca')">🔎 Buscar endereço</button><button class="btn btn-s" onclick="definirLocal('vetvida','gps')">📍 Estou na Vet Vida</button></div>
+    </div>
+    <div class="grid2">
+      <button class="btn btn-s" onclick="fecharLocais()">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarPreferenciasLocais()">Salvar</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -137,7 +164,8 @@ var ROMS = [];             // romaneios abertos do motorista
 var SEL = {};              // nu_rom -> true (cargas incluídas na rota)
 var PARADAS = [];          // paradas das cargas selecionadas
 var POS = null;            // posição GPS atual {lat,lng}
-var VOLTAR = localStorage.getItem('vv_ent_voltar') === '1';
+var LOCAIS = {};           // {inicio:'gps'|'vetvida'|'casa', fim:'ultima'|'vetvida'|'casa', casa:{lat,lng,endereco}, vetvida:{...}}
+var ABERTO = null;         // parada expandida na lista
 var EDITANDO = false;
 var VIEW = 'rota';
 var MAPA = null, CAMADA = null;
@@ -160,6 +188,7 @@ if (!SESS.ok || (SESS.perfil !== 'motorista' && !IS_GESTOR)) { window.location.h
     if (!MOT) { document.getElementById('v-rota').innerHTML = '<div class="vazio"><b>Usuário sem motorista vinculado</b>Fale com o Felipe.</div>'; return; }
   }
   try { SEL = JSON.parse(localStorage.getItem('vv_ent_sel_' + MOT.cd) || '{}'); } catch (e) { SEL = {}; }
+  carregarLocais();
   if (navigator.geolocation) {
     navigator.geolocation.watchPosition(function (p) {
       POS = { lat: p.coords.latitude, lng: p.coords.longitude };
@@ -178,6 +207,7 @@ function trocarMotorista(u) {
   localStorage.setItem('vv_ent_mot_gestor', u);
   MOT = ENT.MOTORISTAS[u];
   try { SEL = JSON.parse(localStorage.getItem('vv_ent_sel_' + MOT.cd) || '{}'); } catch (e) { SEL = {}; }
+  carregarLocais();
   carregar();
 }
 
@@ -273,7 +303,7 @@ function renderRota() {
   }
   h += '</div>';
   if (pend.length && !EDITANDO) {
-    h += '<label class="tog"><input type="checkbox" ' + (VOLTAR ? 'checked' : '') + ' onchange="VOLTAR=this.checked;localStorage.setItem(\'vv_ent_voltar\',VOLTAR?\'1\':\'0\')"> Terminar a rota de volta na Vet Vida</label>';
+    h += '<div class="tog" onclick="abrirLocais()" style="cursor:pointer">🏁 <span>Início: <b>' + NOMES_INICIO[LOCAIS.inicio] + '</b> · Término: <b>' + NOMES_FIM[LOCAIS.fim] + '</b></span> <u style="color:var(--red);margin-left:auto">alterar</u></div>';
   }
 
   if (!pend.length) {
@@ -286,28 +316,21 @@ function renderRota() {
     });
   } else {
     var px = pend[0];
-    h += '<div class="prox"><div class="tag">Próxima parada' + (px.ordem != null ? ' · nº ' + (conc.length + 1) : '') + (px.eta ? ' · previsão ' + fmtHora(px.eta) : '') + '</div>' +
-      '<h2>' + esc(px.fantasia) + '</h2>' +
-      '<div class="end">' + esc(enderecoTexto(px)) + '</div>' +
-      chips(px) +
-      '<div class="grid2" style="margin-bottom:8px">' +
-        '<a class="btn btn-s" href="' + linkGoogleMaps(px) + '" target="_blank" rel="noopener">📍 Google Maps</a>' +
-        '<a class="btn btn-s" href="' + linkWaze(px) + '" target="_blank" rel="noopener">🚗 Waze</a></div>' +
-      '<div class="grid2">' +
-        '<button class="btn btn-g" onclick="abrirModal(\'entregue\',\'' + px.id + '\')">✔ Entregue</button>' +
-        '<button class="btn btn-a" onclick="abrirModal(\'ocorrencia\',\'' + px.id + '\')">⚠ Ocorrência</button></div>' +
-      (px.telefone ? '<a class="btn btn-s" style="width:100%;margin-top:8px" href="tel:' + esc(px.telefone) + '">📞 Ligar ' + esc(fmtTel(px.telefone)) + '</a>' : '') +
-      '</div>';
+    h += cardParada(px, 'Próxima parada' + (px.ordem != null ? ' · nº ' + (conc.length + 1) : '') + (px.eta ? ' · previsão ' + fmtHora(px.eta) : ''), false);
     if (semOrdem) h += '<div class="sub" style="margin:-4px 2px 10px;font-size:12px;color:var(--amb)">⚠ Ordem ainda não otimizada — toque em <b>Otimizar rota</b>.</div>';
 
     if (pend.length > 1) {
-      h += '<div class="sec">Depois (' + (pend.length - 1) + ')</div>';
+      h += '<div class="sec">Depois (' + (pend.length - 1) + ') · toque para ver</div>';
       pend.slice(1).forEach(function (p, i) {
-        h += '<div class="item"><div class="num' + (temCoord(p) ? '' : ' sc') + '">' + (conc.length + i + 2) + '</div>' +
+        var n = conc.length + i + 2;
+        if (ABERTO === p.id) {
+          h += cardParada(p, 'Parada nº ' + n + (p.eta ? ' · previsão ' + fmtHora(p.eta) : ''), true);
+          return;
+        }
+        h += '<div class="item" style="cursor:pointer" onclick="abrirParada(\'' + p.id + '\')"><div class="num' + (temCoord(p) ? '' : ' sc') + '">' + n + '</div>' +
           '<div class="inf"><h3>' + esc(p.fantasia) + '</h3><div class="s">' + esc(p.bairro || '') + ' · ' + esc(p.municipio || '') + (p.eta ? ' · ~' + fmtHora(p.eta) : '') + '</div>' +
           (temCoord(p) ? '' : '<div class="s" style="color:var(--amb)">Sem localização no mapa</div>') + '</div>' +
-          '<div class="lado"><a class="ico" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="' + linkGoogleMaps(p) + '" target="_blank" rel="noopener">📍</a>' +
-          '<button class="ico" onclick="abrirModal(\'entregue\',\'' + p.id + '\')">✔</button></div></div>';
+          '<div class="lado"><span style="color:var(--tx3);font-size:18px">›</span></div></div>';
       });
     }
   }
@@ -327,27 +350,111 @@ function renderRota() {
 
 function chips(p) {
   var c = '<div class="meta"><span class="chip r">' + esc(rotaDe(p)) + '</span>' +
-    '<span class="chip">' + (p.qtde_nf || 0) + ' NF' + ((p.qtde_nf || 0) > 1 ? 's' : '') + ': ' + (p.notas || []).map(function (n) { return n.nu_nf; }).join(', ') + '</span>' +
+    '<span class="chip">' + (p.qtde_nf || 0) + ' NF' + ((p.qtde_nf || 0) > 1 ? 's' : '') + ': ' + numerosNF(p) + '</span>' +
     (p.peso ? '<span class="chip">' + Number(p.peso).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' kg</span>' : '') +
     (p.reentrega ? '<span class="chip a">Reentrega</span>' : '') +
     (temCoord(p) ? '' : '<span class="chip a">Sem localização</span>') + '</div>';
   return c;
 }
+function numerosNF(p) { return (p.notas || []).map(function (n) { return n.nf || n.nu_nf; }).join(', '); }
+
+// Card completo de uma parada (mesmo formato da "Próxima parada")
+function cardParada(p, titulo, fechavel) {
+  return '<div class="prox" id="card-' + p.id + '">' +
+    '<div class="tag" style="display:flex;justify-content:space-between;gap:8px"><span>' + titulo + '</span>' +
+    (fechavel ? '<span style="cursor:pointer;color:var(--tx2)" onclick="abrirParada(null)">✕ fechar</span>' : '') + '</div>' +
+    '<h2>' + esc(p.fantasia) + '</h2>' +
+    '<div class="end">' + esc(enderecoTexto(p)) + '</div>' +
+    chips(p) +
+    '<div class="grid2" style="margin-bottom:8px">' +
+      '<a class="btn btn-s" href="' + linkGoogleMaps(p) + '" target="_blank" rel="noopener">📍 Google Maps</a>' +
+      '<a class="btn btn-s" href="' + linkWaze(p) + '" target="_blank" rel="noopener">🚗 Waze</a></div>' +
+    '<div class="grid2">' +
+      '<button class="btn btn-g" onclick="abrirModal(\'entregue\',\'' + p.id + '\')">✔ Entregue</button>' +
+      '<button class="btn btn-a" onclick="abrirModal(\'ocorrencia\',\'' + p.id + '\')">⚠ Ocorrência</button></div>' +
+    (p.telefone ? '<a class="btn btn-s" style="width:100%;margin-top:8px" href="tel:' + esc(p.telefone) + '">📞 Ligar ' + esc(fmtTel(p.telefone)) + '</a>' : '') +
+    '</div>';
+}
+function abrirParada(id) {
+  ABERTO = id; renderRota();
+  if (id) setTimeout(function () { var c = document.getElementById('card-' + id); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 30);
+}
+
+// ── Locais de início e término ──────────────────────────────────────────────
+var NOMES_INICIO = { gps: 'onde estou', vetvida: 'Vet Vida', casa: 'Casa' };
+var NOMES_FIM = { ultima: 'última entrega', vetvida: 'Vet Vida', casa: 'Casa' };
+function carregarLocais() {
+  try { LOCAIS = JSON.parse(localStorage.getItem('vv_ent_locais_' + MOT.cd) || '{}'); } catch (e) { LOCAIS = {}; }
+  if (!LOCAIS.inicio) LOCAIS.inicio = 'gps';
+  if (!LOCAIS.fim) LOCAIS.fim = localStorage.getItem('vv_ent_voltar') === '1' ? 'vetvida' : 'ultima';
+}
+function salvarLocais() { localStorage.setItem('vv_ent_locais_' + MOT.cd, JSON.stringify(LOCAIS)); }
+function coordVetVida() {
+  if (LOCAIS.vetvida && LOCAIS.vetvida.lat) return LOCAIS.vetvida;
+  var r = ROMS.find(function (x) { return x.dep_lat; });
+  return r ? { lat: r.dep_lat, lng: r.dep_lng, endereco: 'Cadastro do ERP' } : null;
+}
+function pontoDe(tipo) {
+  if (tipo === 'gps') return POS;
+  if (tipo === 'vetvida') return coordVetVida();
+  if (tipo === 'casa') return LOCAIS.casa && LOCAIS.casa.lat ? LOCAIS.casa : null;
+  return null;
+}
+function abrirLocais() {
+  var vv = coordVetVida(), casa = LOCAIS.casa;
+  var opt = function (mapa, sel) { return Object.keys(mapa).map(function (k) { return '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + mapa[k].charAt(0).toUpperCase() + mapa[k].slice(1) + '</option>'; }).join(''); };
+  document.getElementById('ml-inicio').innerHTML = opt(NOMES_INICIO, LOCAIS.inicio);
+  document.getElementById('ml-fim').innerHTML = opt(NOMES_FIM, LOCAIS.fim);
+  document.getElementById('ml-casa-atual').textContent = casa && casa.lat ? '✔ ' + (casa.endereco || 'Localização salva') : 'Ainda não cadastrada';
+  document.getElementById('ml-vv-atual').textContent = vv ? '✔ ' + (vv.endereco || 'Localização salva') : 'Sem localização — cadastre abaixo';
+  document.getElementById('ml-casa-end').value = '';
+  document.getElementById('ml-vv-end').value = '';
+  document.getElementById('modal-locais').style.display = 'flex';
+}
+function fecharLocais() { document.getElementById('modal-locais').style.display = 'none'; renderRota(); }
+function salvarPreferenciasLocais() {
+  var ini = document.getElementById('ml-inicio').value, fim = document.getElementById('ml-fim').value;
+  if ((ini === 'casa' || fim === 'casa') && !(LOCAIS.casa && LOCAIS.casa.lat)) { toast('Cadastre o endereço de casa primeiro.'); return; }
+  if ((ini === 'vetvida' || fim === 'vetvida') && !coordVetVida()) { toast('Cadastre a localização da Vet Vida primeiro.'); return; }
+  LOCAIS.inicio = ini; LOCAIS.fim = fim; salvarLocais();
+  toast('Salvo. Toque em Reotimizar para aplicar.');
+  fecharLocais();
+}
+function definirLocal(qual, modo) {
+  var campo = document.getElementById(qual === 'casa' ? 'ml-casa-end' : 'ml-vv-end');
+  var fim = function (pt) {
+    LOCAIS[qual] = pt; salvarLocais();
+    document.getElementById(qual === 'casa' ? 'ml-casa-atual' : 'ml-vv-atual').textContent = '✔ ' + pt.endereco;
+    toast('Local salvo');
+  };
+  if (modo === 'gps') {
+    if (!POS) { toast('Localização do celular indisponível. Ative o GPS.'); return; }
+    fim({ lat: POS.lat, lng: POS.lng, endereco: 'Localização marcada em ' + new Date().toLocaleDateString('pt-BR') });
+    return;
+  }
+  var txt = campo.value.trim();
+  if (txt.length < 6) { toast('Digite o endereço com número e cidade.'); return; }
+  toast('Procurando endereço…');
+  geocodificarEndereco(txt).then(function (pt) {
+    if (!pt) { toast('Endereço não encontrado. Confira e tente de novo.'); return; }
+    fim(pt);
+  }).catch(function (e) { toast('Erro ao buscar: ' + e.message); });
+}
+
 function fmtTel(t) { t = String(t); return t.length >= 10 ? '(' + t.slice(0, 2) + ') ' + t.slice(2, -4) + '-' + t.slice(-4) : t; }
 
 // ── Otimização ──────────────────────────────────────────────────────────────
 function origemAtual() {
-  if (POS) return POS;
-  var r = ROMS.find(function (x) { return SEL[x.nu_rom] && x.dep_lat; });
-  return r ? { lat: r.dep_lat, lng: r.dep_lng } : null;
+  // Depois da primeira baixa a rota sempre recalcula de onde o motorista está
+  if (concluidas().length && POS) return POS;
+  return pontoDe(LOCAIS.inicio) || POS || coordVetVida();
 }
 function otimizar() {
   var origem = origemAtual();
-  if (!origem) { toast('Ative a localização do celular para otimizar a rota.'); return; }
+  if (!origem) { toast('Sem ponto de partida: ative a localização ou cadastre Casa / Vet Vida em "alterar".'); return; }
   var b = document.getElementById('btn-otim'); if (b) { b.disabled = true; b.textContent = 'Otimizando…'; }
   var pend = pendentes();
-  var dep = ROMS.find(function (x) { return SEL[x.nu_rom] && x.dep_lat; });
-  var retorno = VOLTAR ? (dep ? { lat: dep.dep_lat, lng: dep.dep_lng } : origem) : null;
+  var retorno = LOCAIS.fim === 'ultima' ? null : pontoDe(LOCAIS.fim);
   roteirizar(origem, pend, retorno, new Date()).then(function (res) {
     var base = concluidas().length;
     var updates = res.ordem.map(function (p, i) {
@@ -416,6 +523,12 @@ function renderCargas() {
 function alternarCarga(nu, on) { SEL[nu] = on; salvarSel(); carregar(true).then(function () { renderCargas(); }); }
 
 // ── Tela MAPA ───────────────────────────────────────────────────────────────
+function cardNoMapa(p, titulo) {
+  var c = document.getElementById('mapa-card');
+  c.innerHTML = cardParada(p, titulo, false) ;
+  c.querySelector('.tag').insertAdjacentHTML('beforeend', '<span style="cursor:pointer;color:var(--tx2)" onclick="document.getElementById(\'mapa-card\').style.display=\'none\'">✕ fechar</span>');
+  c.style.display = 'block';
+}
 function desenharMapa() {
   if (VIEW !== 'mapa' || typeof L === 'undefined') return;
   if (!MAPA) {
@@ -429,9 +542,9 @@ function desenharMapa() {
   var orig = origemAtual(); if (orig) linha.push([orig.lat, orig.lng]);
   pendentes().forEach(function (p, i) {
     if (!temCoord(p)) return;
-    var m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: 'pin', html: String(conc + i + 1), iconSize: [28, 28] }) })
-      .bindPopup('<b>' + esc(p.fantasia) + '</b><br>' + esc(enderecoTexto(p)) + (p.eta ? '<br>Previsão ' + fmtHora(p.eta) : '') +
-                 '<br><a href="' + linkGoogleMaps(p) + '" target="_blank">Navegar</a>');
+    var n = conc + i + 1;
+    var m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: 'pin', html: String(n), iconSize: [28, 28] }) })
+      .on('click', function () { cardNoMapa(p, 'Parada nº ' + n + (p.eta ? ' · previsão ' + fmtHora(p.eta) : '')); });
     CAMADA.addLayer(m); bounds.push([p.lat, p.lng]); linha.push([p.lat, p.lng]);
   });
   concluidas().forEach(function (p) {
@@ -439,6 +552,12 @@ function desenharMapa() {
     CAMADA.addLayer(L.marker([p.lat, p.lng], { icon: L.divIcon({ className: 'pin ' + (p.status === 'entregue' ? 'ok' : 'oc'), html: p.status === 'entregue' ? '✔' : '!', iconSize: [28, 28] }) })
       .bindPopup('<b>' + esc(p.fantasia) + '</b><br>' + (p.status === 'entregue' ? 'Entregue ' : esc(p.ocorrencia_tipo || '') + ' ') + fmtHora(p.baixa_em)));
     bounds.push([p.lat, p.lng]);
+  });
+  var pfim = LOCAIS.fim !== 'ultima' ? pontoDe(LOCAIS.fim) : null;
+  if (pfim && linha.length) linha.push([pfim.lat, pfim.lng]);
+  [['casa', '🏠'], ['vetvida', '🏢']].forEach(function (x) {
+    var pt = pontoDe(x[0]);
+    if (pt && (LOCAIS.inicio === x[0] || LOCAIS.fim === x[0])) CAMADA.addLayer(L.marker([pt.lat, pt.lng], { icon: L.divIcon({ className: '', html: '<div style="font-size:22px">' + x[1] + '</div>', iconSize: [24, 24] }) }));
   });
   if (linha.length > 1) CAMADA.addLayer(L.polyline(linha, { color: '#CC0000', weight: 3, opacity: .6, dashArray: '6 6' }));
   if (POS) { CAMADA.addLayer(L.marker([POS.lat, POS.lng], { icon: L.divIcon({ className: 'pin eu', html: '', iconSize: [18, 18] }) })); bounds.push([POS.lat, POS.lng]); }
@@ -452,7 +571,7 @@ function abrirModal(modo, id) {
   MODAL = { modo: modo, parada: p, foto: null };
   var oc = modo === 'ocorrencia';
   document.getElementById('m-tit').textContent = oc ? 'Registrar ocorrência' : 'Confirmar entrega';
-  document.getElementById('m-sub').textContent = p.fantasia + ' · NF ' + (p.notas || []).map(function (n) { return n.nu_nf; }).join(', ');
+  document.getElementById('m-sub').textContent = p.fantasia + ' · NF ' + numerosNF(p);
   document.getElementById('fg-tipo').style.display = oc ? '' : 'none';
   document.getElementById('fg-receb').style.display = oc ? 'none' : '';
   document.getElementById('m-foto-lbl').textContent = oc ? 'Foto (opcional)' : 'Foto do canhoto assinado';

@@ -184,7 +184,7 @@ function renderTabela() {
   }).join('');
   var lista = PARADAS.filter(function (p) { return FILTRO === 'todas' || p.status === FILTRO; }).slice().sort(function (a, b) {
     var ra = romDe(a), rb = romDe(b);
-    return String(ra.cd_motor).localeCompare(String(rb.cd_motor)) || (a.ordem || 9999) - (b.ordem || 9999);
+    return String(ra.cd_motor).localeCompare(String(rb.cd_motor)) || a.nu_rom - b.nu_rom || (a.ordem || 9999) - (b.ordem || 9999);
   });
   document.getElementById('tbody').innerHTML = lista.length ? lista.map(function (p) {
     var r = romDe(p);
@@ -222,10 +222,11 @@ function renderMapa() {
                  (p.baixa_em ? '<br>Baixa ' + fmtHora(p.baixa_em) : p.eta ? '<br>Previsão ' + fmtHora(p.eta) : '') +
                  (p.foto_url ? '<br><a href="' + esc(p.foto_url) + '" target="_blank">Ver canhoto</a>' : '')));
     bounds.push([p.lat, p.lng]);
-    (linhas[r.cd_motor] = linhas[r.cd_motor] || []).push([p.lat, p.lng]);
+    (linhas[p.nu_rom] = linhas[p.nu_rom] || { cd: r.cd_motor, pts: [] }).pts.push([p.lat, p.lng]);
   });
-  Object.keys(linhas).forEach(function (cd) {
-    if (linhas[cd].length > 1) CAMADA.addLayer(L.polyline(linhas[cd], { color: corMot[cd] || '#CC0000', weight: 2, opacity: .5, dashArray: '5 6' }));
+  Object.keys(linhas).forEach(function (nu) {
+    var l = linhas[nu];
+    if (l.pts.length > 1) CAMADA.addLayer(L.polyline(l.pts, { color: corMot[l.cd] || '#CC0000', weight: 2, opacity: .5, dashArray: '5 6' }));
   });
   if (PRIMEIRA || !bounds.length) {
     if (bounds.length) MAPA.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 }); else MAPA.setView([-23.55, -46.6], 10);

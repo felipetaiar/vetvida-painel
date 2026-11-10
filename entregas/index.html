@@ -161,8 +161,9 @@ var SESS = entSessao();
 var IS_GESTOR = SESS.perfil === 'gestor';
 var MOT = null;            // {cd, nome}
 var ROMS = [];             // romaneios abertos do motorista
-var SEL = {};              // nu_rom -> true (cargas incluídas na rota)
-var PARADAS = [];          // paradas das cargas selecionadas
+var ATIVO = null;          // romaneio (rota) aberto na tela — cada romaneio é uma rota separada
+var TODAS = [];            // paradas de todos os romaneios do motorista
+var PARADAS = [];          // paradas do romaneio ativo
 var POS = null;            // posição GPS atual {lat,lng}
 var LOCAIS = {};           // {inicio:'gps'|'vetvida'|'casa', fim:'ultima'|'vetvida'|'casa', casa:{lat,lng,endereco}, vetvida:{...}}
 var ABERTO = null;         // parada expandida na lista
@@ -187,7 +188,7 @@ if (!SESS.ok || (SESS.perfil !== 'motorista' && !IS_GESTOR)) { window.location.h
     MOT = ENT.MOTORISTAS[SESS.user];
     if (!MOT) { document.getElementById('v-rota').innerHTML = '<div class="vazio"><b>Usuário sem motorista vinculado</b>Fale com o Felipe.</div>'; return; }
   }
-  try { SEL = JSON.parse(localStorage.getItem('vv_ent_sel_' + MOT.cd) || '{}'); } catch (e) { SEL = {}; }
+  ATIVO = parseInt(localStorage.getItem('vv_ent_ativo_' + MOT.cd), 10) || null;
   carregarLocais();
   if (navigator.geolocation) {
     navigator.geolocation.watchPosition(function (p) {
@@ -206,7 +207,7 @@ if (!SESS.ok || (SESS.perfil !== 'motorista' && !IS_GESTOR)) { window.location.h
 function trocarMotorista(u) {
   localStorage.setItem('vv_ent_mot_gestor', u);
   MOT = ENT.MOTORISTAS[u];
-  try { SEL = JSON.parse(localStorage.getItem('vv_ent_sel_' + MOT.cd) || '{}'); } catch (e) { SEL = {}; }
+  ATIVO = parseInt(localStorage.getItem('vv_ent_ativo_' + MOT.cd), 10) || null;
   carregarLocais();
   carregar();
 }
@@ -218,17 +219,12 @@ function carregar(silencioso) {
                '&order=dt_montagem.asc')
     .then(function (roms) {
       ROMS = roms;
-      var ids = {}; roms.forEach(function (r) { ids[r.nu_rom] = true; });
-      // remove da seleção cargas que já não existem; inclui novas automaticamente
-      Object.keys(SEL).forEach(function (k) { if (!ids[k]) delete SEL[k]; });
-      roms.forEach(function (r) { if (SEL[r.nu_rom] === undefined) SEL[r.nu_rom] = true; });
-      salvarSel();
-      var sel = roms.filter(function (r) { return SEL[r.nu_rom]; }).map(function (r) { return r.nu_rom; });
-      if (!sel.length) return [];
-      return sbGet('entregas_paradas?nu_rom=in.(' + sel.join(',') + ')&order=ordem.asc.nullslast,nu_rom.asc');
+      if (!roms.length) return [];
+      return sbGet('entregas_paradas?nu_rom=in.(' + roms.map(function (r) { return r.nu_rom; }).join(',') + ')&order=ordem.asc.nullslast');
     })
     .then(function (ps) {
-      PARADAS = aplicarFilaLocal(ps || []);
+      TODAS = aplicarFilaLocal(ps || []);
+      escolherAtivo();
       atualizarHeader();
       render();
     })
@@ -237,7 +233,32 @@ function carregar(silencioso) {
       if (!silencioso) document.getElementById('v-rota').innerHTML = '<div class="vazio"><b>Sem conexão</b>' + esc(e.message) + '<br><br><button class="btn btn-p" onclick="carregar()">Tentar de novo</button></div>';
     });
 }
-function salvarSel() { localStorage.setItem('vv_ent_sel_' + MOT.cd, JSON.stringify(SEL)); }
+function romAtivo() { return ROMS.find(function (r) { return r.nu_rom === ATIVO; }) || null; }
+function pendentesDe(nu) { return TODAS.filter(function (p) { return p.nu_rom === nu && p.status === 'pendente'; }).length; }
+// Mantém o romaneio escolhido; senão pega o que está em rota, senão o primeiro com pendências
+function escolherAtivo() {
+  if (!ROMS.some(function (r) { return r.nu_rom === ATIVO; })) {
+    var emRota = ROMS.find(function (r) { return r.status_app === 'em_rota' && pendentesDe(r.nu_rom); });
+    var comPend = ROMS.find(function (r) { return pendentesDe(r.nu_rom); });
+    ATIVO = (emRota || comPend || ROMS[0] || {}).nu_rom || null;
+  }
+  localStorage.setItem('vv_ent_ativo_' + MOT.cd, ATIVO || '');
+  PARADAS = TODAS.filter(function (p) { return p.nu_rom === ATIVO; });
+}
+function selecionarCarga(nu) {
+  ATIVO = nu; ABERTO = null; EDITANDO = false;
+  escolherAtivo();
+  var c = document.getElementById('mapa-card'); if (c) c.style.display = 'none';
+  mostrar('rota');
+}
+function seletorCargas() {
+  if (ROMS.length < 2) return '';
+  return '<div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px">' + ROMS.map(function (r) {
+    var tot = TODAS.filter(function (p) { return p.nu_rom === r.nu_rom; }).length, pe = pendentesDe(r.nu_rom), on = r.nu_rom === ATIVO;
+    return '<button onclick="selecionarCarga(' + r.nu_rom + ')" style="flex:0 0 auto;border:2px solid ' + (on ? 'var(--red)' : 'var(--bd)') + ';background:' + (on ? 'var(--red)' : 'var(--sf)') +
+      ';color:' + (on ? '#fff' : 'var(--tx)') + ';border-radius:20px;padding:7px 12px;font-size:12px;font-weight:800">' + esc(r.rota) + ' · ' + (tot - pe) + '/' + tot + (pe ? '' : ' ✔') + '</button>';
+  }).join('') + '</div>';
+}
 
 function atualizarHeader() {
   var hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
@@ -276,20 +297,19 @@ function rotaDe(p) { var r = ROMS.find(function (x) { return x.nu_rom === p.nu_r
 function renderRota() {
   var el = document.getElementById('v-rota');
   if (!ROMS.length) { el.innerHTML = '<div class="vazio"><b>Nenhuma carga aberta</b>Quando um romaneio for montado para você no sistema, ele aparece aqui.</div>'; return; }
-  if (!PARADAS.length) { el.innerHTML = '<div class="vazio"><b>Nenhuma carga selecionada</b>Escolha as cargas na aba Cargas.</div>'; return; }
+  if (!PARADAS.length) { el.innerHTML = seletorCargas() + '<div class="vazio"><b>Romaneio sem paradas</b>Escolha outra carga na aba Cargas.</div>'; return; }
 
   var pend = pendentes(), conc = concluidas();
   var ent = PARADAS.filter(function (p) { return p.status === 'entregue'; }).length;
   var oc = PARADAS.filter(function (p) { return p.status === 'ocorrencia'; }).length;
   var tot = PARADAS.length, pct = Math.round((ent + oc) / tot * 100);
   var semOrdem = pend.some(function (p) { return p.ordem == null; });
-  var romsSel = ROMS.filter(function (r) { return SEL[r.nu_rom]; });
-  var otim = romsSel.map(function (r) { return r.otimizado_em; }).filter(Boolean).sort().pop();
-  var km = romsSel.reduce(function (s, r) { return s + (r.km_estimado || 0); }, 0);
+  var ra = romAtivo() || {};
+  var otim = ra.otimizado_em, km = ra.km_estimado || 0;
 
-  var h = '<div class="resumo"><div class="lin"><div><div class="big">' + (ent + oc) + ' / ' + tot + '</div>' +
+  var h = seletorCargas() + '<div class="resumo"><div class="lin"><div><div class="big">' + (ent + oc) + ' / ' + tot + '</div>' +
     '<div class="sub">' + ent + ' entregue' + (ent === 1 ? '' : 's') + (oc ? ' · ' + oc + ' ocorrência' + (oc > 1 ? 's' : '') : '') + '</div></div>' +
-    '<div style="text-align:right"><div class="sub">' + romsSel.map(function (r) { return esc(r.rota); }).join(' + ') + '</div>' +
+    '<div style="text-align:right"><div class="sub"><b>' + esc(ra.rota || '') + '</b> · romaneio ' + (ra.nu_rom || '') + '</div>' +
     (otim ? '<div class="sub">Otimizada às ' + fmtHora(otim) + (km ? ' · ~' + Math.round(km) + ' km' : '') + '</div>' : '') + '</div></div>' +
     '<div class="prog"><i style="width:' + pct + '%"></i></div></div>';
 
@@ -307,7 +327,9 @@ function renderRota() {
   }
 
   if (!pend.length) {
-    h += '<div class="vazio"><b>🎉 Rota concluída</b>Todas as paradas tiveram baixa.</div>';
+    var prox = ROMS.find(function (r) { return r.nu_rom !== ATIVO && pendentesDe(r.nu_rom); });
+    h += '<div class="vazio"><b>🎉 Rota concluída</b>Todas as paradas deste romaneio tiveram baixa.' +
+      (prox ? '<br><br><button class="btn btn-p" onclick="selecionarCarga(' + prox.nu_rom + ')">Ir para ' + esc(prox.rota) + ' (romaneio ' + prox.nu_rom + ')</button>' : '') + '</div>';
   } else if (EDITANDO) {
     h += '<div class="sec">Arraste com as setas</div>';
     pend.forEach(function (p, i) {
@@ -354,7 +376,8 @@ function chips(p) {
     (p.peso ? '<span class="chip">' + Number(p.peso).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' kg</span>' : '') +
     (p.refrigerado ? '<span class="chip" style="background:#e0f2fe;color:#0369a1">❄️ Refrigerado</span>' : '') +
     (p.reentrega ? '<span class="chip a">Reentrega</span>' : '') +
-    (temCoord(p) ? '' : '<span class="chip a">Sem localização</span>') + '</div>';
+    (temCoord(p) ? '' : '<span class="chip a">Sem localização</span>') + '</div>' +
+    (p.itens_frios ? '<div style="font-size:12px;color:#0369a1;margin:-4px 0 10px">❄️ ' + esc(p.itens_frios) + '</div>' : '');
   return c;
 }
 function numerosNF(p) { return (p.notas || []).map(function (n) { return n.nf || n.nu_nf; }).join(', '); }
@@ -464,11 +487,11 @@ function otimizar() {
       return sbPatch('entregas_paradas', 'id=eq.' + encodeURIComponent(p.id), { ordem: p.ordem, eta: p.eta });
     });
     var agora = new Date().toISOString();
-    ROMS.filter(function (r) { return SEL[r.nu_rom]; }).forEach(function (r) {
-      var share = pend.filter(function (p) { return p.nu_rom === r.nu_rom; }).length / Math.max(1, pend.length);
-      r.otimizado_em = agora; r.km_estimado = Math.round(res.km * share * 10) / 10; r.min_estimado = Math.round(res.min * share);
+    var r = romAtivo();
+    if (r) {
+      r.otimizado_em = agora; r.km_estimado = res.km; r.min_estimado = res.min;
       updates.push(sbPatch('entregas_romaneios', 'nu_rom=eq.' + r.nu_rom, { otimizado_em: agora, km_estimado: r.km_estimado, min_estimado: r.min_estimado }));
-    });
+    }
     return Promise.all(updates).then(function () {
       var msg = 'Rota otimizada: ~' + res.km + ' km, ~' + fmtDur(res.min) + (res.fonte === 'google' ? ' (com trânsito)' : ' (estimativa)');
       if (res.frios) msg += ' · ' + res.frios + ' refrigerada' + (res.frios > 1 ? 's' : '') + ' primeiro';
@@ -509,20 +532,19 @@ function salvarOrdem() {
 function renderCargas() {
   var el = document.getElementById('v-cargas');
   if (!ROMS.length) { el.innerHTML = '<div class="vazio"><b>Nenhuma carga aberta</b>Os romaneios montados para você nos últimos ' + ENT.DIAS_JANELA + ' dias aparecem aqui.</div>'; return; }
-  var h = '<div class="sec">Cargas na rota de hoje</div>';
+  var h = '<div class="sec">Suas cargas · cada romaneio é uma rota</div>';
   ROMS.forEach(function (r) {
-    var on = !!SEL[r.nu_rom];
-    h += '<label class="carga' + (on ? ' on' : '') + '"><input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="alternarCarga(' + r.nu_rom + ',this.checked)">' +
+    var on = r.nu_rom === ATIVO, tot = TODAS.filter(function (p) { return p.nu_rom === r.nu_rom; }).length, pe = pendentesDe(r.nu_rom);
+    h += '<div class="carga' + (on ? ' on' : '') + '" style="cursor:pointer" onclick="selecionarCarga(' + r.nu_rom + ')">' +
       '<div style="flex:1"><h3>' + esc(r.rota) + ' <span style="font-weight:600;color:var(--tx2);font-size:12px">· romaneio ' + r.nu_rom + '</span></h3>' +
       '<div class="s">' + esc(r.rota_desc || '') + '</div>' +
-      '<div class="s">Montado ' + fmtData(r.dt_montagem) + ' ' + fmtHora(r.dt_montagem) + ' · ' + (r.qtde_paradas || 0) + ' parada' + (r.qtde_paradas === 1 ? '' : 's') +
-      (r.status_app === 'em_rota' ? ' · <b style="color:var(--grn)">em rota</b>' : '') + '</div></div></label>';
+      '<div class="s">Montado ' + fmtData(r.dt_montagem) + ' ' + fmtHora(r.dt_montagem) + ' · ' + (tot - pe) + ' de ' + tot + ' parada' + (tot === 1 ? '' : 's') + ' concluída' + (tot - pe === 1 ? '' : 's') +
+      (r.status_app === 'em_rota' ? ' · <b style="color:var(--grn)">em rota</b>' : r.status_app === 'finalizado' ? ' · <b style="color:var(--grn)">finalizado</b>' : '') + '</div></div>' +
+      '<span style="font-size:20px;color:' + (on ? 'var(--red)' : 'var(--tx3)') + '">' + (on ? '●' : '›') + '</span></div>';
   });
-  h += '<div class="sub" style="font-size:12px;color:var(--tx2);margin:8px 2px">As cargas marcadas são juntadas numa única rota. Depois de mudar, toque em Otimizar na aba Rota.</div>';
   h += '<button class="btn btn-s" style="width:100%;margin-top:6px" onclick="carregar()">🔄 Atualizar</button>';
   el.innerHTML = h;
 }
-function alternarCarga(nu, on) { SEL[nu] = on; salvarSel(); carregar(true).then(function () { renderCargas(); }); }
 
 // ── Tela MAPA ───────────────────────────────────────────────────────────────
 function cardNoMapa(p, titulo) {
@@ -657,7 +679,7 @@ function processarFila() {
     return atualizarStatusRomaneio(op.nu_rom);
   }).then(function () {
     var f2 = lerFila(); f2.shift(); gravarFila(f2);
-    var p = PARADAS.find(function (x) { return x.id === op.id; }); if (p) { delete p._fila; if (op.dados.foto_url) p.foto_url = op.dados.foto_url; }
+    var p = TODAS.find(function (x) { return x.id === op.id; }); if (p) { delete p._fila; if (op.dados.foto_url) p.foto_url = op.dados.foto_url; }
     PROCESSANDO = false;
     if (VIEW === 'rota' && !MODAL && !EDITANDO) renderRota();
     if (f2.length) processarFila();

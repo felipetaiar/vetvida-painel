@@ -329,13 +329,18 @@ function linkWaze(p) {
   return temCoord(p) ? 'https://waze.com/ul?ll=' + p.lat + ',' + p.lng + '&navigate=yes'
                      : 'https://waze.com/ul?q=' + encodeURIComponent(enderecoTexto(p)) + '&navigate=yes';
 }
-// Próximas até 9 paradas numa única rota do Google Maps
-function linkRotaGoogle(paradas) {
-  var ps = paradas.filter(temCoord).slice(0, 10);
+// Rota no Google Maps: origem (opcional), até 9 paradas intermediárias e destino.
+// fim: ponto final configurado (Vet Vida/casa) — só entra quando todas as paradas cabem no link.
+function linkRotaGoogle(paradas, origem, fim) {
+  var ps = paradas.filter(temCoord);
   if (!ps.length) return null;
-  var dest = ps[ps.length - 1], wps = ps.slice(0, -1).map(function (p) { return p.lat + ',' + p.lng; }).join('|');
-  return 'https://www.google.com/maps/dir/?api=1&destination=' + dest.lat + ',' + dest.lng +
-         (wps ? '&waypoints=' + encodeURIComponent(wps) : '') + '&travelmode=driving';
+  var ll = function (p) { return p.lat + ',' + p.lng; };
+  var dest, wps, completo;
+  if (fim && ps.length <= 9) { dest = fim; wps = ps; completo = true; }
+  else { var lote = ps.slice(0, 10); dest = lote[lote.length - 1]; wps = lote.slice(0, -1); completo = ps.length <= 10 && !fim; }
+  var url = 'https://www.google.com/maps/dir/?api=1' + (origem ? '&origin=' + ll(origem) : '') +
+            '&destination=' + ll(dest) + (wps.length ? '&waypoints=' + encodeURIComponent(wps.map(ll).join('|')) : '') + '&travelmode=driving';
+  return { url: url, completo: completo, qtd: wps.length + (completo && fim ? 0 : 1) };
 }
 
 // ── Formatação ──────────────────────────────────────────────────────────────

@@ -650,9 +650,13 @@ function inverterRota() {
   recalcularOrdem(pend.slice().reverse(), 'Rota invertida');
 }
 function abrirRotaMaps() {
-  var l = linkRotaGoogle(pendentes());
+  // Antes da primeira baixa, a rota parte do início configurado (Vet Vida/casa); depois, de onde o motorista está
+  var origem = (!concluidas().length && LOCAIS.inicio !== 'gps') ? pontoDe(LOCAIS.inicio) : null;
+  var fim = LOCAIS.fim === 'ultima' ? null : pontoDe(LOCAIS.fim);
+  var l = linkRotaGoogle(pendentes(), origem, fim);
   if (!l) { toast('Nenhuma parada com localização.'); return; }
-  window.open(l, '_blank');
+  if (!l.completo) toast('O Google Maps aceita até 10 pontos por vez: abri as próximas ' + l.qtd + '. Depois toque em Maps de novo.');
+  window.open(l.url, '_blank');
 }
 
 // ── Edição manual de ordem ──────────────────────────────────────────────────

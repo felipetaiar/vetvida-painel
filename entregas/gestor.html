@@ -138,7 +138,8 @@ function renderKpis() {
   var semCoord = PARADAS.filter(function (p) { return !temCoord(p); }).length;
   var k = [
     [ROMS.length, 'Romaneios'], [t, 'Paradas'], [e, 'Entregues'], [o, 'Ocorrências'],
-    [t - e - o, 'Pendentes'], [semFoto, 'Entregues sem foto'], [semCoord, 'Sem localização']
+    [t - e - o, 'Pendentes'], [PARADAS.filter(function (p) { return p.carregado || p.status !== 'pendente'; }).length + ' / ' + t, 'No carro / saíram'],
+    [semFoto, 'Entregues sem foto'], [semCoord, 'Sem localização']
   ];
   document.getElementById('kpis').innerHTML = k.map(function (x) {
     return '<div class="kpi"><div class="v">' + x[0] + '</div><div class="l">' + x[1] + '</div></div>';

@@ -162,6 +162,7 @@ button{font-family:inherit;cursor:pointer}
   <div class="modal">
     <h2>Opções da rota</h2>
     <div class="s" id="op-sub"></div>
+    <div class="menu-item" onclick="fecharOpcoes();abrirCarga()"><span>📦</span>Carregar carro</div>
     <div class="menu-item" onclick="fecharOpcoes();EDITANDO=true;mostrar('rota')"><span>↕️</span>Mudar ordem com setas</div>
     <div class="menu-item" onclick="iniciarOrdemMapa()"><span>✍️</span>Ordenar tocando no mapa</div>
     <div class="menu-item" onclick="inverterRota()"><span>🔁</span>Inverter a rota</div>
@@ -174,7 +175,7 @@ button{font-family:inherit;cursor:pointer}
 </div>
 
 <!-- Editor de parada -->
-<div class="modal-bg" id="modal-editor" onclick="if(event.target===this)fecharEditor()">
+<div class="modal-bg" id="modal-editor" style="z-index:950" onclick="if(event.target===this)fecharEditor()">
   <div class="modal">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
       <h2>Editar parada</h2><button class="btn btn-p" style="padding:8px 14px" onclick="salvarEditor()">Concluído</button>
@@ -204,6 +205,15 @@ button{font-family:inherit;cursor:pointer}
       <button class="btn btn-s" onclick="duplicarParada()">⧉ Duplicar parada</button>
       <button class="btn btn-s" style="color:var(--red);border-color:var(--red)" onclick="removerParada()">🗑 Remover parada</button>
     </div>
+  </div>
+</div>
+
+<!-- Carregar carro -->
+<div class="modal-bg" id="modal-carga" onclick="if(event.target===this)fecharCarga()">
+  <div class="modal" style="max-height:96vh">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h2>📦 Carregar carro</h2><button class="btn btn-s" style="padding:8px 12px" onclick="fecharCarga()">Fechar</button></div>
+    <div class="s" id="cg-sub"></div>
+    <div id="cg-corpo"></div>
   </div>
 </div>
 
@@ -407,6 +417,10 @@ function renderRota() {
          '<button class="btn btn-s" onclick="abrirOpcoes()" title="Mais opções">⋯</button>';
   }
   h += '</div>';
+  var naoCarr = pend.filter(function (p) { return !p.carregado; }).length;
+  if (pend.length && !EDITANDO && !conc.length && naoCarr) {
+    h += '<button class="btn btn-s" style="width:100%;margin-bottom:10px" onclick="abrirCarga()">📦 Carregar carro (' + (pend.length - naoCarr) + '/' + pend.length + ' carregadas)</button>';
+  }
   if (pend.length && !EDITANDO) {
     h += '<div class="tog" onclick="abrirLocais()" style="cursor:pointer">🏁 <span>Início: <b>' + NOMES_INICIO[LOCAIS.inicio] + '</b> · Término: <b>' + NOMES_FIM[LOCAIS.fim] + '</b></span> <u style="color:var(--red);margin-left:auto">alterar</u></div>';
   }
@@ -468,6 +482,7 @@ function chips(p) {
     (p.refrigerado ? '<span class="chip" style="background:#e0f2fe;color:#0369a1">❄️ Refrigerado</span>' : '') +
     (p.tipo === 'coleta' ? '<span class="chip" style="background:#ede9fe;color:#6d28d9">↩ Coleta</span>' : '') +
     (p.avulsa ? '<span class="chip">Avulsa</span>' : '') +
+    (p.carregado ? '<span class="chip g">✔ No carro</span>' : '') +
     (p.fixar ? '<span class="chip r">📌 ' + (p.fixar === 'primeira' ? 'Primeira' : 'Última') + '</span>' : '') +
     (p.janela_inicio || p.janela_fim ? '<span class="chip' + (p._atraso ? ' a' : '') + '">🕒 ' + esc(p.janela_inicio || '…') + '–' + esc(p.janela_fim || '…') + (p._atraso ? ' · atraso' : '') + '</span>' : '') +
     ((p.volumes || p.volumes_erp || p.posicao) ? '<span class="chip">📦 ' + (p.volumes || p.volumes_erp ? (p.volumes || Math.round(p.volumes_erp)) + ' vol' : '') + (p.tamanho ? ' · ' + esc(p.tamanho) : '') + (p.posicao ? ' · ' + esc(p.posicao) : '') + '</span>' : '') +
@@ -979,6 +994,7 @@ function salvarEditor() {
     Object.assign(p, dados);
     if (p.cd_clien) NOTAS_CLI[p.cd_clien] = nota || null;
     fecharEditor();
+    if (document.getElementById('modal-carga').style.display === 'flex') renderCarga();
     toast(mudouOrdem ? 'Salvo. Toque em Reotimizar para aplicar a ordem/horário.' : 'Parada atualizada');
     render();
   }).catch(function (e) { toast('Erro ao salvar: ' + e.message); });
@@ -1025,6 +1041,58 @@ function removerParada() {
                       : sbPatch('entregas_paradas', 'id=eq.' + encodeURIComponent(p.id), { status: 'removida', ordem: null });
   acao.then(function () { fecharEditor(); toast('Parada removida'); carregar(true); })
     .catch(function (e) { toast('Erro: ' + e.message); });
+}
+
+// ── Carregar carro ─────────────────────────────────────────────────────────
+// A última entrega entra primeiro (fundo do carro); a primeira fica perto da porta.
+function posicaoSugerida(i, total) {
+  var t = i / Math.max(1, total);           // i = posição na ordem de entrega (0 = primeira)
+  return t < 1 / 3 ? 'Atrás' : t < 2 / 3 ? 'Meio' : 'Frente';
+}
+function abrirCarga() {
+  if (!romAtivo()) { toast('Abra uma carga primeiro.'); return; }
+  document.getElementById('modal-carga').style.display = 'flex';
+  renderCarga();
+}
+function fecharCarga() { document.getElementById('modal-carga').style.display = 'none'; render(); }
+function renderCarga() {
+  var r = romAtivo() || {}, pend = pendentes(), total = pend.length;
+  var semOrdem = pend.some(function (p) { return p.ordem == null; });
+  var feitos = pend.filter(function (p) { return p.carregado; }).length;
+  document.getElementById('cg-sub').textContent = (r.rota || '') + ' · romaneio ' + (r.nu_rom || '') + ' · ' + feitos + ' de ' + total + ' carregadas';
+  var h = '<div class="prog"><i style="width:' + (total ? feitos / total * 100 : 0) + '%"></i></div>';
+  if (semOrdem) h += '<div style="background:var(--amb-s);color:var(--amb);border-radius:10px;padding:10px;font-size:13px;margin:8px 0"><b>Otimize a rota antes de carregar</b> — a ordem de carga depende da ordem de entrega.<br><button class="btn btn-a" style="margin-top:8px" onclick="fecharCarga();otimizar()">⚡ Otimizar agora</button></div>';
+  h += '<div style="font-size:13px;color:var(--tx2);margin:10px 0">Carregue <b>de cima para baixo</b>: a última entrega vai primeiro, no fundo do carro; a primeira entrega fica perto da porta. Toque em cada cliente quando carregar.</div>';
+  // ordem de carga = inverso da ordem de entrega
+  pend.slice().reverse().forEach(function (p, k) {
+    var iEntrega = total - 1 - k, sug = p.posicao || posicaoSugerida(iEntrega, total);
+    var vol = p.volumes || (p.volumes_erp ? Math.round(p.volumes_erp) : null);
+    h += '<div class="item" style="cursor:pointer;' + (p.carregado ? 'opacity:.55' : '') + '" onclick="alternarCarregado(\'' + p.id + '\')">' +
+      '<div class="num' + (p.carregado ? ' ok' : '') + '">' + (p.carregado ? '✔' : (k + 1)) + '</div>' +
+      '<div class="inf"><h3>' + (p.refrigerado ? '❄️ ' : '') + esc(p.fantasia) + '</h3>' +
+      '<div class="s">Entrega nº ' + (concluidas().length + iEntrega + 1) + ' · NF ' + esc(numerosNF(p) || '—') + (vol ? ' · ' + vol + ' vol' : '') + (p.peso ? ' · ' + Number(p.peso).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' kg' : '') + '</div>' +
+      '<div class="s" style="color:var(--blu);font-weight:700">📍 ' + esc(sug) + (p.refrigerado ? ' · manter na caixa térmica' : '') + '</div></div>' +
+      '<div class="lado"><button class="ico" title="Editar localizador" onclick="event.stopPropagation();abrirEditor(\'' + p.id + '\')">✏️</button></div></div>';
+  });
+  if (total && feitos < total) h += '<button class="btn btn-g" style="width:100%;margin-top:8px" onclick="marcarTudoCarregado()">✔ Tudo carregado</button>';
+  else if (total) h += '<div class="vazio" style="padding:16px"><b>🚚 Carro carregado</b>Bom trabalho! Pode sair para a rota.</div>';
+  document.getElementById('cg-corpo').innerHTML = h;
+}
+function gravarCarga(ps, valor) {
+  var agora = new Date().toISOString(), total = pendentes().length, ordem = pendentes();
+  return Promise.all(ps.map(function (p) {
+    var dados = { carregado: valor, carregado_em: valor ? agora : null };
+    if (valor && !p.posicao) dados.posicao = posicaoSugerida(ordem.indexOf(p), total);
+    Object.assign(p, dados);
+    return sbPatch('entregas_paradas', 'id=eq.' + encodeURIComponent(p.id), dados);
+  })).catch(function (e) { toast('Erro ao salvar (rode o SQL v4 no Supabase?): ' + e.message); });
+}
+function alternarCarregado(id) {
+  var p = pendentes().find(function (x) { return x.id === id; }); if (!p) return;
+  gravarCarga([p], !p.carregado); renderCarga();
+}
+function marcarTudoCarregado() {
+  gravarCarga(pendentes().filter(function (p) { return !p.carregado; }), true); renderCarga();
 }
 
 // ── Parada avulsa ───────────────────────────────────────────────────────────

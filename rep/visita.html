@@ -234,6 +234,33 @@ function boughtSet(peds,meses){
   var s={};peds.forEach(function(p){if(p.d>=lim)p.itens.forEach(function(i){s[i.prod]=(s[i.prod]||0)+(Number(i.qtde)||0);});});
   return s;
 }
+// ── Ritmo de compra: meses (últimos 12, incl. o atual) com compra → distância mediana entre eles
+var ROTULO_RITMO={mensal:'mensal (todo mês)',bimestral:'bimestral (a cada ~2 meses)',trimestral:'trimestral (a cada ~3 meses)',esporadico:'esporádico (a cada 4+ meses)'};
+function idxMes(d){return d.getFullYear()*12+d.getMonth();}
+function perfilCadencia(datas){
+  var lim=idxMes(new Date())-11,seen={},u=[],ds=[];
+  datas.forEach(function(d){var i=idxMes(d);if(i>=lim){ds.push(d.getTime());if(!seen[i]){seen[i]=1;u.push(i);}}});
+  u.sort(function(a,b){return a-b;});ds.sort(function(a,b){return a-b;});
+  if(u.length<3)return {classe:null,n:u.length};
+  function med(v){v=v.slice().sort(function(a,b){return a-b;});return v.length%2?v[(v.length-1)/2]:(v[v.length/2-1]+v[v.length/2])/2;}
+  var gaps=[];for(var i=1;i<u.length;i++)gaps.push(u[i]-u[i-1]);
+  var m=med(gaps),gd=[];for(var k=1;k<ds.length;k++){var dd=Math.round((ds[k]-ds[k-1])/86400000);if(dd>0)gd.push(dd);}
+  var classe=m<=1?'mensal':m<=2?'bimestral':m<=3?'trimestral':'esporadico';
+  return {classe:classe,ciclo:Math.max(1,Math.round(m)),n:u.length,medDias:gd.length?med(gd):null};
+}
+// Momento da compra: onde o cliente está dentro do ciclo dele
+function momentoCompra(perfil,ultData){
+  if(!perfil||!perfil.classe||!ultData)return null;
+  var dias=diasEntre(ultData,new Date()),alvo=(perfil.classe==='mensal'&&perfil.medDias)?Math.max(7,Math.min(30.4,perfil.medDias)):perfil.ciclo*30.4,r=dias/alvo;
+  return {dias:dias,alvo:Math.round(alvo),restante:Math.round(alvo-dias),estado:r<0.5?'cedo':r<0.85?'proximo':r<1.15?'hora':'atrasado'};
+}
+function textoMomento(m){
+  if(!m)return '';
+  if(m.estado==='cedo')return 'Comprou há '+m.dias+' dias e o ritmo dele indica o próximo pedido só daqui a ~'+m.restante+' dias. Hoje vale mais cross-sell, relacionamento e plantar a campanha para o próximo pedido.';
+  if(m.estado==='proximo')return 'Próximo pedido previsto em ~'+m.restante+' dias: apresente a campanha já, para ele pedir dentro dela.';
+  if(m.estado==='hora')return 'Na hora de repor (ciclo de ~'+m.alvo+' dias, última compra há '+m.dias+'): apresente a campanha.';
+  return 'Reposição atrasada em ~'+(m.dias-m.alvo)+' dias: confirme se algo mudou (estoque, concorrente) e apresente a campanha.';
+}
 // Janela mensal: 6 meses completos antes do mês atual; para cliente mais novo, desde o mês da 1ª compra.
 // Meses sem compra CONTAM no denominador (média = total ÷ meses da janela).
 function janelaMensal(peds){
@@ -253,6 +280,7 @@ function resumoCliente(peds){
   peds.forEach(function(p){if(p.d>=j.ini&&p.d<j.fim){tj+=p.total;ms[p.d.getFullYear()+'-'+p.d.getMonth()]=1;}});
   r.fatMensal=tj/j.meses;r.mesesComCompra=Object.keys(ms).length;
   r.ult=peds[peds.length-1];r.dias=diasEntre(r.ult.d,hoje);
+  r.perfil=perfilCadencia(peds.map(function(p){return p.d;}));r.momento=momentoCompra(r.perfil,r.ult.d);
   var lim=new Date();lim.setMonth(lim.getMonth()-12);
   var p12=peds.filter(function(p){return p.d>=lim;});
   if(p12.length>=3){var gaps=[];for(var i=1;i<p12.length;i++){gaps.push(diasEntre(p12[i-1].d,p12[i].d));}
@@ -266,13 +294,18 @@ function resumoCliente(peds){
   return r;
 }
 // Campanha: quantidade por PEDIDO (6 meses) para a faixa; consumo MENSAL (meses sem compra contam) para sugerir agrupar pedidos
-function planoCampanha(peds){
+function planoCampanha(peds,perfilCli){
   var plano={ativas:[],semCompra:[]};
   if(typeof CAMPANHA==='undefined'||!CAMPANHA.regras)return plano;
   var p6=ult6m(peds),j=janelaMensal(peds);
   CAMPANHA.regras.forEach(function(r){
     var set={};r.produtos.forEach(function(n){set[n]=1;});
     var qtds=[],ultVal=0,ultQ=0,unidJanela=0,mesesCom={};
+    var datasL=[],ultL=null;
+    peds.forEach(function(p){var h=false;p.itens.forEach(function(i){if(set[i.prod])h=true;});if(h){datasL.push(p.d);ultL=p.d;}});
+    var perfL=perfilCadencia(datasL),perfEf=perfL.classe?perfL:((perfilCli&&perfilCli.classe)?perfilCli:null);
+    var capMeses=perfEf?Math.max(3,Math.min(perfEf.ciclo,6)):3;      // quanto consumo um pedido pode cobrir
+    var momL=perfL.classe?momentoCompra(perfL,ultL):null;
     peds.forEach(function(p){
       if(p.d>=j.ini&&p.d<j.fim){var q=0;p.itens.forEach(function(i){if(set[i.prod])q+=Number(i.qtde)||0;});if(q){unidJanela+=q;mesesCom[p.d.getFullYear()+'-'+p.d.getMonth()]=1;}}
     });
@@ -295,20 +328,20 @@ function planoCampanha(peds){
     // consumo mensal: já cobriria faixa maior se agrupasse os pedidos do mês?
     var mensal=unidJanela/j.meses,mm=Math.floor(mensal+1e-9),tm=null;
     var cobertura=(sug&&mensal>0)?sug.qtd/mensal:0;           // meses de consumo que a faixa sugerida representa
-    var excesso=!!(sug&&cobertura>3);                          // > 3 meses de consumo: não empurrar estoque
+    var excesso=!!(sug&&cobertura>capMeses);                   // acima do ciclo do cliente (mín. 3 meses): não empurrar estoque
     var sugOriginal=sug;if(excesso)sug=null;
     // Dentro da mesma faixa: cliente já está na faixa atual e a próxima é distante/estoque demais →
     // sobe o gatilho (ex.: 6–7 un a 5% em vez das 5 que ele já pediria). Teto: faixa seguinte -1 e 3 meses de consumo.
     var gat=null;
     if(!sug&&atual&&prox){
-      var inc=Math.max(1,Math.ceil(a*0.25)),cap3=Math.floor(mensal*3+1e-9);
+      var inc=Math.max(1,Math.ceil(a*0.25)),cap3=Math.floor(mensal*capMeses+1e-9);
       var alvo=Math.min(a+inc,prox.min-1,cap3);
       if(alvo>a)gat={de:a,ate:alvo,pct:atual.pct,min:atual.min};
     }
     faixas.forEach(function(f){if(f.min<=mm)tm=f;});
     var agrupar=(tm&&(!atual||tm.pct>atual.pct))?tm:null;
     var preco=ultQ?ultVal/ultQ:0;
-    plano.ativas.push({regra:r,faixas:faixas,pedidos:qtds.length,media:media,a:a,atual:atual,prox:prox,sug:sug,preco:preco,gat:gat,distante:!!(prox&&!sug&&!excesso&&!gat),excesso:excesso?{qtd:sugOriginal.qtd,meses:cobertura}:null,cobertura:cobertura,mensal:mensal,mesesCom:Object.keys(mesesCom).length,mesesBase:j.meses,agrupar:agrupar});
+    plano.ativas.push({regra:r,faixas:faixas,pedidos:qtds.length,media:media,a:a,atual:atual,prox:prox,sug:sug,preco:preco,gat:gat,perfL:perfL,perfEf:perfEf,capMeses:capMeses,momL:momL,distante:!!(prox&&!sug&&!excesso&&!gat),excesso:excesso?{qtd:sugOriginal.qtd,meses:cobertura}:null,cobertura:cobertura,mensal:mensal,mesesCom:Object.keys(mesesCom).length,mesesBase:j.meses,agrupar:agrupar});
   });
   plano.ativas.sort(function(x,y){return (y.sug||y.gat||y.agrupar?1:0)-(x.sug||x.gat||x.agrupar?1:0)||y.media-x.media;});
   return plano;
@@ -411,7 +444,7 @@ function crossSell(peds,plano,ritmo){
   return out.slice(0,8);
 }
 function calcularContexto(c){
-  var peds=pedidosEx(c.cod),resumo=resumoCliente(peds),plano=planoCampanha(peds),ritmo=ritmoMeta();
+  var peds=pedidosEx(c.cod),resumo=resumoCliente(peds),plano=planoCampanha(peds,resumo.perfil),ritmo=ritmoMeta();
   var h=HIST[c.cod]||HIST[String(c.cod)]||{};
   var parados=(h.parados||[]).filter(function(p){return labKey(p.lab);}).slice(0,8);
   return {peds:peds,resumo:resumo,plano:plano,ritmo:ritmo,cross:crossSell(peds,plano,ritmo),parados:parados,sb:{estoque:null,acoes:null,contatos:null,visitas:null,erro:false}};
@@ -472,7 +505,10 @@ function htmlEtapa1(){
     corpo+='<div class="kv"><span>Faturamento médio mensal ('+r.mesesBase+(r.mesesBase===1?' mês':' meses')+', contando meses sem compra)</span><b>'+brl(r.fatMensal)+'</b></div>';
     corpo+='<div class="kv"><span>Meses com compra na janela</span><b>'+r.mesesComCompra+' de '+r.mesesBase+'</b></div>';
     corpo+='<div class="kv"><span>Valor médio por pedido · pedidos em 6 meses</span><b>'+brl(r.ticket)+' · '+r.n6+'</b></div>';
-    if(r.ciclo!=null){var rest=r.ciclo-r.dias;corpo+='<div class="kv"><span>Ciclo de compra típico</span><b>a cada '+r.ciclo+' dias '+(rest<=0?'<span class="pill r">reposição vencida há '+(-rest)+'d</span>':'<span class="pill b">faltam ~'+rest+'d</span>')+'</b></div>';}
+    var pf=r.perfil;
+    if(pf&&pf.classe){var mo=r.momento,cm={cedo:'b',proximo:'y',hora:'g',atrasado:'r'}[mo.estado],tm={cedo:'cedo para novo pedido',proximo:'próximo pedido em ~'+mo.restante+'d',hora:'na hora de repor',atrasado:'reposição atrasada'}[mo.estado];
+      corpo+='<div class="kv"><span>Ritmo de compra (12 meses)</span><b>'+esc(ROTULO_RITMO[pf.classe])+((pf.classe==='mensal'&&pf.medDias&&pf.medDias<=25)?' · pedidos a cada ~'+Math.round(pf.medDias)+' dias':'')+' <span class="pill '+cm+'">'+tm+'</span></b></div>';}
+    else corpo+='<div class="kv"><span>Ritmo de compra (12 meses)</span><b class="muted">poucos dados ('+(pf?pf.n:0)+' mês(es) com compra)</b></div>';
     corpo+='<div class="kv"><span>Mês atual / mês anterior</span><b>'+brl0(r.fatMes)+' / '+brl0(r.fatMesAnt)+'</b></div>';
   }
   h+=cardCk('compras','🛒 Compras',corpo);
@@ -525,6 +561,9 @@ var ofertaMeta={};
 function htmlEtapa2(){
   ofertaMeta={};
   var h='',pl=CTX.plano,rit=CTX.ritmo;
+  // momento da compra (ritmo do cliente)
+  if(CTX.resumo.momento){var mo2=CTX.resumo.momento,cor2={cedo:['#e0f2fe','#075985'],proximo:['#fef3c7','#92400e'],hora:['#dcfce7','#166534'],atrasado:['#fee2e2','#991b1b']}[mo2.estado];
+    h+='<div class="warn" style="background:'+cor2[0]+';border-color:transparent;color:'+cor2[1]+'">⏱ <b>Momento da compra · '+esc(ROTULO_RITMO[CTX.resumo.perfil.classe])+'</b><br>'+esc(textoMomento(mo2))+'</div>';}
   // meta
   if(rit.length){
     h+='<div class="card"><h3>📈 Meta do mês × ritmo ('+REP+')</h3>';
@@ -546,7 +585,8 @@ function htmlEtapa2(){
       ofertaMeta[chave]={tipo:'campanha',nome:x.regra.nome,qtd:x.sug?x.sug.qtd:(x.gat?x.gat.ate:null)};
       var tiers=x.faixas.map(function(f){return f.min+'→'+f.pct+'%';}).join(' · ');
       var mensTxt=x.mensal.toFixed(1).replace('.',',');
-      var linha='<div class="s">Consumo mensal <b>'+mensTxt+' un</b> (6 meses, meses sem compra contam; comprou em '+x.mesesCom+' de '+x.mesesBase+')</div><div class="s">Média '+qtdTxt+' un/pedido ('+x.pedidos+(x.pedidos===1?' pedido':' pedidos')+') · '+(x.atual?'já atinge <b>'+x.atual.pct+'%</b>':'abaixo da 1ª faixa')+(x.regra.mix?' · MIX na linha':'')+'<br>Faixas: '+tiers+'</div>';
+      var ritTxt=x.perfL&&x.perfL.classe?('Ritmo desta linha: <b>'+esc(ROTULO_RITMO[x.perfL.classe])+'</b>'+(x.momL?' · '+({cedo:'cedo para novo pedido',proximo:'próximo pedido em ~'+x.momL.restante+'d',hora:'na hora de repor',atrasado:'reposição atrasada'}[x.momL.estado]):'')):(x.perfEf?'Ritmo geral do cliente: '+esc(ROTULO_RITMO[x.perfEf.classe])+' (poucos dados nesta linha)':'Ritmo: poucos dados');
+      var linha='<div class="s">'+ritTxt+'</div><div class="s">Consumo mensal <b>'+mensTxt+' un</b> (6 meses, meses sem compra contam; comprou em '+x.mesesCom+' de '+x.mesesBase+')</div><div class="s">Média '+qtdTxt+' un/pedido ('+x.pedidos+(x.pedidos===1?' pedido':' pedidos')+') · '+(x.atual?'já atinge <b>'+x.atual.pct+'%</b>':'abaixo da 1ª faixa')+(x.regra.mix?' · MIX na linha':'')+'<br>Faixas: '+tiers+'</div>';
       var sug='';
       if(x.sug){
         var ganho=x.preco?(x.sug.qtd*x.preco):0;
@@ -635,7 +675,7 @@ function montarPayload(){
     resultado:V.resultado,houve_pedido:V.resultado==='pedido_fechado',
     valor_pedido:(V.resultado==='pedido_fechado'&&V.valor_pedido!=='')?Number(V.valor_pedido):null,
     campanha_mes:(typeof CAMPANHA!=='undefined')?CAMPANHA.mes:null,
-    checklist:{conferidos:V.checklist,resumo:CTX?{dias_ult_compra:CTX.resumo.dias,fat_mensal_6m:Math.round(CTX.resumo.fatMensal),meses_com_compra:CTX.resumo.mesesComCompra,meses_janela:CTX.resumo.mesesBase}:null},
+    checklist:{conferidos:V.checklist,resumo:CTX?{dias_ult_compra:CTX.resumo.dias,fat_mensal_6m:Math.round(CTX.resumo.fatMensal),meses_com_compra:CTX.resumo.mesesComCompra,meses_janela:CTX.resumo.mesesBase,ritmo:(CTX.resumo.perfil&&CTX.resumo.perfil.classe)||null}:null},
     ofertas:ofs.filter(function(o){return o.tipo!=='cross';}),
     cross_sell:ofs.filter(function(o){return o.tipo==='cross';}),
     objecao:V.objecoes.length?V.objecoes.join(', '):null,

@@ -297,12 +297,20 @@ function planoCampanha(peds){
     var cobertura=(sug&&mensal>0)?sug.qtd/mensal:0;           // meses de consumo que a faixa sugerida representa
     var excesso=!!(sug&&cobertura>3);                          // > 3 meses de consumo: não empurrar estoque
     var sugOriginal=sug;if(excesso)sug=null;
+    // Dentro da mesma faixa: cliente já está na faixa atual e a próxima é distante/estoque demais →
+    // sobe o gatilho (ex.: 6–7 un a 5% em vez das 5 que ele já pediria). Teto: faixa seguinte -1 e 3 meses de consumo.
+    var gat=null;
+    if(!sug&&atual&&prox){
+      var inc=Math.max(1,Math.ceil(a*0.25)),cap3=Math.floor(mensal*3+1e-9);
+      var alvo=Math.min(a+inc,prox.min-1,cap3);
+      if(alvo>a)gat={de:a,ate:alvo,pct:atual.pct,min:atual.min};
+    }
     faixas.forEach(function(f){if(f.min<=mm)tm=f;});
     var agrupar=(tm&&(!atual||tm.pct>atual.pct))?tm:null;
     var preco=ultQ?ultVal/ultQ:0;
-    plano.ativas.push({regra:r,faixas:faixas,pedidos:qtds.length,media:media,a:a,atual:atual,prox:prox,sug:sug,preco:preco,distante:!!(prox&&!sug&&!excesso),excesso:excesso?{qtd:sugOriginal.qtd,meses:cobertura}:null,cobertura:cobertura,mensal:mensal,mesesCom:Object.keys(mesesCom).length,mesesBase:j.meses,agrupar:agrupar});
+    plano.ativas.push({regra:r,faixas:faixas,pedidos:qtds.length,media:media,a:a,atual:atual,prox:prox,sug:sug,preco:preco,gat:gat,distante:!!(prox&&!sug&&!excesso&&!gat),excesso:excesso?{qtd:sugOriginal.qtd,meses:cobertura}:null,cobertura:cobertura,mensal:mensal,mesesCom:Object.keys(mesesCom).length,mesesBase:j.meses,agrupar:agrupar});
   });
-  plano.ativas.sort(function(x,y){return (y.sug||y.agrupar?1:0)-(x.sug||x.agrupar?1:0)||y.media-x.media;});
+  plano.ativas.sort(function(x,y){return (y.sug||y.gat||y.agrupar?1:0)-(x.sug||x.gat||x.agrupar?1:0)||y.media-x.media;});
   return plano;
 }
 // Meta × ritmo do rep (labs exclusivos), a partir do histórico da carteira
@@ -535,7 +543,7 @@ function htmlEtapa2(){
     if(!pl.ativas.length)h+='<p class="muted">O cliente não comprou nenhum produto da campanha nos últimos 6 meses.</p>';
     pl.ativas.forEach(function(x){
       var chave='camp:'+x.regra.id,qtdTxt=x.media.toFixed(1).replace('.',',');
-      ofertaMeta[chave]={tipo:'campanha',nome:x.regra.nome,qtd:x.sug?x.sug.qtd:null};
+      ofertaMeta[chave]={tipo:'campanha',nome:x.regra.nome,qtd:x.sug?x.sug.qtd:(x.gat?x.gat.ate:null)};
       var tiers=x.faixas.map(function(f){return f.min+'→'+f.pct+'%';}).join(' · ');
       var mensTxt=x.mensal.toFixed(1).replace('.',',');
       var linha='<div class="s">Consumo mensal <b>'+mensTxt+' un</b> (6 meses, meses sem compra contam; comprou em '+x.mesesCom+' de '+x.mesesBase+')</div><div class="s">Média '+qtdTxt+' un/pedido ('+x.pedidos+(x.pedidos===1?' pedido':' pedidos')+') · '+(x.atual?'já atinge <b>'+x.atual.pct+'%</b>':'abaixo da 1ª faixa')+(x.regra.mix?' · MIX na linha':'')+'<br>Faixas: '+tiers+'</div>';
@@ -543,6 +551,9 @@ function htmlEtapa2(){
       if(x.sug){
         var ganho=x.preco?(x.sug.qtd*x.preco):0;
         sug='<div class="sug">👉 Sugira <b>'+x.sug.qtd+' un</b> no pedido (+'+x.sug.mais+' sobre a média) para liberar <b>'+x.sug.pct+'% de desconto</b>'+(x.cobertura?' (~'+x.cobertura.toFixed(1).replace('.',',')+' mês de consumo)':'')+(ganho?' · pedido da linha ≈ '+brl0(ganho)+' antes do desconto':'')+'. Assim o desconto vem com volume, não de graça.</div>';
+      }else if(x.gat){
+        var g=x.gat,faixaTxt=(g.ate>g.de+1)?((g.de+1)+' a '+g.ate):String(g.ate);
+        sug='<div class="sug">🎯 Ele já pede ~'+g.de+' un e fica em <b>'+g.pct+'%</b>. Em vez de '+g.de+' un, sugira <b>'+faixaTxt+' un</b> na mesma faixa de '+g.pct+'% (sem passar para a faixa seguinte, que está fora do consumo dele). O desconto continua o mesmo: o ganho é volume.</div>';
       }else if(x.excesso)sug='<div class="s">Faixa de '+x.excesso.qtd+' un equivale a ~'+Math.round(x.excesso.meses)+' meses de consumo do cliente — não force: mantenha o pedido habitual.</div>';
       else if(x.distante)sug='<div class="s">Próxima faixa ('+x.prox.min+' un) está longe da média — mantenha o pedido habitual, sem forçar desconto.</div>';
       else if(x.atual&&!x.prox)sug='<div class="s">✔ Já está na faixa máxima.</div>';

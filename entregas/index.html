@@ -192,7 +192,7 @@ button{font-family:inherit;cursor:pointer}
       <div class="seg" data-campo="pos2" style="margin-bottom:6px"><button data-v="Esquerda">Esquerda</button><button data-v="Direita">Direita</button></div>
       <div class="seg" data-campo="pos3"><button data-v="Chão">Chão</button><button data-v="Prateleira">Prateleira</button></div>
     </div>
-    <div class="fg"><label>Ordem</label><div class="seg" data-campo="fixar"><button data-v="primeira">Primeira</button><button data-v="">Automática</button><button data-v="ultima">Última</button></div></div>
+    <div class="fg"><label>Ordem</label><div class="seg" data-campo="fixar"><button data-v="primeira">Prioritária</button><button data-v="">Automática</button><button data-v="ultima">Última</button></div></div>
     <div class="grid2">
       <div class="fg"><label>Chegar a partir de</label><input type="time" id="ed-ji" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:10px;font-size:15px"></div>
       <div class="fg"><label>Chegar até</label><input type="time" id="ed-jf" style="width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:10px;font-size:15px"></div>
@@ -423,6 +423,12 @@ function renderRota() {
     h += '<button class="btn btn-s" style="width:100%;margin-bottom:10px" onclick="abrirCarga()">📦 Carregar carro (' + (pend.length - naoCarr) + '/' + pend.length + ' carregadas)</button>';
   }
   if (pend.length && !EDITANDO) {
+    var nFrio = pend.filter(function (p) { return p.refrigerado; }).length;
+    if (nFrio) {
+      var on = LOCAIS.prioFrio !== false;
+      h += '<button onclick="alternarPrioFrio()" style="width:100%;margin-bottom:8px;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:13px;font-weight:800;text-align:left;cursor:pointer;' +
+        (on ? 'background:#e0f2fe;color:#0369a1;border:1.5px solid #0284c7' : 'background:var(--sf);color:var(--tx2);border:1.5px solid var(--bd)') + '">❄️ Priorizar entregas com gelo (' + nFrio + ') <span style="float:right">' + (on ? 'LIGADO' : 'DESLIGADO') + '</span></button>';
+    }
     h += '<div class="tog" onclick="abrirLocais()" style="cursor:pointer">🏁 <span>Início: <b>' + NOMES_INICIO[LOCAIS.inicio] + '</b> · Término: <b>' + NOMES_FIM[LOCAIS.fim] + '</b></span> <u style="color:var(--red);margin-left:auto">alterar</u></div>';
   }
 
@@ -484,7 +490,7 @@ function chips(p) {
     (p.tipo === 'coleta' ? '<span class="chip" style="background:#ede9fe;color:#6d28d9">↩ Coleta</span>' : '') +
     (p.avulsa ? '<span class="chip">Avulsa</span>' : '') +
     (p.carregado ? '<span class="chip g">✔ No carro</span>' : '') +
-    (p.fixar ? '<span class="chip r">📌 ' + (p.fixar === 'primeira' ? 'Primeira' : 'Última') + '</span>' : '') +
+    (p.fixar ? '<span class="chip r">' + (p.fixar === 'primeira' ? '⭐ Prioritária' : '📌 Última') + '</span>' : '') +
     (p.janela_inicio || p.janela_fim ? '<span class="chip' + (p._atraso ? ' a' : '') + '">🕒 ' + esc(p.janela_inicio || '…') + '–' + esc(p.janela_fim || '…') + (p._atraso ? ' · atraso' : '') + '</span>' : '') +
     ((p.volumes || p.volumes_erp || p.posicao) ? '<span class="chip">📦 ' + (p.volumes || p.volumes_erp ? (p.volumes || Math.round(p.volumes_erp)) + ' vol' : '') + (p.tamanho ? ' · ' + esc(p.tamanho) : '') + (p.posicao ? ' · ' + esc(p.posicao) : '') + '</span>' : '') +
     (p.reentrega ? '<span class="chip a">Reentrega</span>' : '') +
@@ -512,10 +518,25 @@ function cardParada(p, titulo, fechavel, ehProxima) {
       '<button class="btn btn-g" onclick="abrirModal(\'entregue\',\'' + p.id + '\')">✔ Entregue</button>' +
       '<button class="btn btn-a" onclick="abrirModal(\'ocorrencia\',\'' + p.id + '\')">⚠ Ocorrência</button></div>' +
     (p.telefone ? '<a class="btn btn-s" style="width:100%;margin-top:8px" href="tel:' + esc(p.telefone) + '">📞 Ligar ' + esc(fmtTel(p.telefone)) + '</a>' : '') +
+    (p.status === 'pendente' ? '<button class="btn btn-s" style="width:100%;margin-top:8px;' + (p.fixar === 'primeira' ? 'background:#fef3c7;border-color:#d97706;color:#92400e' : '') + '" onclick="alternarPrioridade(\'' + p.id + '\')">' +
+      (p.fixar === 'primeira' ? '★ Prioritária — tirar prioridade' : '⭐ Priorizar esta entrega') + '</button>' : '') +
     (ehProxima
       ? (pendentes().length > 1 ? '<button class="btn btn-s" style="width:100%;margin-top:8px" onclick="pularParada(\'' + p.id + '\')">⏭ Pular — deixar esta para depois</button>' : '')
       : '<button class="btn btn-p" style="width:100%;margin-top:8px" onclick="comecarPor(\'' + p.id + '\')">▶ Ir para esta agora</button>') +
     '</div>';
+}
+function alternarPrioFrio() {
+  LOCAIS.prioFrio = LOCAIS.prioFrio === false; salvarLocais();
+  toast(LOCAIS.prioFrio ? '❄️ Entregas com gelo vão primeiro' : 'Entregas com gelo sem prioridade');
+  if (pendentes().length > 1) otimizar(); else renderRota();
+}
+function alternarPrioridade(id) {
+  var p = TODAS.find(function (x) { return x.id === id; }); if (!p) return;
+  var novo = p.fixar === 'primeira' ? null : 'primeira';
+  sbPatch('entregas_paradas', 'id=eq.' + encodeURIComponent(id), { fixar: novo }).then(function () {
+    p.fixar = novo; ABERTO = null;
+    if (pendentes().length > 1) otimizar(); else renderRota();
+  }).catch(function (e) { toast('Erro: ' + e.message); });
 }
 function navPreferido() { return localStorage.getItem('vv_ent_nav') || 'maps'; }
 function lembrarNav(app) { localStorage.setItem('vv_ent_nav', app); AVISO = null; }
@@ -525,7 +546,7 @@ function comecarPor(id) {
   if (!temCoord(alvo)) { toast('Esta parada está sem localização: use ⋯ → Mudar ordem com setas.'); return; }
   var resto = pend.filter(function (p) { return p.id !== id; });
   var retorno = LOCAIS.fim === 'ultima' ? null : pontoDe(LOCAIS.fim);
-  var orden = ordemAutomatica(alvo, resto.filter(temCoord), retorno).ordem.concat(resto.filter(function (p) { return !temCoord(p); }));
+  var orden = ordemAutomatica(alvo, resto.filter(temCoord), retorno, LOCAIS.prioFrio !== false).ordem.concat(resto.filter(function (p) { return !temCoord(p); }));
   ABERTO = null; AVISO = null;
   recalcularOrdem([alvo].concat(orden), 'Indo para ' + alvo.fantasia).then(function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 }
@@ -615,7 +636,7 @@ function otimizar() {
   var b = document.getElementById('btn-otim'); if (b) { b.disabled = true; b.textContent = 'Otimizando…'; }
   var pend = pendentes();
   var retorno = LOCAIS.fim === 'ultima' ? null : pontoDe(LOCAIS.fim);
-  roteirizar(origem, pend, retorno, new Date()).then(function (res) {
+  roteirizar(origem, pend, retorno, new Date(), false, LOCAIS.prioFrio !== false).then(function (res) {
     return aplicarResultado(res, 'Rota otimizada');
   }).catch(function (e) {
     console.error(e); toast('Erro ao otimizar: ' + e.message); renderRota();

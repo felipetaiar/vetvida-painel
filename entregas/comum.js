@@ -211,12 +211,14 @@ function calcularEtas(ordem, legsSeg, inicio) {
   return { etas: etas, fim: new Date(t), atrasos: atrasos };
 }
 
-// Ordem automática em blocos: fixadas como primeira → refrigerados → demais → fixadas como última.
-function ordemAutomatica(origem, paradas, retorno) {
+// Ordem automática em blocos: prioritárias (fixadas como primeira) → refrigerados (se priorizar gelo) → demais → fixadas como última.
+function ordemAutomatica(origem, paradas, retorno, prioFrio) {
+  if (prioFrio === undefined) prioFrio = true;
+  var meio = function (p) { return p.fixar !== 'primeira' && p.fixar !== 'ultima'; };
   var blocos = [
     paradas.filter(function (p) { return p.fixar === 'primeira'; }),
-    paradas.filter(function (p) { return p.fixar !== 'primeira' && p.fixar !== 'ultima' && p.refrigerado; }),
-    paradas.filter(function (p) { return p.fixar !== 'primeira' && p.fixar !== 'ultima' && !p.refrigerado; }),
+    paradas.filter(function (p) { return meio(p) && prioFrio && p.refrigerado; }),
+    paradas.filter(function (p) { return meio(p) && !(prioFrio && p.refrigerado); }),
     paradas.filter(function (p) { return p.fixar === 'ultima'; })
   ].filter(function (b) { return b.length; });
   var ordem = [], ponto = origem;
@@ -228,12 +230,13 @@ function ordemAutomatica(origem, paradas, retorno) {
 }
 
 // Roteiriza. ordemFixa=true mantém a ordem recebida (inverter, ordem manual) e só recalcula tempos/traçado.
-function roteirizar(origem, paradas, retorno, inicio, ordemFixa) {
+function roteirizar(origem, paradas, retorno, inicio, ordemFixa, prioFrio) {
+  if (prioFrio === undefined) prioFrio = true;
   var com = paradas.filter(temCoord), sem = paradas.filter(function (p) { return !temCoord(p); });
   var base, manter = !!ordemFixa;
   if (ordemFixa) { base = com; }
-  else { var a = ordemAutomatica(origem, com, retorno); base = a.ordem; manter = a.blocos > 1; }
-  var frios = com.filter(function (p) { return p.refrigerado; }).length;
+  else { var a = ordemAutomatica(origem, com, retorno, prioFrio); base = a.ordem; manter = a.blocos > 1; }
+  var frios = (prioFrio && !ordemFixa) ? com.filter(function (p) { return p.refrigerado; }).length : 0;
   function local() { var est = estimarLegs(origem, base, retorno); return { ordem: base, legsSeg: est.legsSeg, km: est.km, polyline: null, fonte: 'local' }; }
   var prom = (ENT.GOOGLE_KEY && base.length)
     ? otimizarGoogle(origem, base, retorno, manter).catch(function (e) {

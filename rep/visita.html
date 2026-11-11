@@ -234,14 +234,27 @@ function boughtSet(peds,meses){
   var s={};peds.forEach(function(p){if(p.d>=lim)p.itens.forEach(function(i){s[i.prod]=(s[i.prod]||0)+(Number(i.qtde)||0);});});
   return s;
 }
+// Janela mensal: 6 meses completos antes do mês atual; para cliente mais novo, desde o mês da 1ª compra.
+// Meses sem compra CONTAM no denominador (média = total ÷ meses da janela).
+function janelaMensal(peds){
+  var h=new Date(),fim=new Date(h.getFullYear(),h.getMonth(),1),ini=new Date(h.getFullYear(),h.getMonth()-6,1);
+  if(peds.length){var pm=new Date(peds[0].d.getFullYear(),peds[0].d.getMonth(),1);if(pm>ini)ini=pm;}
+  var meses=(fim.getFullYear()-ini.getFullYear())*12+(fim.getMonth()-ini.getMonth());
+  return {ini:ini,fim:fim,meses:meses<1?1:meses};
+}
+function ult6m(peds){var l=new Date();l.setMonth(l.getMonth()-6);return peds.filter(function(p){return p.d>=l;});}
 function resumoCliente(peds){
-  var hoje=new Date(),r={n12:0,ticket:0,ult:null,dias:null,ciclo:null,fatMes:0,fatMesAnt:0};
+  var hoje=new Date(),r={n6:0,ticket:0,ult:null,dias:null,ciclo:null,fatMes:0,fatMesAnt:0,fatMensal:0,mesesBase:1,mesesComCompra:0};
   if(!peds.length)return r;
+  var j=janelaMensal(peds),p6=ult6m(peds);
+  r.n6=p6.length;r.mesesBase=j.meses;
+  if(p6.length){var t=0;p6.forEach(function(p){t+=p.total;});r.ticket=t/p6.length;}
+  var tj=0,ms={};
+  peds.forEach(function(p){if(p.d>=j.ini&&p.d<j.fim){tj+=p.total;ms[p.d.getFullYear()+'-'+p.d.getMonth()]=1;}});
+  r.fatMensal=tj/j.meses;r.mesesComCompra=Object.keys(ms).length;
+  r.ult=peds[peds.length-1];r.dias=diasEntre(r.ult.d,hoje);
   var lim=new Date();lim.setMonth(lim.getMonth()-12);
   var p12=peds.filter(function(p){return p.d>=lim;});
-  r.n12=p12.length;
-  if(p12.length){var t=0;p12.forEach(function(p){t+=p.total;});r.ticket=t/p12.length;}
-  r.ult=peds[peds.length-1];r.dias=diasEntre(r.ult.d,hoje);
   if(p12.length>=3){var gaps=[];for(var i=1;i<p12.length;i++){gaps.push(diasEntre(p12[i-1].d,p12[i].d));}
     gaps.sort(function(a,b){return a-b;});r.ciclo=gaps[Math.floor(gaps.length/2)];}
   var m=hoje.getMonth(),y=hoje.getFullYear();
@@ -252,16 +265,18 @@ function resumoCliente(peds){
   });
   return r;
 }
-// Campanha: média por PEDIDO do cliente em cada regra, faixa atual e próxima
+// Campanha: quantidade por PEDIDO (6 meses) para a faixa; consumo MENSAL (meses sem compra contam) para sugerir agrupar pedidos
 function planoCampanha(peds){
   var plano={ativas:[],semCompra:[]};
   if(typeof CAMPANHA==='undefined'||!CAMPANHA.regras)return plano;
-  var lim=new Date();lim.setMonth(lim.getMonth()-12);
-  var p12=peds.filter(function(p){return p.d>=lim;});
+  var p6=ult6m(peds),j=janelaMensal(peds);
   CAMPANHA.regras.forEach(function(r){
     var set={};r.produtos.forEach(function(n){set[n]=1;});
-    var qtds=[],ultVal=0,ultQ=0;
-    p12.forEach(function(p){
+    var qtds=[],ultVal=0,ultQ=0,unidJanela=0,mesesCom={};
+    peds.forEach(function(p){
+      if(p.d>=j.ini&&p.d<j.fim){var q=0;p.itens.forEach(function(i){if(set[i.prod])q+=Number(i.qtde)||0;});if(q){unidJanela+=q;mesesCom[p.d.getFullYear()+'-'+p.d.getMonth()]=1;}}
+    });
+    p6.forEach(function(p){
       var porProd={},tot=0,val=0;
       p.itens.forEach(function(i){if(set[i.prod]){var q=Number(i.qtde)||0;porProd[i.prod]=(porProd[i.prod]||0)+q;tot+=q;val+=Number(i.val)||0;}});
       if(!tot)return;
@@ -277,10 +292,17 @@ function planoCampanha(peds){
     for(var i=0;i<faixas.length;i++){if(faixas[i].min>a){prox=faixas[i];break;}}
     var sug=null;
     if(prox&&a>=1&&prox.min<=a*2)sug={qtd:prox.min,mais:prox.min-a,pct:prox.pct};
+    // consumo mensal: já cobriria faixa maior se agrupasse os pedidos do mês?
+    var mensal=unidJanela/j.meses,mm=Math.floor(mensal+1e-9),tm=null;
+    var cobertura=(sug&&mensal>0)?sug.qtd/mensal:0;           // meses de consumo que a faixa sugerida representa
+    var excesso=!!(sug&&cobertura>3);                          // > 3 meses de consumo: não empurrar estoque
+    var sugOriginal=sug;if(excesso)sug=null;
+    faixas.forEach(function(f){if(f.min<=mm)tm=f;});
+    var agrupar=(tm&&(!atual||tm.pct>atual.pct))?tm:null;
     var preco=ultQ?ultVal/ultQ:0;
-    plano.ativas.push({regra:r,faixas:faixas,pedidos:qtds.length,media:media,a:a,atual:atual,prox:prox,sug:sug,preco:preco,distante:!!(prox&&!sug)});
+    plano.ativas.push({regra:r,faixas:faixas,pedidos:qtds.length,media:media,a:a,atual:atual,prox:prox,sug:sug,preco:preco,distante:!!(prox&&!sug&&!excesso),excesso:excesso?{qtd:sugOriginal.qtd,meses:cobertura}:null,cobertura:cobertura,mensal:mensal,mesesCom:Object.keys(mesesCom).length,mesesBase:j.meses,agrupar:agrupar});
   });
-  plano.ativas.sort(function(x,y){return (y.sug?1:0)-(x.sug?1:0)||y.media-x.media;});
+  plano.ativas.sort(function(x,y){return (y.sug||y.agrupar?1:0)-(x.sug||x.agrupar?1:0)||y.media-x.media;});
   return plano;
 }
 // Meta × ritmo do rep (labs exclusivos), a partir do histórico da carteira
@@ -439,8 +461,9 @@ function htmlEtapa1(){
     var cor=r.dias>60?'r':r.dias>35?'y':'g';
     corpo+='<div class="kv"><span>Última compra</span><b>'+fmtData(r.ult.d)+' <span class="pill '+cor+'">'+r.dias+' dias</span></b></div>';
     corpo+='<div class="kv"><span>Valor da última</span><b>'+brl(r.ult.total)+'</b></div>';
-    corpo+='<div class="kv"><span>Ticket médio (12 meses)</span><b>'+brl(r.ticket)+'</b></div>';
-    corpo+='<div class="kv"><span>Pedidos em 12 meses</span><b>'+r.n12+'</b></div>';
+    corpo+='<div class="kv"><span>Faturamento médio mensal ('+r.mesesBase+(r.mesesBase===1?' mês':' meses')+', contando meses sem compra)</span><b>'+brl(r.fatMensal)+'</b></div>';
+    corpo+='<div class="kv"><span>Meses com compra na janela</span><b>'+r.mesesComCompra+' de '+r.mesesBase+'</b></div>';
+    corpo+='<div class="kv"><span>Valor médio por pedido · pedidos em 6 meses</span><b>'+brl(r.ticket)+' · '+r.n6+'</b></div>';
     if(r.ciclo!=null){var rest=r.ciclo-r.dias;corpo+='<div class="kv"><span>Ciclo de compra típico</span><b>a cada '+r.ciclo+' dias '+(rest<=0?'<span class="pill r">reposição vencida há '+(-rest)+'d</span>':'<span class="pill b">faltam ~'+rest+'d</span>')+'</b></div>';}
     corpo+='<div class="kv"><span>Mês atual / mês anterior</span><b>'+brl0(r.fatMes)+' / '+brl0(r.fatMesAnt)+'</b></div>';
   }
@@ -509,18 +532,21 @@ function htmlEtapa2(){
     var hoje=new Date(),mesAtual=hoje.getFullYear()+'-'+('0'+(hoje.getMonth()+1)).slice(-2);
     if(camp.mes!==mesAtual)h+='<div class="warn">⚠️ A campanha carregada é a de <b>'+esc(camp.rotulo)+'</b>. Confirme com o gestor se ela continua valendo neste mês.</div>';
     h+='<div class="card"><h3>🏷 Campanha '+esc(camp.rotulo)+' × média do cliente</h3>';
-    if(!pl.ativas.length)h+='<p class="muted">O cliente não comprou nenhum produto da campanha nos últimos 12 meses.</p>';
+    if(!pl.ativas.length)h+='<p class="muted">O cliente não comprou nenhum produto da campanha nos últimos 6 meses.</p>';
     pl.ativas.forEach(function(x){
       var chave='camp:'+x.regra.id,qtdTxt=x.media.toFixed(1).replace('.',',');
       ofertaMeta[chave]={tipo:'campanha',nome:x.regra.nome,qtd:x.sug?x.sug.qtd:null};
       var tiers=x.faixas.map(function(f){return f.min+'→'+f.pct+'%';}).join(' · ');
-      var linha='<div class="s">Média '+qtdTxt+' un/pedido ('+x.pedidos+(x.pedidos===1?' pedido':' pedidos')+') · '+(x.atual?'já atinge <b>'+x.atual.pct+'%</b>':'abaixo da 1ª faixa')+(x.regra.mix?' · MIX na linha':'')+'<br>Faixas: '+tiers+'</div>';
+      var mensTxt=x.mensal.toFixed(1).replace('.',',');
+      var linha='<div class="s">Consumo mensal <b>'+mensTxt+' un</b> (6 meses, meses sem compra contam; comprou em '+x.mesesCom+' de '+x.mesesBase+')</div><div class="s">Média '+qtdTxt+' un/pedido ('+x.pedidos+(x.pedidos===1?' pedido':' pedidos')+') · '+(x.atual?'já atinge <b>'+x.atual.pct+'%</b>':'abaixo da 1ª faixa')+(x.regra.mix?' · MIX na linha':'')+'<br>Faixas: '+tiers+'</div>';
       var sug='';
       if(x.sug){
         var ganho=x.preco?(x.sug.qtd*x.preco):0;
-        sug='<div class="sug">👉 Sugira <b>'+x.sug.qtd+' un</b> no pedido (+'+x.sug.mais+' sobre a média) para liberar <b>'+x.sug.pct+'% de desconto</b>'+(ganho?' · pedido da linha ≈ '+brl0(ganho)+' antes do desconto':'')+'. Assim o desconto vem com volume, não de graça.</div>';
-      }else if(x.distante)sug='<div class="s">Próxima faixa ('+x.prox.min+' un) está longe da média — mantenha o pedido habitual, sem forçar desconto.</div>';
+        sug='<div class="sug">👉 Sugira <b>'+x.sug.qtd+' un</b> no pedido (+'+x.sug.mais+' sobre a média) para liberar <b>'+x.sug.pct+'% de desconto</b>'+(x.cobertura?' (~'+x.cobertura.toFixed(1).replace('.',',')+' mês de consumo)':'')+(ganho?' · pedido da linha ≈ '+brl0(ganho)+' antes do desconto':'')+'. Assim o desconto vem com volume, não de graça.</div>';
+      }else if(x.excesso)sug='<div class="s">Faixa de '+x.excesso.qtd+' un equivale a ~'+Math.round(x.excesso.meses)+' meses de consumo do cliente — não force: mantenha o pedido habitual.</div>';
+      else if(x.distante)sug='<div class="s">Próxima faixa ('+x.prox.min+' un) está longe da média — mantenha o pedido habitual, sem forçar desconto.</div>';
       else if(x.atual&&!x.prox)sug='<div class="s">✔ Já está na faixa máxima.</div>';
+      if(x.agrupar)sug+='<div class="sug">📦 O consumo mensal ('+mensTxt+' un) já alcançaria <b>'+x.agrupar.pct+'%</b> ('+x.agrupar.min+' un): sugira concentrar o mês em um único pedido em vez de pedidos pequenos.</div>';
       var nota='';
       if(x.regra.exclusiva_com)nota='<div class="s">⚠️ Não cumulativa com o desconto do grupo Carprofen / Doxi / Enro Flec / Fort Cam: vale a melhor para o cliente.</div>';
       if(x.regra.bonus_exclusivo_do_desconto)nota='<div class="s">🎁 Bonificação (50 un → +25 de 50 mg · 100 un → +100 de 50 mg) <b>não soma</b> com o desconto: escolha uma.</div>';
@@ -531,7 +557,7 @@ function htmlEtapa2(){
     if(pl.semCompra.length){
       var seg=norm((BASEMAP[CLI.cod]||{}).segmento);
       var lista=pl.semCompra.map(function(x){var cb=parcela(x.regra.nome,seg);var maxp=0;x.regra.produtos.forEach(function(n){var pc=parcela(n,seg);if(pc.p>maxp)maxp=pc.p;});return {x:x,p:Math.max(maxp,cb.p)};}).sort(function(a,b){return b.p-a.p;}).slice(0,6);
-      h+='<div class="card"><h3>➕ Na campanha, ainda não compra</h3>';
+      h+='<div class="card"><h3>➕ Na campanha, sem compra nos últimos 6 meses</h3>';
       lista.forEach(function(it){
         var r=it.x.regra,chave='campnova:'+r.id,f1=it.x.faixas[0];
         ofertaMeta[chave]={tipo:'campanha_nova',nome:r.nome,qtd:f1?f1.min:null};
@@ -598,7 +624,7 @@ function montarPayload(){
     resultado:V.resultado,houve_pedido:V.resultado==='pedido_fechado',
     valor_pedido:(V.resultado==='pedido_fechado'&&V.valor_pedido!=='')?Number(V.valor_pedido):null,
     campanha_mes:(typeof CAMPANHA!=='undefined')?CAMPANHA.mes:null,
-    checklist:{conferidos:V.checklist,resumo:CTX?{dias_ult_compra:CTX.resumo.dias,ticket_medio:Math.round(CTX.resumo.ticket)}:null},
+    checklist:{conferidos:V.checklist,resumo:CTX?{dias_ult_compra:CTX.resumo.dias,fat_mensal_6m:Math.round(CTX.resumo.fatMensal),meses_com_compra:CTX.resumo.mesesComCompra,meses_janela:CTX.resumo.mesesBase}:null},
     ofertas:ofs.filter(function(o){return o.tipo!=='cross';}),
     cross_sell:ofs.filter(function(o){return o.tipo==='cross';}),
     objecao:V.objecoes.length?V.objecoes.join(', '):null,

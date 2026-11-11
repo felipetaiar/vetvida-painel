@@ -40,7 +40,7 @@ tr.oc td{background:#fffbeb}
 .filtros{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
 .filtros button{font-family:inherit;font-size:12px;font-weight:700;border:1px solid var(--bd);background:var(--sf);border-radius:20px;padding:5px 12px;cursor:pointer;color:var(--tx2)}
 .filtros button.on{background:var(--red);border-color:var(--red);color:#fff}
-.foto-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:900;cursor:zoom-out}
+.foto-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:2100;cursor:zoom-out}
 .foto-bg img{max-width:94vw;max-height:90vh;border-radius:8px}
 </style>
 </head>
@@ -49,6 +49,7 @@ tr.oc td{background:#fffbeb}
   <img src="/logo.jpg" alt="Vet Vida">
   <div><h1>Entregas</h1><p id="atualizado">Carregando…</p></div>
   <div class="dir">
+    <form onsubmit="buscarNF();return false" style="display:flex;gap:4px"><input type="text" id="busca-nf" placeholder="Nº da NF" inputmode="numeric" style="width:110px"><button type="submit">🔎 Canhoto</button></form>
     <input type="date" id="dia" onchange="carregar()">
     <button onclick="carregar()">🔄 Atualizar</button>
     <a href="/entregas/">📱 Ver como motorista</a>
@@ -76,6 +77,9 @@ tr.oc td{background:#fffbeb}
   </div>
 </div>
 <div class="foto-bg" id="foto-bg" onclick="this.style.display='none'"><img id="foto-big" alt=""></div>
+<div class="foto-bg" id="nf-bg" style="cursor:default;z-index:2000" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#fff;border-radius:14px;max-width:760px;width:94vw;max-height:90vh;overflow:auto;padding:18px" id="nf-corpo"></div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/entregas/comum.js"></script>
@@ -194,7 +198,7 @@ function renderTabela() {
   document.getElementById('tbody').innerHTML = lista.length ? lista.map(function (p) {
     var r = romDe(p);
     var st = { pendente: 'Pendente', entregue: 'Entregue', ocorrencia: 'Ocorrência' }[p.status] || p.status;
-    var det = p.status === 'entregue' ? esc(p.recebedor || '—') : p.status === 'ocorrencia' ? '<b>' + esc(p.ocorrencia_tipo || '') + '</b>' : (p.eta ? 'previsão ' + fmtHora(p.eta) : '');
+    var det = p.status === 'entregue' ? esc(p.recebedor || '—') + (p.recebedor_doc ? '<br><span style="color:var(--tx2)">doc. ' + esc(p.recebedor_doc) + '</span>' : '') : p.status === 'ocorrencia' ? '<b>' + esc(p.ocorrencia_tipo || '') + '</b>' : (p.eta ? 'previsão ' + fmtHora(p.eta) : '');
     if (p.obs) det += '<br><span style="color:var(--tx2)">' + esc(p.obs) + '</span>';
     return '<tr class="' + (p.status === 'ocorrencia' ? 'oc' : '') + '"><td>' + (p.ordem || '—') + '</td>' +
       '<td><b>' + (p.refrigerado ? '❄️ ' : '') + (p.tipo === 'coleta' ? '↩ ' : '') + esc(p.fantasia) + '</b>' + (p.avulsa ? ' <span style="color:var(--tx3)">(avulsa)</span>' : '') +
@@ -254,6 +258,46 @@ function imprimirRom(nu) {
   var r = ROMS.find(function (x) { return x.nu_rom === nu; }); if (!r) return;
   var ps = PARADAS.filter(function (p) { return romDaParada(p) === nu; }).sort(function (a, b) { return (a.ordem || 9999) - (b.ordem || 9999); });
   imprimirRota(r, ps, NOME_MOT[r.cd_motor]);
+}
+// ── Consulta de canhoto por número de NF (qualquer data) ─────────────────────
+function buscarNF() {
+  var n = parseInt(String(document.getElementById('busca-nf').value).replace(/\D/g, ''), 10);
+  if (!n) return;
+  var corpo = document.getElementById('nf-corpo');
+  corpo.innerHTML = '<div class="vazio">Procurando NF ' + n + '…</div>';
+  document.getElementById('nf-bg').style.display = 'flex';
+  var q = function (campo) { var o = {}; o[campo] = n; return sbGet('entregas_paradas?notas=cs.' + encodeURIComponent(JSON.stringify([o])) + '&order=baixa_em.desc.nullslast'); };
+  Promise.all([q('nf'), q('nu_nf')]).then(function (rs) {
+    var vistos = {}, ps = rs[0].concat(rs[1]).filter(function (p) { if (vistos[p.id]) return false; vistos[p.id] = 1; return true; });
+    if (!ps.length) { corpo.innerHTML = '<div class="vazio"><b>Nenhuma entrega encontrada para a NF ' + n + '</b><br>Confira o número ou se a nota entrou em algum romaneio.</div>' + botaoFechar(); return; }
+    var roms = ps.map(romDaParada).filter(function (v, i, a) { return a.indexOf(v) === i; });
+    return sbGet('entregas_romaneios?nu_rom=in.(' + roms.join(',') + ')').then(function (rr) {
+      var mapa = {}; rr.forEach(function (r) { mapa[r.nu_rom] = r; });
+      corpo.innerHTML = ps.map(function (p) { return fichaCanhoto(p, mapa[romDaParada(p)] || {}, n); }).join('<hr style="border:none;border-top:1px solid var(--bd);margin:16px 0">') + botaoFechar();
+    });
+  }).catch(function (e) { corpo.innerHTML = '<div class="vazio">Erro: ' + esc(e.message) + '</div>' + botaoFechar(); });
+}
+function botaoFechar() { return '<button onclick="document.getElementById(\'nf-bg\').style.display=\'none\'" style="margin-top:14px;width:100%;font-family:inherit;font-weight:700;border:1px solid var(--bd);background:#fff;border-radius:8px;padding:10px;cursor:pointer">Fechar</button>'; }
+function fichaCanhoto(p, r, nBusca) {
+  var st = { pendente: 'Pendente (ainda não entregue)', entregue: 'Entregue', ocorrencia: 'Ocorrência', removida: 'Removida da rota' }[p.status] || p.status;
+  var nfs = (p.notas || []).map(function (x) { return x.nf || x.nu_nf; }).join(', ');
+  var linha = function (k, v) { return v ? '<tr><td style="color:var(--tx2);width:150px;padding:4px 0">' + k + '</td><td style="padding:4px 0"><b>' + v + '</b></td></tr>' : ''; };
+  return '<h2 style="font-size:17px;margin-bottom:2px">NF ' + esc(nfs) + ' — ' + esc(p.fantasia) + '</h2>' +
+    '<div style="color:var(--tx2);font-size:13px;margin-bottom:10px">' + esc(enderecoTexto(p)) + '</div>' +
+    '<span class="st ' + esc(p.status) + '">' + esc(st) + '</span>' +
+    '<table style="margin:10px 0;font-size:13px">' +
+      linha('Romaneio', (r.rota ? esc(r.rota) + ' · ' : '') + romDaParada(p)) +
+      linha('Motorista', esc(NOME_MOT[r.cd_motor] || r.cd_motor || '')) +
+      linha('Data/hora da baixa', p.baixa_em ? new Date(p.baixa_em).toLocaleString('pt-BR') : '') +
+      linha('Recebido por', esc(p.recebedor || '')) +
+      linha('Documento', esc(p.recebedor_doc || '')) +
+      linha('Ocorrência', esc(p.ocorrencia_tipo || '')) +
+      linha('Observação', esc(p.obs || '')) +
+      linha('Local da baixa', p.baixa_lat ? '<a target="_blank" href="https://www.google.com/maps?q=' + p.baixa_lat + ',' + p.baixa_lng + '">ver no mapa</a>' : '') +
+    '</table>' +
+    (p.foto_url ? '<a href="' + esc(p.foto_url) + '" target="_blank"><img src="' + esc(p.foto_url) + '" style="width:100%;border-radius:10px;border:1px solid var(--bd)"></a>' +
+                  '<div style="font-size:12px;color:var(--tx2);margin-top:4px">Toque na foto para abrir em tamanho real e baixar.</div>'
+                : '<div class="vazio" style="padding:12px">Sem foto do canhoto.</div>');
 }
 function verFoto(src) { document.getElementById('foto-big').src = src; document.getElementById('foto-bg').style.display = 'flex'; }
 </script>

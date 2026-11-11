@@ -115,6 +115,7 @@ button{font-family:inherit;cursor:pointer}
     <div class="fg" id="fg-receb">
       <label>Quem recebeu</label>
       <input type="text" id="m-receb" placeholder="Nome de quem recebeu" autocomplete="off">
+      <input type="text" id="m-doc" placeholder="Documento (RG ou CPF)" autocomplete="off" inputmode="text" style="margin-top:8px">
     </div>
     <div class="fg">
       <label id="m-foto-lbl">Foto do canhoto</label>
@@ -467,7 +468,7 @@ function renderRota() {
     conc.forEach(function (p) {
       var ok = p.status === 'entregue';
       h += '<div class="item"><div class="num ' + (ok ? 'ok' : 'oc') + '">' + (ok ? '✔' : '!') + '</div>' +
-        '<div class="inf"><h3>' + esc(p.fantasia) + '</h3><div class="s">' + (ok ? 'Entregue' + (p.recebedor ? ' a ' + esc(p.recebedor) : '') : esc(p.ocorrencia_tipo || 'Ocorrência')) +
+        '<div class="inf"><h3>' + esc(p.fantasia) + '</h3><div class="s">' + (ok ? 'Entregue' + (p.recebedor ? ' a ' + esc(p.recebedor) : '') + (p.recebedor_doc ? ' (doc. ' + esc(p.recebedor_doc) + ')' : '') : esc(p.ocorrencia_tipo || 'Ocorrência')) +
         ' · ' + fmtHora(p.baixa_em) + (p._fila ? ' · ⏳ enviando' : '') + '</div></div>' +
         '<div class="lado"><button class="ico" title="Reabrir" onclick="reabrir(\'' + p.id + '\')">↩</button></div></div>';
     });
@@ -803,6 +804,7 @@ function abrirModal(modo, id) {
   document.getElementById('m-foto-lbl').textContent = oc ? 'Foto (opcional)' : 'Foto do canhoto assinado';
   document.getElementById('m-tipo').innerHTML = OCORRENCIAS.map(function (o) { return '<option>' + o + '</option>'; }).join('');
   document.getElementById('m-receb').value = '';
+  document.getElementById('m-doc').value = '';
   document.getElementById('m-obs').value = '';
   document.getElementById('m-foto').value = '';
   document.getElementById('m-foto-txt').textContent = 'Tirar foto';
@@ -823,11 +825,14 @@ function fotoEscolhida(inp) {
 function confirmarBaixa() {
   if (!MODAL) return;
   var p = MODAL.parada, oc = MODAL.modo === 'ocorrencia';
+  if (!oc && !document.getElementById('m-receb').value.trim()) { toast('Informe o nome de quem recebeu.'); return; }
+  if (!oc && !document.getElementById('m-doc').value.trim() && !confirm('Confirmar sem o documento de quem recebeu?')) return;
   if (!oc && !MODAL.foto && !confirm('Confirmar a entrega sem foto do canhoto?')) return;
   var dados = {
     status: oc ? 'ocorrencia' : 'entregue',
     ocorrencia_tipo: oc ? document.getElementById('m-tipo').value : null,
     recebedor: oc ? null : (document.getElementById('m-receb').value.trim() || null),
+    recebedor_doc: oc ? null : (document.getElementById('m-doc').value.trim() || null),
     obs: document.getElementById('m-obs').value.trim() || null,
     baixa_em: new Date().toISOString(),
     baixa_lat: POS ? POS.lat : null, baixa_lng: POS ? POS.lng : null
@@ -844,7 +849,7 @@ function confirmarBaixa() {
 function reabrir(id) {
   var p = PARADAS.find(function (x) { return x.id === id; }); if (!p) return;
   if (!confirm('Reabrir "' + p.fantasia + '" e voltar para pendente?')) return;
-  var dados = { status: 'pendente', ocorrencia_tipo: null, recebedor: null, obs: null, foto_url: null, baixa_em: null, baixa_lat: null, baixa_lng: null };
+  var dados = { status: 'pendente', ocorrencia_tipo: null, recebedor: null, recebedor_doc: null, obs: null, foto_url: null, baixa_em: null, baixa_lat: null, baixa_lng: null };
   Object.assign(p, dados);
   enfileirar({ tipo: 'baixa', id: p.id, nu_rom: romDaParada(p), dados: dados, foto: null });
   renderRota(); processarFila();
@@ -878,7 +883,12 @@ function processarFila() {
     ? sbUploadFoto(op.nu_rom + '/' + op.id + '-' + op.criado + '.jpg', dataUrlParaBlob(op.foto)).then(function (url) { op.dados.foto_url = url; })
     : Promise.resolve();
   passo.then(function () {
-    return sbPatch('entregas_paradas', 'id=eq.' + encodeURIComponent(op.id), op.dados);
+    return sbPatch('entregas_paradas', 'id=eq.' + encodeURIComponent(op.id), op.dados).catch(function (e) {
+      // Se a coluna do documento ainda não existir no Supabase, grava o resto da baixa mesmo assim
+      if (String(e.message).indexOf('recebedor_doc') < 0) throw e;
+      var d = Object.assign({}, op.dados); delete d.recebedor_doc;
+      return sbPatch('entregas_paradas', 'id=eq.' + encodeURIComponent(op.id), d);
+    });
   }).then(function () {
     return atualizarStatusRomaneio(op.nu_rom);
   }).then(function () {

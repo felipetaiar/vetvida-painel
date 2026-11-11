@@ -301,7 +301,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
 <div class="hdr">
   <button onclick="abrirMenuLateral()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">☰</button>
   <img src="logo.jpg" alt="Vet Vida" onerror="this.style.display='none'">
-  <div class="hi"><h1>Vet Hub</h1><p id="sub">Carregando...</p></div>
+  <div class="hi"><h1>Vet Hub</h1><p id="sub">Carregando...</p><p id="sync-info" style="font-size:9px;color:var(--muted);margin-top:1px;opacity:0.7;"></p></div>
   <div class="hr" style="display:flex;align-items:center;gap:8px;"><span id="notif-sininho-placeholder"></span><span class="hrep" id="badge">...</span></div>
 </div>
 
@@ -314,6 +314,7 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(
   </div>
   <div style="padding:10px;">
     <a href="rep.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#CC0000;text-decoration:none;font-weight:700;font-size:14px;background:#fdf2f2;margin-bottom:4px;">🏠 Reativação</a>
+    <a href="visita.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">▶ Iniciar visita</a>
     <a href="estoque.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">📦 Estoque</a>
     <a href="roteiro.html" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;text-decoration:none;font-weight:600;font-size:14px;">🗓 Roteiro</a>
     <button onclick="fecharMenuLateral();abrirCalculadora();" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#1f2937;background:none;border:none;font-weight:600;font-size:14px;cursor:pointer;">🧮 Calculadora</button>
@@ -597,6 +598,10 @@ var STATUS_CORES={
   'Cliente inativo':{bg:'#D9D9D9',txt:'#333'}
 };
 
+function buscarSincronizacao(){
+  var el = document.getElementById('sync-info');
+  if(el && typeof SINCRONIZADO_EM !== 'undefined') el.textContent = 'Atualizado: ' + SINCRONIZADO_EM;
+}
 function sair(){sessionStorage.clear();localStorage.removeItem('vv_auth');localStorage.removeItem('vv_perfil');localStorage.removeItem('vv_user');localStorage.removeItem('vv_lembrar');window.location.href='/?logout=1';}
 function fmtFat(v){var n=parseFloat(v)||0;return 'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
@@ -648,6 +653,7 @@ function init(){
     });
   },600);
   document.getElementById('badge').textContent=REP;
+  buscarSincronizacao();
   var _d=new Date(),_mn=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];document.getElementById('sub').innerHTML='Ref: '+_mn[_d.getMonth()]+'/'+_d.getFullYear()+'<br>Area: '+(AREAS_LABEL_DATA[REP]||'');
   document.getElementById('ct').textContent=TG;
   document.getElementById('ca').textContent=CL.filter(function(c){return c.tipo==='alta';}).length;
@@ -849,6 +855,7 @@ function rnd(){
     h+='</div></div>';
     h+='<div style="text-align:right;margin-top:8px;display:flex;gap:6px;justify-content:flex-end">';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" data-mun="'+encodeURIComponent(c.municipio)+'" onclick="var el=this;irEstoque(parseInt(el.dataset.cod),el.dataset.nome,el.dataset.mun);" style="background:#375623;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer">📦 Contar estoque</button>';
+    h+='<button data-cod="'+c.cod+'" onclick="sessionStorage.setItem(\'visita_cod\',this.dataset.cod);window.location.href=\'visita.html\';" style="background:#c44040;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer;margin-left:6px">▶ Iniciar visita</button>';
     h+='<button data-cod="'+c.cod+'" data-nome="'+encodeURIComponent(c.nome)+'" onclick="var el=this;abrirHist(parseInt(el.dataset.cod),decodeURIComponent(el.dataset.nome));" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:bold;cursor:pointer">Ver historico completo</button>';
     h+='</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">';

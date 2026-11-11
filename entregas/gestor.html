@@ -49,7 +49,7 @@ tr.oc td{background:#fffbeb}
   <img src="/logo.jpg" alt="Vet Vida">
   <div><h1>Entregas</h1><p id="atualizado">Carregando…</p></div>
   <div class="dir">
-    <form onsubmit="buscarNF();return false" style="display:flex;gap:4px"><input type="text" id="busca-nf" placeholder="Nº da NF" inputmode="numeric" style="width:110px"><button type="submit">🔎 Canhoto</button></form>
+    <form onsubmit="buscarNF();return false" style="display:flex;gap:4px"><input type="text" id="busca-nf" placeholder="NF ou cliente" style="width:170px"><button type="submit">🔎 Buscar</button></form>
     <input type="date" id="dia" onchange="carregar()">
     <button onclick="carregar()">🔄 Atualizar</button>
     <a href="/entregas/">📱 Ver como motorista</a>
@@ -260,22 +260,70 @@ function imprimirRom(nu) {
   imprimirRota(r, ps, NOME_MOT[r.cd_motor]);
 }
 // ── Consulta de canhoto por número de NF (qualquer data) ─────────────────────
+var BUSCA = { ps: [], roms: {} };
+// Busca no painel: número → NF (oficial ou interna) ou código do cliente; texto → nome fantasia ou razão social
 function buscarNF() {
-  var n = parseInt(String(document.getElementById('busca-nf').value).replace(/\D/g, ''), 10);
-  if (!n) return;
+  var txt = String(document.getElementById('busca-nf').value).trim();
+  if (!txt) return;
   var corpo = document.getElementById('nf-corpo');
-  corpo.innerHTML = '<div class="vazio">Procurando NF ' + n + '…</div>';
+  corpo.innerHTML = '<div class="vazio">Procurando ' + esc(txt) + '…</div>';
   document.getElementById('nf-bg').style.display = 'flex';
-  var q = function (campo) { var o = {}; o[campo] = n; return sbGet('entregas_paradas?notas=cs.' + encodeURIComponent(JSON.stringify([o])) + '&order=baixa_em.desc.nullslast'); };
-  Promise.all([q('nf'), q('nu_nf')]).then(function (rs) {
-    var vistos = {}, ps = rs[0].concat(rs[1]).filter(function (p) { if (vistos[p.id]) return false; vistos[p.id] = 1; return true; });
-    if (!ps.length) { corpo.innerHTML = '<div class="vazio"><b>Nenhuma entrega encontrada para a NF ' + n + '</b><br>Confira o número ou se a nota entrou em algum romaneio.</div>' + botaoFechar(); return; }
+  var soNum = /^\d+$/.test(txt.replace(/[.\-\s]/g, ''));
+  var buscas;
+  if (soNum) {
+    var n = parseInt(txt.replace(/\D/g, ''), 10);
+    var q = function (campo) { var o = {}; o[campo] = n; return sbGet('entregas_paradas?notas=cs.' + encodeURIComponent(JSON.stringify([o])) + '&order=baixa_em.desc.nullslast'); };
+    buscas = [q('nf'), q('nu_nf'), sbGet('entregas_paradas?cd_clien=eq.' + n + '&order=sincronizado_em.desc&limit=200')];
+  } else {
+    var termo = txt.replace(/[*,()"]/g, ' ').trim().replace(/\s+/g, '*');
+    buscas = [sbGet('entregas_paradas?or=' + encodeURIComponent('(fantasia.ilike.*' + termo + '*,razao.ilike.*' + termo + '*)') + '&order=sincronizado_em.desc&limit=300')];
+  }
+  Promise.all(buscas).then(function (rs) {
+    var vistos = {}, ps = [].concat.apply([], rs).filter(function (p) { if (vistos[p.id]) return false; vistos[p.id] = 1; return true; });
+    if (!ps.length) { corpo.innerHTML = '<div class="vazio"><b>Nada encontrado para "' + esc(txt) + '"</b><br>Tente o número da NF, o código, parte do nome fantasia ou da razão social.</div>' + botaoFechar(); return; }
     var roms = ps.map(romDaParada).filter(function (v, i, a) { return a.indexOf(v) === i; });
     return sbGet('entregas_romaneios?nu_rom=in.(' + roms.join(',') + ')').then(function (rr) {
-      var mapa = {}; rr.forEach(function (r) { mapa[r.nu_rom] = r; });
-      corpo.innerHTML = ps.map(function (p) { return fichaCanhoto(p, mapa[romDaParada(p)] || {}, n); }).join('<hr style="border:none;border-top:1px solid var(--bd);margin:16px 0">') + botaoFechar();
+      BUSCA.ps = ps; BUSCA.roms = {}; rr.forEach(function (r) { BUSCA.roms[r.nu_rom] = r; });
+      // NF exata com um só resultado → ficha direto; senão, lista por cliente
+      if (soNum && ps.length === 1) { mostrarFicha(ps[0].id, false); return; }
+      mostrarListaBusca(txt);
     });
   }).catch(function (e) { corpo.innerHTML = '<div class="vazio">Erro: ' + esc(e.message) + '</div>' + botaoFechar(); });
+}
+function dataDaParada(p) { var r = BUSCA.roms[romDaParada(p)] || {}; return p.baixa_em || r.dt_montagem || p.dt_prevista || p.sincronizado_em; }
+function mostrarListaBusca(txt) {
+  var porCli = {};
+  BUSCA.ps.forEach(function (p) { var k = p.cd_clien || ('av:' + p.fantasia); (porCli[k] = porCli[k] || []).push(p); });
+  var h = '<h2 style="font-size:17px;margin-bottom:4px">Resultado para "' + esc(txt) + '"</h2>' +
+    '<div style="color:var(--tx2);font-size:13px;margin-bottom:12px">' + BUSCA.ps.length + ' entrega(s) em ' + Object.keys(porCli).length + ' cliente(s). Toque numa linha para ver o canhoto.</div>';
+  Object.keys(porCli).forEach(function (k) {
+    var ps = porCli[k].sort(function (a, b) { return new Date(dataDaParada(b)) - new Date(dataDaParada(a)); }), c = ps[0];
+    h += '<div style="border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:12px">' +
+      '<div style="font-weight:800">' + esc(c.fantasia || '') + (c.cd_clien ? ' <span style="color:var(--tx3);font-weight:600">· cód. ' + c.cd_clien + '</span>' : '') + '</div>' +
+      (c.razao && c.razao !== c.fantasia ? '<div style="font-size:12px;color:var(--tx2)">' + esc(c.razao) + '</div>' : '') +
+      '<div style="font-size:12px;color:var(--tx2);margin-bottom:6px">' + esc(enderecoTexto(c)) + ' · ' + ps.length + ' romaneio(s)</div>' +
+      '<table style="font-size:12.5px"><thead><tr><th>Data</th><th>Romaneio</th><th>Motorista</th><th>NF</th><th>Status</th><th>Recebido por</th><th>Foto</th></tr></thead><tbody>' +
+      ps.map(function (p) {
+        var r = BUSCA.roms[romDaParada(p)] || {};
+        var st = { pendente: 'Pendente', entregue: 'Entregue', ocorrencia: 'Ocorrência', removida: 'Removida' }[p.status] || p.status;
+        return '<tr style="cursor:pointer" onclick="mostrarFicha(\'' + p.id + '\',true)">' +
+          '<td>' + (dataDaParada(p) ? new Date(dataDaParada(p)).toLocaleDateString('pt-BR') : '') + '</td>' +
+          '<td>' + esc(r.rota || '') + ' · ' + romDaParada(p) + '</td>' +
+          '<td>' + esc(NOME_MOT[r.cd_motor] || r.cd_motor || '') + '</td>' +
+          '<td>' + (p.notas || []).map(function (x) { return x.nf || x.nu_nf; }).join('<br>') + '</td>' +
+          '<td><span class="st ' + esc(p.status) + '">' + esc(st) + '</span>' + (p.ocorrencia_tipo ? '<br><small>' + esc(p.ocorrencia_tipo) + '</small>' : '') + '</td>' +
+          '<td>' + esc(p.recebedor || '') + '</td>' +
+          '<td>' + (p.foto_url ? '📷' : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  });
+  document.getElementById('nf-corpo').innerHTML = h + botaoFechar();
+  BUSCA.txt = txt;
+}
+function mostrarFicha(id, comVoltar) {
+  var p = BUSCA.ps.find(function (x) { return x.id === id; }); if (!p) return;
+  document.getElementById('nf-corpo').innerHTML =
+    (comVoltar ? '<button onclick="mostrarListaBusca(BUSCA.txt)" style="font-family:inherit;font-weight:700;border:1px solid var(--bd);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;margin-bottom:12px">← Voltar à lista</button>' : '') +
+    fichaCanhoto(p, BUSCA.roms[romDaParada(p)] || {}) + botaoFechar();
 }
 function botaoFechar() { return '<button onclick="document.getElementById(\'nf-bg\').style.display=\'none\'" style="margin-top:14px;width:100%;font-family:inherit;font-weight:700;border:1px solid var(--bd);background:#fff;border-radius:8px;padding:10px;cursor:pointer">Fechar</button>'; }
 function fichaCanhoto(p, r, nBusca) {

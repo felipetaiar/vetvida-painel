@@ -299,7 +299,7 @@ function trocarMotorista(u) {
 function carregar(silencioso) {
   if (!silencioso) document.getElementById('v-rota').innerHTML = '<div class="carreg">Carregando cargas…</div>';
   return sbGet('entregas_romaneios?cd_motor=eq.' + encodeURIComponent(MOT.cd) +
-               '&or=' + encodeURIComponent('(status_app.neq.finalizado,finalizado_em.gte."' + isoDiasAtras(0) + '")') + '&dt_montagem=gte.' + encodeURIComponent(isoDiasAtras(ENT.DIAS_JANELA)) +
+               '&or=' + encodeURIComponent('(status_app.in.(pendente,em_rota),and(status_app.eq.finalizado,finalizado_em.gte."' + isoDiasAtras(0) + '"))') + '&dt_montagem=gte.' + encodeURIComponent(isoDiasAtras(ENT.DIAS_JANELA)) +
                '&order=dt_montagem.asc')
     .then(function (roms) {
       ROMS = roms;
@@ -930,7 +930,7 @@ function atualizarStatusRomaneio(nu) {
     var r = ROMS.find(function (x) { return x.nu_rom === nu; }) || {};
     var dados;
     if (!pend && ps.length) dados = { status_app: 'finalizado', finalizado_em: new Date().toISOString() };
-    else if (r.status_app !== 'em_rota') dados = { status_app: 'em_rota', iniciado_em: r.iniciado_em || new Date().toISOString(), finalizado_em: null };
+    else if (r.status_app !== 'em_rota' && r.situacao_erp !== 'EN' && r.status_app !== 'cancelado') dados = { status_app: 'em_rota', iniciado_em: r.iniciado_em || new Date().toISOString(), finalizado_em: null };
     if (!dados) return;
     Object.assign(r, dados);
     return sbPatch('entregas_romaneios', 'nu_rom=eq.' + nu, dados);
@@ -997,7 +997,7 @@ function abrirEditor(id) {
   document.getElementById('ed-end').value = '';
   var sel = document.getElementById('ed-transf');
   sel.innerHTML = '<option value="">Carregando romaneios…</option>';
-  sbGet('entregas_romaneios?status_app=neq.finalizado&dt_montagem=gte.' + encodeURIComponent(isoDiasAtras(ENT.DIAS_JANELA)) + '&order=dt_montagem.asc').then(function (rs) {
+  sbGet('entregas_romaneios?status_app=in.(pendente,em_rota)&dt_montagem=gte.' + encodeURIComponent(isoDiasAtras(ENT.DIAS_JANELA)) + '&order=dt_montagem.asc').then(function (rs) {
     var nomes = {}; Object.keys(ENT.MOTORISTAS).forEach(function (u) { nomes[ENT.MOTORISTAS[u].cd] = ENT.MOTORISTAS[u].nome; });
     sel.innerHTML = '<option value="">Escolha…</option>' + rs.filter(function (r) { return r.nu_rom !== romDaParada(p); }).map(function (r) {
       return '<option value="' + r.nu_rom + '">' + esc(r.rota) + ' · rom. ' + r.nu_rom + ' · ' + esc(nomes[r.cd_motor] || r.cd_motor || '') + '</option>';

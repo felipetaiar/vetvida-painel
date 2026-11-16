@@ -41,6 +41,7 @@ tr.oc td{background:#fffbeb}
 .filtros button{font-family:inherit;font-size:12px;font-weight:700;border:1px solid var(--bd);background:var(--sf);border-radius:20px;padding:5px 12px;cursor:pointer;color:var(--tx2)}
 .filtros button.on{background:var(--red);border-color:var(--red);color:#fff}
 .foto-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:2100;cursor:zoom-out}
+.bt-rom{font-family:inherit;font-size:12px;font-weight:700;border:1px solid var(--bd);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;color:var(--tx)}
 .foto-bg img{max-width:94vw;max-height:90vh;border-radius:8px}
 </style>
 </head>
@@ -110,9 +111,9 @@ function carregar() {
   sbGet('entregas_romaneios?dt_montagem=gte.' + encodeURIComponent(ini.toISOString()) +
         '&dt_montagem=lt.' + encodeURIComponent(fim.toISOString()) + '&order=dt_montagem.asc')
     .then(function (roms) {
-      ROMS = roms.filter(function (r) {
+      ROMS = roms.filter(function (r) { return r.status_app !== 'cancelado'; }).filter(function (r) {
         return mesmoDia(r.dt_montagem, dia) || (r.finalizado_em && mesmoDia(r.finalizado_em, dia)) ||
-               (r.iniciado_em && mesmoDia(r.iniciado_em, dia)) || (ehHoje && r.status_app !== 'finalizado');
+               (r.iniciado_em && mesmoDia(r.iniciado_em, dia)) || (ehHoje && (r.status_app === 'pendente' || r.status_app === 'em_rota'));
       });
       if (!ROMS.length) return [];
       var ids = ROMS.map(function (r) { return r.nu_rom; }).join(',');
@@ -167,11 +168,11 @@ function renderMotoristas() {
       '<div class="s">' + e + ' entregue' + (e === 1 ? '' : 's') + (o ? ' · ' + o + ' ocorrência' + (o > 1 ? 's' : '') : '') +
       (ult ? ' · última baixa ' + fmtHora(ult) : ' · nenhuma baixa ainda') + '</div>' +
       porMot[cd].map(function (r) {
-        var st = r.status_app === 'finalizado' ? '✅ finalizado ' + fmtHora(r.finalizado_em) : r.status_app === 'em_rota' ? '🚚 em rota desde ' + fmtHora(r.iniciado_em) : '⏸ não iniciado';
-        var np = PARADAS.filter(function (p) { return romDaParada(p) === r.nu_rom; }).length;
-        return '<div class="rom"><span><b>' + esc(r.rota) + '</b> · rom. ' + r.nu_rom + ' · ' + np + ' paradas' +
-               (r.km_estimado ? ' · ~' + Math.round(r.km_estimado) + ' km' : '') +
-               ' · <a href="#" onclick="imprimirRom(' + r.nu_rom + ');return false" style="color:var(--red)">🖨️ imprimir</a></span><span>' + st + '</span></div>';
+        var ps = PARADAS.filter(function (p) { return romDaParada(p) === r.nu_rom; });
+        var feitos = ps.filter(function (p) { return p.status !== 'pendente'; }).length;
+        return '<div class="rom" style="cursor:pointer;border-radius:8px;padding:4px 6px;margin:2px -6px" onmouseover="this.style.background=\'#f6f7f9\'" onmouseout="this.style.background=\'\'" onclick="abrirRomaneio(' + r.nu_rom + ')">' +
+               '<span><b>' + esc(r.rota) + '</b> · rom. ' + r.nu_rom + ' · ' + feitos + '/' + ps.length + ' paradas' +
+               (r.km_estimado ? ' · ~' + Math.round(r.km_estimado) + ' km' : '') + ' <span style="color:var(--red)">› detalhes</span></span><span>' + statusRom(r) + '</span></div>';
       }).join('') + '</div>';
   }).join('');
 }
@@ -188,10 +189,11 @@ function renderOcorrencias() {
 function renderTabela() {
   var cont = { todas: PARADAS.length, pendente: 0, entregue: 0, ocorrencia: 0 };
   PARADAS.forEach(function (p) { cont[p.status] = (cont[p.status] || 0) + 1; });
-  document.getElementById('filtros').innerHTML = [['todas', 'Todas'], ['pendente', 'Pendentes'], ['entregue', 'Entregues'], ['ocorrencia', 'Ocorrências']].map(function (f) {
+  var avisoRom = FILTRO_ROM ? '<button class="on" onclick="FILTRO_ROM=null;PRIMEIRA=true;renderTudo()">Romaneio ' + FILTRO_ROM + ' ✕</button>' : '';
+  document.getElementById('filtros').innerHTML = avisoRom + [['todas', 'Todas'], ['pendente', 'Pendentes'], ['entregue', 'Entregues'], ['ocorrencia', 'Ocorrências']].map(function (f) {
     return '<button class="' + (FILTRO === f[0] ? 'on' : '') + '" onclick="FILTRO=\'' + f[0] + '\';renderTabela()">' + f[1] + ' (' + (cont[f[0]] || 0) + ')</button>';
   }).join('');
-  var lista = PARADAS.filter(function (p) { return FILTRO === 'todas' || p.status === FILTRO; }).slice().sort(function (a, b) {
+  var lista = PARADAS.filter(function (p) { return (FILTRO === 'todas' || p.status === FILTRO) && (!FILTRO_ROM || romDaParada(p) === FILTRO_ROM); }).slice().sort(function (a, b) {
     var ra = romDe(a), rb = romDe(b);
     return String(ra.cd_motor).localeCompare(String(rb.cd_motor)) || a.nu_rom - b.nu_rom || (a.ordem || 9999) - (b.ordem || 9999);
   });
@@ -210,7 +212,7 @@ function renderTabela() {
       '<td>' + (p.baixa_em ? fmtHora(p.baixa_em) : '') + '</td><td>' + det + '</td>' +
       '<td>' + (p.foto_url ? '<img class="thumb" loading="lazy" src="' + esc(p.foto_url) + '" onclick="verFoto(this.src)">' : '') + '</td>' +
       '<td>' + (p.status === 'pendente' ? '<select onchange="moverParada(\'' + p.id + '\',this.value)" style="font-family:inherit;font-size:12px;border:1px solid var(--bd);border-radius:6px;padding:4px"><option value="">—</option>' +
-        ROMS.filter(function (x) { return x.nu_rom !== r.nu_rom && x.status_app !== 'finalizado'; }).map(function (x) {
+        ROMS.filter(function (x) { return x.nu_rom !== r.nu_rom && (x.status_app === 'pendente' || x.status_app === 'em_rota'); }).map(function (x) {
           return '<option value="' + x.nu_rom + '">' + esc(x.rota) + ' · ' + esc(NOME_MOT[x.cd_motor] || x.cd_motor || '') + ' · ' + x.nu_rom + '</option>';
         }).join('') + '</select>' : '') + '</td></tr>';
   }).join('') : '<tr><td colspan="11" class="vazio">Nada para mostrar.</td></tr>';
@@ -227,7 +229,7 @@ function renderMapa() {
   var bounds = [], corMot = {};
   Object.keys(ENT.MOTORISTAS).forEach(function (u, i) { corMot[ENT.MOTORISTAS[u].cd] = CORES_MOT[i % CORES_MOT.length]; });
   var linhas = {};
-  PARADAS.slice().sort(function (a, b) { return (a.ordem || 9999) - (b.ordem || 9999); }).forEach(function (p) {
+  PARADAS.filter(function (p) { return !FILTRO_ROM || romDaParada(p) === FILTRO_ROM; }).sort(function (a, b) { return (a.ordem || 9999) - (b.ordem || 9999); }).forEach(function (p) {
     if (!temCoord(p)) return;
     var r = romDe(p), cor = p.status === 'entregue' ? '#16a34a' : p.status === 'ocorrencia' ? '#d97706' : (corMot[r.cd_motor] || '#CC0000');
     var html = p.status === 'entregue' ? '✔' : p.status === 'ocorrencia' ? '!' : (p.ordem || '•');
@@ -246,6 +248,61 @@ function renderMapa() {
     if (bounds.length) MAPA.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 }); else MAPA.setView([-23.55, -46.6], 10);
     PRIMEIRA = !bounds.length;
   }
+}
+function statusRom(r) {
+  if (r.status_app === 'finalizado') {
+    var quando = r.finalizado_em ? (mesmoDia(r.finalizado_em, new Date()) ? fmtHora(r.finalizado_em) : fmtData(r.finalizado_em) + ' ' + fmtHora(r.finalizado_em)) : '';
+    return r.situacao_erp === 'EN' ? '✅ baixado no ERP ' + quando : '✅ finalizado ' + quando;
+  }
+  if (r.status_app === 'cancelado') return '❌ cancelado';
+  return r.status_app === 'em_rota' ? '🚚 em rota desde ' + fmtHora(r.iniciado_em) : '⏸ não iniciado';
+}
+// ── Detalhe de um romaneio ──────────────────────────────────────────────────
+function abrirRomaneio(nu) {
+  var r = ROMS.find(function (x) { return x.nu_rom === nu; }); if (!r) return;
+  var ps = PARADAS.filter(function (p) { return romDaParada(p) === nu; }).sort(function (a, b) { return (a.ordem || 9999) - (b.ordem || 9999); });
+  var e = ps.filter(function (p) { return p.status === 'entregue'; }).length, o = ps.filter(function (p) { return p.status === 'ocorrencia'; }).length;
+  var stLbl = { pendente: 'Pendente', entregue: 'Entregue', ocorrencia: 'Ocorrência' };
+  var h = '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">' +
+    '<div><h2 style="font-size:18px">' + esc(r.rota) + ' · romaneio ' + nu + '</h2>' +
+    '<div style="color:var(--tx2);font-size:13px">' + esc(r.rota_desc || '') + ' · ' + esc(NOME_MOT[r.cd_motor] || r.cd_motor || '') + (r.veiculo ? ' · ' + esc(r.veiculo) : '') + '</div></div>' +
+    '<div style="font-size:13px;text-align:right">' + statusRom(r) + '<br><span style="color:var(--tx2)">Montado ' + fmtData(r.dt_montagem) + ' ' + fmtHora(r.dt_montagem) + '</span></div></div>' +
+    '<div class="prog" style="margin:10px 0"><i style="width:' + (ps.length ? e / ps.length * 100 : 0) + '%;background:var(--grn)"></i><i style="width:' + (ps.length ? o / ps.length * 100 : 0) + '%;background:var(--amb)"></i></div>' +
+    '<div style="font-size:13px;margin-bottom:10px"><b>' + e + '</b> entregues · <b>' + o + '</b> ocorrências · <b>' + (ps.length - e - o) + '</b> pendentes' +
+      (r.km_estimado ? ' · ~' + Math.round(r.km_estimado) + ' km' : '') + (r.iniciado_em ? ' · saiu ' + fmtHora(r.iniciado_em) : '') + '</div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' +
+      '<button class="bt-rom" onclick="imprimirRom(' + nu + ')">🖨️ Imprimir</button>' +
+      '<button class="bt-rom" onclick="filtrarRomaneio(' + nu + ')">🗺️ Ver só este no mapa e na tabela</button>' +
+      (r.status_app === 'pendente' || r.status_app === 'em_rota' ? '<button class="bt-rom" style="color:var(--red);border-color:var(--red)" onclick="encerrarRomaneio(' + nu + ')">Encerrar no app</button>' : '') +
+    '</div>' +
+    '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Cliente</th><th>NF</th><th>Status</th><th>Hora</th><th>Recebido por</th><th>Foto</th></tr></thead><tbody>' +
+    (ps.length ? ps.map(function (p) {
+      var det = p.status === 'entregue' ? esc(p.recebedor || '—') + (p.recebedor_doc ? '<br><small style="color:var(--tx2)">doc. ' + esc(p.recebedor_doc) + '</small>' : '')
+              : p.status === 'ocorrencia' ? '<b>' + esc(p.ocorrencia_tipo || '') + '</b>' : (p.eta ? '<small>previsão ' + fmtHora(p.eta) + '</small>' : '');
+      if (p.obs) det += '<br><small style="color:var(--tx2)">' + esc(p.obs) + '</small>';
+      return '<tr class="' + (p.status === 'ocorrencia' ? 'oc' : '') + '"><td>' + (p.ordem || '—') + '</td>' +
+        '<td><b>' + (p.refrigerado ? '❄️ ' : '') + esc(p.fantasia) + '</b><br><small style="color:var(--tx2)">' + esc(p.bairro || '') + ' · ' + esc(p.municipio || '') + '</small></td>' +
+        '<td>' + (p.notas || []).map(function (x) { return x.nf || x.nu_nf; }).join('<br>') + '</td>' +
+        '<td><span class="st ' + p.status + '">' + (stLbl[p.status] || p.status) + '</span></td>' +
+        '<td>' + (p.baixa_em ? fmtHora(p.baixa_em) : '') + '</td><td>' + det + '</td>' +
+        '<td>' + (p.foto_url ? '<img class="thumb" loading="lazy" src="' + esc(p.foto_url) + '" onclick="verFoto(this.src)">' : '') + '</td></tr>';
+    }).join('') : '<tr><td colspan="7" class="vazio">Sem paradas.</td></tr>') +
+    '</tbody></table></div>' + botaoFechar();
+  document.getElementById('nf-corpo').innerHTML = h;
+  document.getElementById('nf-bg').style.display = 'flex';
+}
+var FILTRO_ROM = null;
+function filtrarRomaneio(nu) {
+  FILTRO_ROM = nu; PRIMEIRA = true;
+  document.getElementById('nf-bg').style.display = 'none';
+  renderTudo();
+  document.getElementById('mapa').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function encerrarRomaneio(nu) {
+  if (!confirm('Encerrar o romaneio ' + nu + ' no app? Ele some da tela do motorista e dos abertos. (Não altera o ERP.)')) return;
+  sbPatch('entregas_romaneios', 'nu_rom=eq.' + nu, { status_app: 'finalizado', finalizado_em: new Date().toISOString() })
+    .then(function () { document.getElementById('nf-bg').style.display = 'none'; carregar(); })
+    .catch(function (e) { alert('Erro: ' + e.message); });
 }
 function moverParada(id, alvo) {
   alvo = parseInt(alvo, 10); if (!alvo) return;

@@ -212,6 +212,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="nav-item" onclick="navegarPara('campo',this)">
       <span class="nav-icon">🗺️</span> Campo (Nicolle)
     </div>
+    <div class="nav-item" onclick="navegarPara('campo-reps',this)">
+      <span class="nav-icon">▶</span> Campo — Reps
+    </div>
     <div class="nav-item" onclick="navegarPara('roteiro',this)">
       <span class="nav-icon">📋</span> Roteiro
     </div>
@@ -495,6 +498,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
 
+    <!-- ================================ CAMPO — REPS ================================ -->
+    <div class="screen" id="screen-campo-reps">
+      <div class="sec">
+        <div class="sec-title"><span>▶</span> Campo — Reps · visitas registradas</div>
+        <div class="filtros">
+          <select class="filtro-select" id="cr-per" onchange="renderCampoReps(false)">
+            <option value="mes">Mês atual</option>
+            <option value="7">Últimos 7 dias</option>
+            <option value="30">Últimos 30 dias</option>
+            <option value="mes-ant">Mês anterior</option>
+            <option value="tudo">Tudo</option>
+          </select>
+          <select class="filtro-select" id="cr-area" onchange="renderCampoReps(false)">
+            <option value="">Todas as áreas</option>
+          </select>
+          <select class="filtro-select" id="cr-res" onchange="renderCampoReps(false)">
+            <option value="">Todos os resultados</option>
+            <option value="pedido_fechado">Pedido fechado</option>
+            <option value="sem_pedido">Sem pedido</option>
+            <option value="cliente_ausente">Cliente ausente</option>
+            <option value="reagendar">Reagendar</option>
+          </select>
+          <input class="filtro-input" id="cr-busca" placeholder="Buscar cliente..." oninput="renderCampoReps(false)">
+          <button class="filtro-select" onclick="renderCampoReps(true)" style="cursor:pointer;">↻ Atualizar</button>
+        </div>
+        <div id="campo-reps-content"><div class="loading">Carregando visitas...</div></div>
+      </div>
+    </div>
+
     <!-- ================================ ROTEIRO ================================ -->
     <div class="screen" id="screen-roteiro">
       <div class="sec">
@@ -643,7 +675,7 @@ function sair(){
 // ============================================================
 // SUPABASE
 // ============================================================
-var SB2_TABLES = ['contagens_estoque','roteiros','pdv_agenda'];
+var SB2_TABLES = ['contagens_estoque','roteiros','pdv_agenda','visitas_rep'];
 async function sbFetch(path){
   var parts = path.split('?');
   var table = parts[0];
@@ -789,7 +821,7 @@ function navegarPara(id, el){
   document.getElementById('overlay-menu').classList.remove('open');
   if(!_screenCarregadas[id]){
     _screenCarregadas[id] = true;
-    var fn = { 'campo':renderCampo, 'roteiro':renderRoteiro, 'estoque':renderEstoque, 'pdv':renderPDV, 'alertas':renderAlertas }[id];
+    var fn = { 'campo':renderCampo, 'campo-reps':renderCampoReps, 'roteiro':renderRoteiro, 'estoque':renderEstoque, 'pdv':renderPDV, 'alertas':renderAlertas }[id];
     if(fn) fn();
   }
 }
@@ -1600,6 +1632,147 @@ async function renderRoteiro(){
       +'<tbody>'+tblRows+'</tbody></table></div></div>';
   }).join('');
 
+  content.innerHTML = html;
+}
+
+// ============================================================
+// CAMPO — REPS (visitas registradas pela tela "Iniciar visita")
+// ============================================================
+var _visitasRep = null;
+function crEsc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+var CR_RES = { pedido_fechado:['Pedido fechado','green'], sem_pedido:['Sem pedido','gray'], cliente_ausente:['Ausente','yellow'], reagendar:['Reagendar','blue'] };
+var CR_RESP = { aceitou:'✔ Aceitou', pensar:'Vai pensar', recusou:'Recusou' };
+var CR_TIPO = { campanha:'Campanha', campanha_nova:'Campanha (sem compra)', parado:'Parado', cross:'Cross-sell' };
+
+function crPeriodo(v){
+  var h = new Date(), ini = null, fim = null;
+  if(v==='mes') ini = new Date(h.getFullYear(), h.getMonth(), 1);
+  else if(v==='mes-ant'){ ini = new Date(h.getFullYear(), h.getMonth()-1, 1); fim = new Date(h.getFullYear(), h.getMonth(), 1); }
+  else if(v==='7' || v==='30'){ ini = new Date(h.getTime() - parseInt(v)*86400000); }
+  return {ini:ini, fim:fim};
+}
+function crAreaDe(v){
+  return v.area || (typeof AREAS_LABEL_DATA!=='undefined' && AREAS_LABEL_DATA[String(v.rep||'').toUpperCase()]) || '—';
+}
+function crFmtData(iso){
+  var d = new Date(iso); if(isNaN(d)) return '—';
+  return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+}
+function crFmtDia(s){ if(!s) return '—'; var p=String(s).slice(0,10).split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : s; }
+function crToggle(id){ var e=document.getElementById(id); if(e) e.style.display = e.style.display==='none' ? 'table-row' : 'none'; }
+
+async function renderCampoReps(recarregar){
+  var content = document.getElementById('campo-reps-content');
+  if(_visitasRep===null || recarregar){
+    content.innerHTML = '<div class="loading">Carregando visitas...</div>';
+    try {
+      var r = await sbFetch('visitas_rep?order=inicio.desc&limit=3000');
+      _visitasRep = Array.isArray(r) ? r : [];
+    } catch(e){ _visitasRep = []; }
+  }
+  // filtro de áreas (preserva seleção)
+  var areaSel = document.getElementById('cr-area'), areaAtual = areaSel.value;
+  var areas = Array.from(new Set(_visitasRep.map(crAreaDe).filter(function(a){return a!=='—';}))).sort();
+  areaSel.innerHTML = '<option value="">Todas as áreas</option>' + areas.map(function(a){ return '<option value="'+crEsc(a)+'"'+(a===areaAtual?' selected':'')+'>'+crEsc(a)+'</option>'; }).join('');
+
+  var per = crPeriodo(document.getElementById('cr-per').value);
+  var fArea = areaSel.value, fRes = document.getElementById('cr-res').value;
+  var busca = (document.getElementById('cr-busca').value||'').trim().toLowerCase();
+  var lista = _visitasRep.filter(function(v){
+    var d = new Date(v.inicio);
+    if(per.ini && d < per.ini) return false;
+    if(per.fim && d >= per.fim) return false;
+    if(fArea && crAreaDe(v)!==fArea) return false;
+    if(fRes && v.resultado!==fRes) return false;
+    if(busca && String(v.nome_cli||'').toLowerCase().indexOf(busca)<0 && String(v.cod_cli||'').indexOf(busca)<0) return false;
+    return true;
+  });
+
+  if(!lista.length){
+    content.innerHTML = '<div class="vazio"><span class="vazio-ico">▶</span>Nenhuma visita registrada neste filtro</div>';
+    return;
+  }
+
+  // KPIs
+  var n = lista.length;
+  var comPed = lista.filter(function(v){ return v.houve_pedido; });
+  var valor = comPed.reduce(function(a,v){ return a + (Number(v.valor_pedido)||0); }, 0);
+  var durs = lista.map(function(v){ return Number(v.duracao_min)||0; }).filter(function(x){return x>0;});
+  var durMed = durs.length ? Math.round(durs.reduce(function(a,b){return a+b;},0)/durs.length) : 0;
+  var efetivas = lista.filter(function(v){ return v.resultado!=='cliente_ausente'; }).length;
+  var ofs = 0, ofsAc = 0;
+  lista.forEach(function(v){
+    (Array.isArray(v.ofertas)?v.ofertas:[]).concat(Array.isArray(v.cross_sell)?v.cross_sell:[]).forEach(function(o){
+      ofs++; if(o.resposta==='aceitou') ofsAc++;
+    });
+  });
+  var html = '<div class="kpi-grid cols4">'
+    + '<div class="kpi blue"><div class="kpi-val">'+n+'</div><div class="kpi-lbl">Visitas registradas</div><div class="kpi-sub">'+efetivas+' com o cliente presente</div></div>'
+    + '<div class="kpi green"><div class="kpi-val">'+pct(comPed.length, n)+'</div><div class="kpi-lbl">Visitas com pedido</div><div class="kpi-sub">'+comPed.length+' de '+n+'</div></div>'
+    + '<div class="kpi yellow"><div class="kpi-val">'+fmt(valor)+'</div><div class="kpi-lbl">Valor informado em pedidos</div><div class="kpi-sub">'+(comPed.length? 'ticket '+fmt(valor/comPed.length):'—')+'</div></div>'
+    + '<div class="kpi"><div class="kpi-val">'+(durMed?durMed+' min':'—')+'</div><div class="kpi-lbl">Duração média</div><div class="kpi-sub">'+(ofs? 'ofertas aceitas: '+ofsAc+' de '+ofs : 'sem ofertas marcadas')+'</div></div>'
+    + '</div>';
+
+  // Resumo por rep
+  var porRep = {};
+  lista.forEach(function(v){
+    var k = String(v.rep||'—').toUpperCase();
+    var o = porRep[k] || (porRep[k] = {rep:k, n:0, ped:0, val:0, clientes:{}});
+    o.n++; if(v.houve_pedido){ o.ped++; o.val += Number(v.valor_pedido)||0; }
+    o.clientes[v.cod_cli] = 1;
+  });
+  var linhasRep = Object.keys(porRep).sort(function(a,b){ return porRep[b].n - porRep[a].n; }).map(function(k){
+    var o = porRep[k], area = (typeof AREAS_LABEL_DATA!=='undefined' && AREAS_LABEL_DATA[k]) || '';
+    return '<tr><td><b>'+crEsc(k)+'</b><div style="font-size:10px;color:var(--muted)">'+crEsc(area)+'</div></td>'
+      +'<td class="r">'+o.n+'</td><td class="r">'+Object.keys(o.clientes).length+'</td>'
+      +'<td class="r">'+o.ped+'</td><td class="r">'+pct(o.ped,o.n)+'</td><td class="r">'+fmt(o.val)+'</td></tr>';
+  }).join('');
+  html += '<div class="sec-title" style="margin-top:6px"><span>👥</span> Por representante</div>'
+    + '<div class="tbl-wrap" style="margin-bottom:16px;"><table class="tbl"><thead><tr><th>Rep</th><th class="r">Visitas</th><th class="r">Clientes</th><th class="r">Com pedido</th><th class="r">%</th><th class="r">Valor</th></tr></thead><tbody>'+linhasRep+'</tbody></table></div>';
+
+  // Lista de visitas (linha clicável abre o detalhe)
+  var linhas = lista.slice(0,300).map(function(v,i){
+    var rs = CR_RES[v.resultado] || [v.resultado||'—','gray'];
+    var id = 'crd-'+i;
+    var det = '';
+    var ofertas = (Array.isArray(v.ofertas)?v.ofertas:[]);
+    var cross = (Array.isArray(v.cross_sell)?v.cross_sell:[]);
+    function listaOf(arr){
+      return arr.map(function(o){
+        var cor = o.resposta==='aceitou'?'green':o.resposta==='recusou'?'red':'yellow';
+        return '<div style="margin:2px 0"><span class="pill '+cor+'">'+crEsc(CR_RESP[o.resposta]||o.resposta||'—')+'</span> '
+          +'<span style="color:var(--muted);font-size:10px">'+crEsc(CR_TIPO[o.tipo]||o.tipo||'')+'</span> '+crEsc(o.nome||'')
+          +(o.qtd_sugerida?' <span style="color:var(--muted)">(sugerido: '+o.qtd_sugerida+' un)</span>':'')+'</div>';
+      }).join('');
+    }
+    var ck = (v.checklist && v.checklist.resumo) || null;
+    if(ofertas.length) det += '<div><b>Ofertas</b>'+listaOf(ofertas)+'</div>';
+    if(cross.length) det += '<div style="margin-top:6px"><b>Cross-sell</b>'+listaOf(cross)+'</div>';
+    if(v.objecao) det += '<div style="margin-top:6px"><b>Objeções:</b> '+crEsc(v.objecao)+'</div>';
+    if(v.proximo_passo) det += '<div style="margin-top:6px"><b>Próximo passo:</b> '+crEsc(v.proximo_passo)+(v.proxima_visita?' · retorno em '+crFmtDia(v.proxima_visita):'')+'</div>';
+    else if(v.proxima_visita) det += '<div style="margin-top:6px"><b>Retorno em:</b> '+crFmtDia(v.proxima_visita)+'</div>';
+    if(v.obs) det += '<div style="margin-top:6px"><b>Obs:</b> '+crEsc(v.obs)+'</div>';
+    if(ck){
+      var partes = [];
+      if(ck.ritmo) partes.push('ritmo: '+crEsc(ck.ritmo));
+      if(ck.dias_ult_compra!=null) partes.push('última compra há '+ck.dias_ult_compra+' dias');
+      if(ck.fat_mensal_6m!=null) partes.push('média mensal 6m: '+fmt(ck.fat_mensal_6m));
+      if(ck.meses_com_compra!=null) partes.push(ck.meses_com_compra+' de '+ck.meses_janela+' meses com compra');
+      det += '<div style="margin-top:6px;color:var(--muted)">Contexto na hora da visita: '+partes.join(' · ')+'</div>';
+    }
+    if(v.campanha_mes) det += '<div style="margin-top:6px;color:var(--muted)">Campanha usada: '+crEsc(v.campanha_mes)+'</div>';
+    if(!det) det = '<div style="color:var(--muted)">Sem detalhes além do resultado.</div>';
+    return '<tr style="cursor:pointer" onclick="crToggle(\''+id+'\')">'
+      +'<td>'+crFmtData(v.inicio)+'</td>'
+      +'<td><b>'+crEsc(String(v.rep||'—').toUpperCase())+'</b></td>'
+      +'<td>'+crEsc(v.nome_cli||v.cod_cli||'—')+'<div style="font-size:10px;color:var(--muted)">'+crEsc(v.cod_cli||'')+'</div></td>'
+      +'<td><span class="pill '+rs[1]+'">'+crEsc(rs[0])+'</span></td>'
+      +'<td class="r">'+(v.houve_pedido && v.valor_pedido!=null ? fmt(Number(v.valor_pedido)) : '—')+'</td>'
+      +'<td class="r">'+(v.duracao_min? v.duracao_min+' min':'—')+'</td></tr>'
+      +'<tr id="'+id+'" style="display:none"><td colspan="6" style="background:#fafafa;font-size:12px;line-height:1.45;">'+det+'</td></tr>';
+  }).join('');
+  html += '<div class="sec-title"><span>📋</span> Visitas <span style="font-weight:400;color:var(--muted);font-size:11px">(toque para ver o detalhe'+(lista.length>300?' · mostrando as 300 mais recentes de '+lista.length:'')+')</span></div>'
+    + '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Data</th><th>Rep</th><th>Cliente</th><th>Resultado</th><th class="r">Valor</th><th class="r">Duração</th></tr></thead><tbody>'+linhas+'</tbody></table></div>';
   content.innerHTML = html;
 }
 

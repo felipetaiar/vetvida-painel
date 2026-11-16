@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><script>
+// Restaurar sessão do localStorage se sessionStorage estiver vazio
+(function() {
+  if (!sessionStorage.getItem('vv_auth') && localStorage.getItem('vv_auth') === 'ok') {
+    sessionStorage.setItem('vv_auth',   localStorage.getItem('vv_auth'));
+    sessionStorage.setItem('vv_perfil', localStorage.getItem('vv_perfil'));
+    sessionStorage.setItem('vv_user',   localStorage.getItem('vv_user') || '');
+  }
+})();
+</script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vet Vida — Entregas dos meus clientes</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+:root{--bg:#f7fafc;--surface:#fff;--border:#e2e8f0;--red:#c44040;--text:#1e293b;--muted:#64748b;--green:#16a34a;--amb:#b45309;--blue:#0369a1;--radius:12px;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);padding-bottom:40px;}
+.hdr{background:#1c2023;color:#f0eee8;padding:10px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;}
+.hdr button{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;}
+.hdr h1{font-size:14px;font-weight:700;line-height:1.2;}
+.hdr p{font-size:10px;color:rgba(255,255,255,.55);margin-top:1px;}
+.hdr .grow{flex:1;min-width:0;}
+.wrap{max-width:720px;margin:0 auto;padding:12px;}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+.kpi b{display:block;font-size:20px;}.kpi span{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;}
+.busca{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;margin-bottom:10px;}
+.filtros{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;}
+.filtros button{flex:0 0 auto;border:1.5px solid var(--border);background:#fff;border-radius:18px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--muted);font-family:inherit;cursor:pointer;}
+.filtros button.on{background:var(--red);border-color:var(--red);color:#fff;}
+.sec{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:14px 2px 8px;}
+.ent{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+.ent.ok{border-left-color:var(--green);}.ent.oc{border-left-color:var(--amb);background:#fffbeb;}.ent.pd{border-left-color:var(--blue);}
+.ent b{font-size:14px;}.ent .s{font-size:12px;color:var(--muted);margin-top:2px;}
+.ent .st{font-size:12px;font-weight:700;margin-top:4px;}
+.ent .st.ok{color:var(--green);}.ent .st.oc{color:var(--amb);}.ent .st.pd{color:var(--blue);}
+.ent a{color:var(--red);font-weight:700;font-size:12px;text-decoration:none;}
+.vazio{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px;}
+</style></head><body>
+
+<div class="hdr">
+  <button onclick="history.length > 1 ? history.back() : location.href='rep.html'">←</button>
+  <div class="grow"><h1>🚚 Entregas dos meus clientes</h1><p id="h-sub">Carregando…</p></div>
+</div>
+<div class="wrap">
+  <div class="kpis" id="kpis"></div>
+  <input class="busca" id="busca" placeholder="Buscar cliente ou NF" oninput="render()">
+  <div class="filtros" id="filtros"></div>
+  <div id="lista"><div class="vazio">Carregando entregas…</div></div>
+</div>
+
+<script src="dados.js"></script>
+<script src="/entregas/comum.js"></script>
+<script>
+var REP = sessionStorage.getItem('vv_perfil') || '';
+var DIAS = 14;
+var ITENS = [], ROMS = {}, FILTRO = 'todas';
+var NOMES_MOT = {}; Object.keys(ENT.MOTORISTAS).forEach(function (u) { NOMES_MOT[ENT.MOTORISTAS[u].cd] = ENT.MOTORISTAS[u].nome; });
+
+(function init() {
+  if (sessionStorage.getItem('vv_auth') !== 'ok' || !REP) { location.href = '/'; return; }
+  if (REP === 'gestor') { var q = new URLSearchParams(location.search).get('rep'); if (q) REP = q.toUpperCase(); }
+  var clientes = (typeof TODOS_DADOS !== 'undefined' && TODOS_DADOS[REP]) || [];
+  var codigos = clientes.map(function (c) { return c.cod; }).filter(Boolean);
+  document.getElementById('h-sub').textContent = REP + ' · últimos ' + DIAS + ' dias · ' + codigos.length + ' clientes';
+  if (!codigos.length) { document.getElementById('lista').innerHTML = '<div class="vazio">Nenhum cliente na sua carteira.</div>'; return; }
+  carregar(codigos);
+  setInterval(function () { carregar(codigos, true); }, 120000);
+})();
+
+function carregar(codigos, silencioso) {
+  var desde = isoDiasAtras(DIAS), lotes = [];
+  for (var i = 0; i < codigos.length; i += 150) lotes.push(codigos.slice(i, i + 150));
+  Promise.all(lotes.map(function (l) {
+    return sbGet('entregas_paradas?select=id,nu_rom,rom_app,cd_clien,fantasia,bairro,municipio,notas,status,ocorrencia_tipo,obs,recebedor,foto_url,baixa_em,eta,sincronizado_em,refrigerado' +
+                 '&cd_clien=in.(' + l.join(',') + ')&status=neq.removida&sincronizado_em=gte.' + encodeURIComponent(desde));
+  })).then(function (rs) {
+    var vistos = {}, ps = [].concat.apply([], rs).filter(function (p) { if (vistos[p.id]) return false; vistos[p.id] = 1; return true; });
+    var nus = ps.map(romDaParada).filter(function (v, i, a) { return a.indexOf(v) === i; });
+    if (!nus.length) return [ps, []];
+    return sbGet('entregas_romaneios?select=nu_rom,rota,cd_motor,dt_montagem,status_app,iniciado_em&nu_rom=in.(' + nus.join(',') + ')').then(function (rr) { return [ps, rr]; });
+  }).then(function (res) {
+    ROMS = {}; res[1].forEach(function (r) { ROMS[r.nu_rom] = r; });
+    // pendente só conta se o romaneio ainda está aberto; cancelados somem
+    ITENS = res[0].filter(function (p) {
+      var r = ROMS[romDaParada(p)] || {};
+      if (r.status_app === 'cancelado') return false;
+      if (p.status === 'pendente' && r.status_app === 'finalizado') return false;
+      return true;
+    });
+    render();
+  }).catch(function (e) {
+    if (!silencioso) document.getElementById('lista').innerHTML = '<div class="vazio">Sem conexão: ' + esc(e.message) + '</div>';
+  });
+}
+
+function dataRef(p) { var r = ROMS[romDaParada(p)] || {}; return new Date(p.baixa_em || r.dt_montagem || p.sincronizado_em); }
+function nfs(p) { return (p.notas || []).map(function (n) { return n.nf || n.nu_nf; }).join(', '); }
+
+function render() {
+  var q = (document.getElementById('busca').value || '').trim().toLowerCase();
+  var ent = ITENS.filter(function (p) { return p.status === 'entregue'; }).length;
+  var oc = ITENS.filter(function (p) { return p.status === 'ocorrencia'; }).length;
+  var pd = ITENS.filter(function (p) { return p.status === 'pendente'; }).length;
+  document.getElementById('kpis').innerHTML =
+    '<div class="kpi"><b style="color:var(--blue)">' + pd + '</b><span>A caminho</span></div>' +
+    '<div class="kpi"><b style="color:var(--green)">' + ent + '</b><span>Entregues</span></div>' +
+    '<div class="kpi"><b style="color:var(--amb)">' + oc + '</b><span>Não entregues</span></div>';
+  document.getElementById('filtros').innerHTML = [['todas', 'Todas'], ['pendente', 'A caminho'], ['ocorrencia', 'Não entregues'], ['entregue', 'Entregues']].map(function (f) {
+    return '<button class="' + (FILTRO === f[0] ? 'on' : '') + '" onclick="FILTRO=\'' + f[0] + '\';render()">' + f[1] + '</button>';
+  }).join('');
+  var lista = ITENS.filter(function (p) {
+    if (FILTRO !== 'todas' && p.status !== FILTRO) return false;
+    if (!q) return true;
+    return (p.fantasia || '').toLowerCase().indexOf(q) >= 0 || nfs(p).indexOf(q) >= 0 || String(p.cd_clien) === q;
+  });
+  if (!lista.length) { document.getElementById('lista').innerHTML = '<div class="vazio">Nenhuma entrega ' + (q ? 'para essa busca' : 'no período') + '.</div>'; return; }
+  // ordem: a caminho → não entregues → entregues (mais recentes primeiro)
+  var peso = { pendente: 0, ocorrencia: 1, entregue: 2 };
+  lista.sort(function (a, b) { return (peso[a.status] - peso[b.status]) || (dataRef(b) - dataRef(a)); });
+  var h = '', secAtual = '';
+  var titulos = { pendente: 'A caminho / aguardando saída', ocorrencia: 'Não entregues', entregue: 'Entregues' };
+  lista.forEach(function (p) {
+    if (p.status !== secAtual) { secAtual = p.status; h += '<div class="sec">' + titulos[p.status] + '</div>'; }
+    var r = ROMS[romDaParada(p)] || {}, cls = p.status === 'entregue' ? 'ok' : p.status === 'ocorrencia' ? 'oc' : 'pd';
+    var st;
+    if (p.status === 'entregue') st = '✔ Entregue ' + fmtData(p.baixa_em) + ' às ' + fmtHora(p.baixa_em) + (p.recebedor ? ' · recebido por ' + esc(p.recebedor) : '');
+    else if (p.status === 'ocorrencia') st = '⚠ Não entregue ' + fmtData(p.baixa_em) + ' às ' + fmtHora(p.baixa_em) + ' · ' + esc(p.ocorrencia_tipo || 'ocorrência') + (p.obs ? ' — ' + esc(p.obs) : '');
+    else st = r.status_app === 'em_rota' ? '🚚 Em rota' + (p.eta ? ' · previsão ~' + fmtHora(p.eta) : '') : '⏸ Aguardando saída do motorista';
+    h += '<div class="ent ' + cls + '"><b>' + (p.refrigerado ? '❄️ ' : '') + esc(p.fantasia) + '</b>' +
+      '<div class="s">' + [p.bairro, p.municipio, 'NF ' + (nfs(p) || '—')].filter(Boolean).map(esc).join(' · ') + '</div>' +
+      '<div class="s">' + esc(r.rota || '') + ' · romaneio ' + romDaParada(p) + (r.cd_motor ? ' · ' + esc(NOMES_MOT[r.cd_motor] || r.cd_motor) : '') + '</div>' +
+      '<div class="st ' + cls + '">' + st + '</div>' +
+      (p.foto_url ? '<a href="' + esc(p.foto_url) + '" target="_blank" rel="noopener">📷 Ver canhoto</a>' : '') + '</div>';
+  });
+  document.getElementById('lista').innerHTML = h;
+}
+</script>
+</body></html>

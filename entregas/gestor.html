@@ -53,6 +53,7 @@ tr.oc td{background:#fffbeb}
     <form onsubmit="buscarNF();return false" style="display:flex;gap:4px"><input type="text" id="busca-nf" placeholder="NF ou cliente" style="width:170px"><button type="submit">🔎 Buscar</button></form>
     <input type="date" id="dia" onchange="carregar()">
     <button onclick="carregar()">🔄 Atualizar</button>
+    <button onclick="abrirRelatorio()">📊 Relatório mensal</button>
     <a href="/entregas/">📱 Ver como motorista</a>
     <a href="/gestor-dashboard.html">← Painel</a>
   </div>
@@ -285,7 +286,8 @@ function abrirRomaneio(nu) {
         '<td>' + (p.notas || []).map(function (x) { return x.nf || x.nu_nf; }).join('<br>') + '</td>' +
         '<td><span class="st ' + p.status + '">' + (stLbl[p.status] || p.status) + '</span></td>' +
         '<td>' + (p.baixa_em ? fmtHora(p.baixa_em) : '') + '</td><td>' + det + '</td>' +
-        '<td>' + (p.foto_url ? '<img class="thumb" loading="lazy" src="' + esc(p.foto_url) + '" onclick="verFoto(this.src)">' : '') + '</td></tr>';
+        '<td>' + (p.foto_url ? '<img class="thumb" loading="lazy" src="' + esc(p.foto_url) + '" onclick="verFoto(this.src)">' : '') +
+        (p.status !== 'pendente' ? (function () { COMPROV[p.id] = { p: p, r: r }; return '<br><a href="#" style="font-size:11px;color:var(--red)" onclick="comprovantePDF(\'' + p.id + '\');return false">📄 PDF</a>'; })() : '') + '</td></tr>';
     }).join('') : '<tr><td colspan="7" class="vazio">Sem paradas.</td></tr>') +
     '</tbody></table></div>' + botaoFechar();
   document.getElementById('nf-corpo').innerHTML = h;
@@ -383,7 +385,9 @@ function mostrarFicha(id, comVoltar) {
     fichaCanhoto(p, BUSCA.roms[romDaParada(p)] || {}) + botaoFechar();
 }
 function botaoFechar() { return '<button onclick="document.getElementById(\'nf-bg\').style.display=\'none\'" style="margin-top:14px;width:100%;font-family:inherit;font-weight:700;border:1px solid var(--bd);background:#fff;border-radius:8px;padding:10px;cursor:pointer">Fechar</button>'; }
+var COMPROV = {};
 function fichaCanhoto(p, r, nBusca) {
+  COMPROV[p.id] = { p: p, r: r };
   var st = { pendente: 'Pendente (ainda não entregue)', entregue: 'Entregue', ocorrencia: 'Ocorrência', removida: 'Removida da rota' }[p.status] || p.status;
   var nfs = (p.notas || []).map(function (x) { return x.nf || x.nu_nf; }).join(', ');
   var linha = function (k, v) { return v ? '<tr><td style="color:var(--tx2);width:150px;padding:4px 0">' + k + '</td><td style="padding:4px 0"><b>' + v + '</b></td></tr>' : ''; };
@@ -402,8 +406,155 @@ function fichaCanhoto(p, r, nBusca) {
     '</table>' +
     (p.foto_url ? '<a href="' + esc(p.foto_url) + '" target="_blank"><img src="' + esc(p.foto_url) + '" style="width:100%;border-radius:10px;border:1px solid var(--bd)"></a>' +
                   '<div style="font-size:12px;color:var(--tx2);margin-top:4px">Toque na foto para abrir em tamanho real e baixar.</div>'
-                : '<div class="vazio" style="padding:12px">Sem foto do canhoto.</div>');
+                : '<div class="vazio" style="padding:12px">Sem foto do canhoto.</div>') +
+    (p.status === 'entregue' || p.status === 'ocorrencia' ? '<button class="bt-rom" style="margin-top:10px" onclick="comprovantePDF(\'' + p.id + '\')">📄 Comprovante de entrega (PDF)</button>' : '');
 }
+
+// ── Comprovante de entrega (abre página pronta para "Salvar como PDF") ──────
+function comprovantePDF(id) {
+  var c = COMPROV[id]; if (!c) return;
+  var p = c.p, r = c.r || {};
+  var nfs = (p.notas || []).map(function (x) { return x.nf || x.nu_nf; }).join(', ');
+  var ok = p.status === 'entregue';
+  var linha = function (k, v) { return v ? '<tr><th>' + k + '</th><td>' + v + '</td></tr>' : ''; };
+  var w = window.open('', '_blank');
+  if (!w) { alert('Permita pop-ups para gerar o PDF.'); return; }
+  w.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Comprovante de entrega — NF ' + esc(nfs) + '</title>' +
+    '<style>body{font-family:Arial,sans-serif;color:#1f2937;margin:28px;font-size:13px}' +
+    '.top{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #CC0000;padding-bottom:10px;margin-bottom:16px}' +
+    '.top img{height:46px}h1{font-size:20px;margin:0}.sub{color:#6b7280;font-size:12px}' +
+    '.selo{display:inline-block;padding:4px 12px;border-radius:14px;font-weight:700;font-size:12px;margin:6px 0 14px;' + (ok ? 'background:#dcfce7;color:#166534' : 'background:#fef3c7;color:#92400e') + '}' +
+    'table{width:100%;border-collapse:collapse;margin-bottom:16px}th{text-align:left;width:190px;color:#6b7280;font-weight:600;padding:6px 0;vertical-align:top}td{padding:6px 0;font-weight:700}' +
+    'tr{border-bottom:1px solid #eee}.foto{text-align:center}.foto img{max-width:100%;max-height:520px;border:1px solid #ddd;border-radius:6px}' +
+    '.rod{margin-top:18px;font-size:11px;color:#9ca3af;border-top:1px solid #eee;padding-top:8px}@media print{body{margin:12mm}}</style></head><body>' +
+    '<div class="top"><div><h1>Comprovante de entrega</h1><div class="sub">Vet V Comercial LTDA · CNPJ 45.063.251/0001-53</div></div><img src="' + location.origin + '/logo.jpg"></div>' +
+    '<div class="selo">' + (ok ? 'ENTREGUE' : 'NÃO ENTREGUE — ' + esc(p.ocorrencia_tipo || 'ocorrência')) + '</div>' +
+    '<table>' +
+      linha('Cliente', esc(p.fantasia || '') + (p.razao && p.razao !== p.fantasia ? '<br><span style="font-weight:400">' + esc(p.razao) + '</span>' : '')) +
+      linha('Código do cliente', p.cd_clien ? String(p.cd_clien) : '') +
+      linha('Endereço', esc(enderecoTexto(p))) +
+      linha('Nota(s) fiscal(is)', esc(nfs)) +
+      linha('Romaneio', esc((r.rota ? r.rota + ' · ' : '') + romDaParada(p))) +
+      linha('Motorista', esc(NOME_MOT[r.cd_motor] || r.cd_motor || '')) +
+      linha(ok ? 'Data e hora da entrega' : 'Data e hora da tentativa', p.baixa_em ? new Date(p.baixa_em).toLocaleString('pt-BR') : '') +
+      linha('Recebido por', esc(p.recebedor || '')) +
+      linha('Documento', esc(p.recebedor_doc || '')) +
+      linha('Observação', esc(p.obs || '')) +
+      linha('Local registrado', p.baixa_lat ? p.baixa_lat.toFixed(5) + ', ' + p.baixa_lng.toFixed(5) + ' (<a href="https://www.google.com/maps?q=' + p.baixa_lat + ',' + p.baixa_lng + '">mapa</a>)' : '') +
+    '</table>' +
+    (p.foto_url ? '<div class="foto"><img src="' + esc(p.foto_url) + '"><div class="sub">Foto do canhoto registrada pelo motorista no momento da ' + (ok ? 'entrega' : 'tentativa') + '.</div></div>' : '') +
+    '<div class="rod">Documento gerado em ' + new Date().toLocaleString('pt-BR') + ' pelo Vet Hub (módulo Entregas). Para salvar em PDF, escolha "Salvar como PDF" na janela de impressão.</div>' +
+    '<script>window.onload=function(){setTimeout(function(){window.print();},400);}<\/script></body></html>');
+  w.document.close();
+}
+
+// ── Relatório mensal por motorista ──────────────────────────────────────────
+var REL = { ps: [], roms: [] };
+function abrirRelatorio() {
+  var d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
+  var corpo = document.getElementById('nf-corpo');
+  corpo.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">' +
+    '<h2 style="font-size:18px">📊 Relatório mensal por motorista</h2>' +
+    '<div><input type="month" id="rel-mes" value="' + d.getFullYear() + '-' + z(d.getMonth() + 1) + '" onchange="carregarRelatorio()" style="font-family:inherit;border:1px solid var(--bd);border-radius:8px;padding:6px 8px"></div></div>' +
+    '<div id="rel-corpo"><div class="vazio">Carregando…</div></div>' + botaoFechar();
+  document.getElementById('nf-bg').style.display = 'flex';
+  carregarRelatorio();
+}
+function carregarRelatorio() {
+  var v = document.getElementById('rel-mes').value.split('-'), ini = new Date(+v[0], +v[1] - 1, 1), fim = new Date(+v[0], +v[1], 1);
+  var el = document.getElementById('rel-corpo');
+  el.innerHTML = '<div class="vazio">Carregando…</div>';
+  sbGet('entregas_romaneios?dt_montagem=gte.' + encodeURIComponent(ini.toISOString()) + '&dt_montagem=lt.' + encodeURIComponent(fim.toISOString()) + '&status_app=neq.cancelado&order=dt_montagem.asc')
+    .then(function (roms) {
+      REL.roms = roms;
+      if (!roms.length) return [];
+      var ids = roms.map(function (r) { return r.nu_rom; }).join(',');
+      return sbGet('entregas_paradas?or=' + encodeURIComponent('(nu_rom.in.(' + ids + '),rom_app.in.(' + ids + '))') + '&status=neq.removida');
+    })
+    .then(function (ps) { REL.ps = ps; renderRelatorio(); })
+    .catch(function (e) { el.innerHTML = '<div class="vazio">Erro: ' + esc(e.message) + '</div>'; });
+}
+function diaKey(d) { d = new Date(d); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function metricasMotorista(cd) {
+  var roms = REL.roms.filter(function (r) { return r.cd_motor === cd; });
+  var nus = roms.map(function (r) { return r.nu_rom; });
+  var ps = REL.ps.filter(function (p) { return nus.indexOf(romDaParada(p)) >= 0; });
+  var ent = ps.filter(function (p) { return p.status === 'entregue'; }), oc = ps.filter(function (p) { return p.status === 'ocorrencia'; });
+  var baixadas = ent.concat(oc);
+  var dias = {}; baixadas.forEach(function (p) { dias[diaKey(p.baixa_em)] = 1; });
+  var nDias = Object.keys(dias).length;
+  // tempo entre baixas seguidas no mesmo romaneio (ignora intervalos > 2h, como almoço)
+  var intervalos = [];
+  nus.forEach(function (nu) {
+    var t = baixadas.filter(function (p) { return romDaParada(p) === nu && p.baixa_em; }).map(function (p) { return new Date(p.baixa_em).getTime(); }).sort();
+    for (var i = 1; i < t.length; i++) { var m = (t[i] - t[i - 1]) / 60000; if (m > 0 && m <= 120) intervalos.push(m); }
+  });
+  var comEta = baixadas.filter(function (p) { return p.eta && p.baixa_em; });
+  var noHorario = comEta.filter(function (p) { return (new Date(p.baixa_em) - new Date(p.eta)) / 60000 <= 30; }).length;
+  var motivos = {}; oc.forEach(function (p) { motivos[p.ocorrencia_tipo || 'Outro'] = (motivos[p.ocorrencia_tipo || 'Outro'] || 0) + 1; });
+  return {
+    roms: roms.length, paradas: ps.length, ent: ent.length, oc: oc.length, semBaixa: ps.length - baixadas.length, dias: nDias,
+    porDia: nDias ? baixadas.length / nDias : 0,
+    km: roms.reduce(function (s, r) { return s + (r.km_estimado || 0); }, 0),
+    minParada: intervalos.length ? intervalos.reduce(function (a, b) { return a + b; }, 0) / intervalos.length : null,
+    pontual: comEta.length ? noHorario / comEta.length : null,
+    semFoto: ent.filter(function (p) { return !p.foto_url; }).length,
+    semDoc: ent.filter(function (p) { return !p.recebedor_doc; }).length,
+    motivos: motivos
+  };
+}
+function renderRelatorio() {
+  var el = document.getElementById('rel-corpo');
+  if (!REL.roms.length) { el.innerHTML = '<div class="vazio">Nenhum romaneio neste mês.</div>'; return; }
+  var cds = REL.roms.map(function (r) { return r.cd_motor; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+  var pct = function (x) { return x == null ? '—' : Math.round(x * 100) + '%'; };
+  var num = function (x, d) { return x == null ? '—' : Number(x).toLocaleString('pt-BR', { maximumFractionDigits: d || 0 }); };
+  var linhas = [
+    ['Romaneios', 'roms'], ['Dias com entrega', 'dias'], ['Paradas', 'paradas'], ['Entregues', 'ent'], ['Não entregues (ocorrências)', 'oc'],
+    ['Sem baixa no app', 'semBaixa'], ['Taxa de sucesso', 'taxa'], ['Paradas por dia', 'porDia'], ['Km estimados', 'km'],
+    ['Tempo médio por parada', 'minParada'], ['Pontualidade (até 30 min da previsão)', 'pontual'], ['Entregas sem foto', 'semFoto'], ['Entregas sem documento', 'semDoc']
+  ];
+  var M = {}; cds.forEach(function (cd) { M[cd] = metricasMotorista(cd); });
+  var fmt = function (m, k) {
+    if (k === 'taxa') return pct((m.ent + m.oc) ? m.ent / (m.ent + m.oc) : null);
+    if (k === 'porDia') return num(m.porDia, 1);
+    if (k === 'km') return num(m.km) + ' km';
+    if (k === 'minParada') return m.minParada == null ? '—' : num(m.minParada, 0) + ' min';
+    if (k === 'pontual') return pct(m.pontual);
+    return num(m[k]);
+  };
+  var h = '<div style="overflow-x:auto"><table><thead><tr><th>Indicador</th>' + cds.map(function (cd) { return '<th>' + esc(NOME_MOT[cd] || cd) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    linhas.map(function (l) { return '<tr><td>' + l[0] + '</td>' + cds.map(function (cd) { return '<td><b>' + fmt(M[cd], l[1]) + '</b></td>'; }).join('') + '</tr>'; }).join('') +
+    '<tr><td>Motivos das ocorrências</td>' + cds.map(function (cd) {
+      var mo = M[cd].motivos; return '<td style="font-size:12px">' + (Object.keys(mo).length ? Object.keys(mo).map(function (k) { return esc(k) + ': ' + mo[k]; }).join('<br>') : '—') + '</td>';
+    }).join('') + '</tr></tbody></table></div>' +
+    '<div style="font-size:11px;color:var(--tx2);margin-top:8px">Km e pontualidade vêm das previsões da otimização no app; tempo por parada = intervalo médio entre baixas seguidas (desconsidera intervalos acima de 2 h). Romaneios cancelados ficam de fora.</div>' +
+    '<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap"><button class="bt-rom" onclick="exportarRelatorioCSV()">⬇️ Baixar planilha (CSV) das paradas do mês</button>' +
+    '<button class="bt-rom" onclick="imprimirRelatorio()">🖨️ Imprimir / PDF</button></div>';
+  el.innerHTML = h;
+}
+function exportarRelatorioCSV() {
+  var romPorNu = {}; REL.roms.forEach(function (r) { romPorNu[r.nu_rom] = r; });
+  var cab = ['Data montagem', 'Romaneio', 'Rota', 'Motorista', 'Cód. cliente', 'Cliente', 'Bairro', 'Município', 'NF', 'Status', 'Ocorrência', 'Baixa', 'Previsão', 'Recebido por', 'Documento', 'Foto'];
+  var q = function (v) { v = v == null ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; };
+  var linhas = REL.ps.map(function (p) {
+    var r = romPorNu[romDaParada(p)] || {};
+    return [r.dt_montagem ? new Date(r.dt_montagem).toLocaleDateString('pt-BR') : '', romDaParada(p), r.rota, NOME_MOT[r.cd_motor] || r.cd_motor, p.cd_clien, p.fantasia, p.bairro, p.municipio,
+      (p.notas || []).map(function (x) { return x.nf || x.nu_nf; }).join(' '), p.status, p.ocorrencia_tipo,
+      p.baixa_em ? new Date(p.baixa_em).toLocaleString('pt-BR') : '', p.eta ? new Date(p.eta).toLocaleString('pt-BR') : '', p.recebedor, p.recebedor_doc, p.foto_url].map(q).join(';');
+  });
+  var blob = new Blob(['﻿' + cab.map(q).join(';') + '\n' + linhas.join('\n')], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'entregas_' + document.getElementById('rel-mes').value + '.csv'; a.click();
+}
+function imprimirRelatorio() {
+  var w = window.open('', '_blank'); if (!w) { alert('Permita pop-ups.'); return; }
+  w.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório de entregas ' + document.getElementById('rel-mes').value + '</title>' +
+    '<style>body{font-family:Arial,sans-serif;margin:24px;font-size:13px}h1{font-size:18px;border-bottom:3px solid #CC0000;padding-bottom:6px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f3f4f6}</style></head><body>' +
+    '<h1>Vet Vida — Relatório de entregas por motorista · ' + document.getElementById('rel-mes').value + '</h1>' + document.getElementById('rel-corpo').querySelector('table').outerHTML +
+    '<p style="font-size:11px;color:#666">Gerado em ' + new Date().toLocaleString('pt-BR') + ' pelo Vet Hub.</p><script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.close();
+}
+
 function verFoto(src) { document.getElementById('foto-big').src = src; document.getElementById('foto-bg').style.display = 'flex'; }
 </script>
 </body>

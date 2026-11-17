@@ -20,14 +20,29 @@
 })();
 
 // Ao rolar para baixo só o topo fica; ao rolar para cima a barra de filtros volta.
+// A barra só some depois que o lugar original dela já passou por cima da tela (senão sobra um buraco).
 (function(){
-  var ult = window.pageYOffset || 0, tick = false;
+  var ult = window.pageYOffset || 0, tick = false, sent = null;
+  function ctrl(){ return document.querySelector('.ctrl'); }
+  function sentinela(){
+    var c = ctrl(); if(!c) return null;
+    if(!sent || !sent.parentNode){
+      sent = document.createElement('div'); sent.style.cssText = 'height:0;margin:0;padding:0;';
+      c.parentNode.insertBefore(sent, c);
+    }
+    return sent;
+  }
   window.addEventListener('scroll', function(){
     if (tick) return; tick = true;
     requestAnimationFrame(function(){
-      var y = window.pageYOffset || 0;
-      if (y > 140 && y > ult + 6) document.body.classList.add('vv-ctrl-off');
-      else if (y < ult - 6 || y <= 140) document.body.classList.remove('vv-ctrl-off');
+      var y = window.pageYOffset || 0, c = ctrl(), s = sentinela();
+      if (c && s) {
+        var topoFixo = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--vv-hdr-h')) || 64) + 18;
+        var lugarPassou = s.getBoundingClientRect().top + c.offsetHeight + 12 < topoFixo;
+        if (!lugarPassou) document.body.classList.remove('vv-ctrl-off');
+        else if (y > ult + 6) document.body.classList.add('vv-ctrl-off');
+        else if (y < ult - 6) document.body.classList.remove('vv-ctrl-off');
+      }
       ult = y; tick = false;
     });
   }, {passive:true});

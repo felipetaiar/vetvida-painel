@@ -1775,21 +1775,30 @@ async function renderRoteiro(){
   }
 
   var dias = ['Segunda','Terça','Quarta','Quinta','Sexta'];
+  var DIA_KEYS = ['segunda','terca','quarta','quinta','sexta'];
+  function diaIdx(v){
+    // o roteiro dos reps grava o dia por extenso ('segunda', 'terca'...); aceita também número 1–5
+    if(typeof v === 'number' || /^[0-9]+$/.test(String(v||''))){ var n = Number(v); return (n>=1 && n<=5) ? n-1 : -1; }
+    var t = String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/-feira/g,'').trim();
+    return DIA_KEYS.indexOf(t);
+  }
   content.innerHTML = reps.map(function(rep){
     var rows = porRep[rep], status = st(rep);
     var statusEl = status==='aprovado'?'<span class="pill green">Aprovado</span>':status==='pendente'?'<span class="pill yellow">Pendente</span>':'<span class="pill gray">Rascunho</span>';
     var area = (typeof AREAS_LABEL_DATA!=='undefined' && AREAS_LABEL_DATA[String(rep).toUpperCase()]) || '';
     function chip(r){
       var cli = (typeof BASE_CLIENTES!=='undefined' && BASE_CLIENTES) ? (BASE_CLIENTES.find(function(c){ return c.cod==r.cod_cli; })||{}) : {};
-      var sem = Array.isArray(r.semanas_mes) ? r.semanas_mes.join(', ') : (r.semanas_mes||'');
+      var sm = r.semanas_mes;
+      if(typeof sm === 'string'){ try{ sm = JSON.parse(sm); }catch(e){} }
+      var sem = Array.isArray(sm) ? sm.join(', ') : (sm||'');
       var sub = [r.frequencia, sem?('semanas '+sem):''].filter(Boolean).join(' · ');
-      return '<div class="rt-c">'+(cli.nome||r.cod_cli||'—')+(sub?'<small>'+sub+'</small>':'')+'</div>';
+      return '<div class="rt-c">'+(cli.nome||r.nome_cli||r.cod_cli||'—')+(sub?'<small>'+sub+'</small>':'')+'</div>';
     }
     var cols = dias.map(function(d,i){
-      var doDia = rows.filter(function(r){ return Number(r.dia_semana)===i+1; });
+      var doDia = rows.filter(function(r){ return diaIdx(r.dia_semana)===i; });
       return '<div class="rt-d'+(doDia.length?'':' vz')+'"><h5>'+d+'<span>'+doDia.length+'</span></h5>'+doDia.map(chip).join('')+'</div>';
     }).join('');
-    var outros = rows.filter(function(r){ var n=Number(r.dia_semana); return !(n>=1&&n<=5); });
+    var outros = rows.filter(function(r){ return diaIdx(r.dia_semana)<0; });
     if(outros.length) cols += '<div class="rt-d"><h5>Sem dia<span>'+outros.length+'</span></h5>'+outros.map(chip).join('')+'</div>';
     return '<div class="card"><div class="rt-h"><span class="av">'+iniciais(rep)+'</span><div><b>'+rep+'</b><br><small>'+(area?area+' · ':'')+rows.length+' clientes no roteiro</small></div><span style="margin-left:auto">'+statusEl+'</span></div>'
       +'<div class="rt-days">'+cols+'</div></div>';

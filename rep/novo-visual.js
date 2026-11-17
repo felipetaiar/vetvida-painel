@@ -18,3 +18,17 @@
   }
   window.addEventListener('load', med); window.addEventListener('resize', med); setTimeout(med, 600); setTimeout(med, 2000);
 })();
+
+// Ao rolar para baixo só o topo fica; ao rolar para cima a barra de filtros volta.
+(function(){
+  var ult = window.pageYOffset || 0, tick = false;
+  window.addEventListener('scroll', function(){
+    if (tick) return; tick = true;
+    requestAnimationFrame(function(){
+      var y = window.pageYOffset || 0;
+      if (y > 140 && y > ult + 6) document.body.classList.add('vv-ctrl-off');
+      else if (y < ult - 6 || y <= 140) document.body.classList.remove('vv-ctrl-off');
+      ult = y; tick = false;
+    });
+  }, {passive:true});
+})();

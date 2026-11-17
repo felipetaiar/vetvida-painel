@@ -683,7 +683,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 .am-seg{display:flex;gap:4px;background:#fff;border-radius:18px;padding:4px;box-shadow:var(--shadow);margin-bottom:12px;overflow-x:auto;}
 .am-seg::-webkit-scrollbar{display:none;}
 .filtro-am-btn{flex:1;white-space:nowrap;border:none;background:none;border-radius:14px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--gray-500);cursor:pointer;font-family:inherit;transition:background .15s,color .15s;}
-.filtro-am-btn.active{background:var(--red-light);color:var(--red);}
 .am-card{background:#fff;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:10px;}
 .am-card.urg{box-shadow:inset 3px 0 0 var(--red),var(--shadow);}
 .am-top{display:flex;align-items:center;gap:12px;}
@@ -706,6 +705,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 .am-obs{margin-top:10px;font-size:12px;color:var(--gray-600);background:#f7f8fa;border-radius:12px;padding:10px 12px;}
 .am-vazio{text-align:center;background:#fff;border-radius:var(--radius);padding:34px 16px;color:var(--gray-500);box-shadow:var(--shadow);font-size:13px;}
 .am-vazio-i{font-size:30px;margin-bottom:8px;opacity:.6;}
+.am-card{cursor:pointer;transition:transform .1s;}
+.am-card:active{transform:scale(.99);}
+.am-seta{color:var(--gray-300);font-size:15px;margin-left:4px;}
+.filtro-am-btn.active{background:var(--red);color:#fff;box-shadow:0 4px 12px rgba(204,0,0,.22);}
+.am-det-foto{width:100%;max-height:200px;object-fit:cover;border-radius:16px;margin-bottom:12px;cursor:pointer;}
+.am-det-bloco{background:#f7f8fa;border-radius:16px;padding:6px 14px;margin-bottom:10px;}
+.am-det-l{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--gray-200);font-size:13px;}
+.am-det-l:last-child{border-bottom:none;}
+.am-det-l span{color:var(--gray-500);flex-shrink:0;}
+.am-det-l b{font-weight:600;text-align:right;word-break:break-word;}
+.am-det-obs{font-size:13px;color:var(--gray-700);padding:4px 0 10px;}
 /* SPLASH — a própria logo acende por partes */
 #vv-splash{position:fixed;inset:0;z-index:99999;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .2s;}
 #vv-splash.out{opacity:0;pointer-events:none;}
@@ -1467,6 +1477,19 @@ document.addEventListener('click', function(e) {
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Modal detalhe amostra -->
+<div class="modal-overlay" id="modal-amostra-det">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="am-det-title"></div>
+    <div id="am-det-body"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary" id="am-det-fb" style="flex:1;display:none;">💬 Registrar feedback</button>
+      <button class="btn btn-secondary" style="flex:1;" data-oc="fecharModal('modal-amostra-det')">Fechar</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal detalhe visita -->
 <div class="modal-overlay" id="modal-visita">
@@ -3878,7 +3901,7 @@ async function renderAmostras() {
 
 function filtrarAmostrasStatus(status, btn) {
   AMOSTRAS_FILTRO_ATUAL = status;
-  document.querySelectorAll('.filtro-am-btn').forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('.filtro-am-btn').forEach(b => b.classList.toggle('active', b.dataset.status === status));
   exibirAmostrasFiltradas();
 }
 
@@ -3918,10 +3941,10 @@ function exibirAmostrasFiltradas() {
     const t = tags[a.status_feedback];
     const tag = t ? `<span class="am-tag ${t[0]}">${t[1]}</span>` : (urgente ? '<span class="am-tag no">Urgente</span>' : '<span class="am-tag wait">Aguardando</span>');
     const foto = a.foto_url
-      ? `<img class="am-foto" src="${a.foto_url}" onclick="abrirFotoAmostra('${a.foto_url}','${(a.produto||'').replace(/'/g,"\\'")}')">`
+      ? `<img class="am-foto" src="${a.foto_url}" onclick="event.stopPropagation();abrirFotoAmostra('${a.foto_url}','${(a.produto||'').replace(/'/g,"\\'")}')">`
       : '<div class="am-foto am-foto-v">📦</div>';
     const sub = [a.estabelecimento_nome || '', a.contato_nome || ''].filter(Boolean).join(' · ');
-    return `<div class="am-card${urgente ? ' urg' : ''}">
+    return `<div class="am-card${urgente ? ' urg' : ''}" onclick="abrirDetalheAmostra(${a.id})">
       <div class="am-top">
         ${foto}
         <div class="am-info">
@@ -3932,13 +3955,59 @@ function exibirAmostrasFiltradas() {
       </div>
       <div class="am-meta">
         <span class="am-chip">Qtd ${a.quantidade || 1}</span>
-        <span class="am-data${urgente ? ' w' : ''}">${new Date(a.created_at).toLocaleDateString('pt-BR')} · ${dias}d</span>
+        <span class="am-data${urgente ? ' w' : ''}">${new Date(a.created_at).toLocaleDateString('pt-BR')} · ${dias}d <span class="am-seta">›</span></span>
       </div>
       ${semFeedback
-        ? `<button class="am-btn" onclick="abrirModalFeedback(${a.id})">💬 Registrar feedback</button>`
+        ? `<button class="am-btn" onclick="event.stopPropagation();abrirModalFeedback(${a.id})">💬 Registrar feedback</button>`
         : (a.obs_feedback ? `<div class="am-obs">${a.obs_feedback}</div>` : '')}
     </div>`;
   }).join('');
+}
+
+function abrirDetalheAmostra(id) {
+  const a = (AMOSTRAS_CACHE || []).find(x => String(x.id) === String(id));
+  if (!a) return;
+  const esc = t => String(t == null ? '' : t).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const dt = a.created_at ? new Date(a.created_at) : null;
+  const dias = dt ? Math.floor((new Date() - dt) / 86400000) : null;
+  const fmtDH = d => d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const fb = { aprovado: '👍 Aprovada', neutro: '🤔 Neutro', recusado: '👎 Recusada' }[a.status_feedback] || null;
+  const v = a.visita_id ? (VISITAS || []).find(x => String(x.id) === String(a.visita_id)) : null;
+  const linha = (rot, val) => val ? `<div class="am-det-l"><span>${rot}</span><b>${esc(val)}</b></div>` : '';
+  document.getElementById('am-det-title').textContent = a.produto || 'Amostra';
+  document.getElementById('am-det-body').innerHTML = `
+    ${a.foto_url ? `<img class="am-det-foto" src="${a.foto_url}" onclick="abrirFotoAmostra('${a.foto_url}','${(a.produto||'').replace(/'/g,"\\'")}')">` : ''}
+    <div class="am-det-bloco">
+      ${linha('📦 Produto', a.produto)}
+      ${linha('🧪 Laboratório', a.lab)}
+      ${linha('🔢 Quantidade', (a.quantidade || 1) + ' un')}
+      ${dt ? linha('📅 Entregue em', fmtDH(dt) + ' (' + (dias === 0 ? 'hoje' : 'há ' + dias + ' dia' + (dias === 1 ? '' : 's')) + ')') : ''}
+    </div>
+    <div class="am-det-bloco">
+      ${linha('🏥 Estabelecimento', a.estabelecimento_nome)}
+      ${linha('👤 Veterinário / contato', a.contato_nome)}
+      ${linha('📍 Área', a.area)}
+      ${linha('🧑‍💼 Representante da área', a.vendedor)}
+      ${linha('🙋 Entregue por', a.promotora_id)}
+    </div>
+    ${v ? `<div class="am-det-bloco">
+      ${linha('🗓️ Visita vinculada', formatarData(v.created_at))}
+      ${linha('🎯 Objetivo da visita', v.objetivo)}
+      ${linha('📊 Resultado da visita', v.resultado)}
+    </div>` : ''}
+    <div class="am-det-bloco">
+      <div class="am-det-l"><span>💬 Feedback</span><b>${fb || (dias >= 45 ? 'Sem feedback — há ' + dias + ' dias' : 'Ainda sem feedback')}</b></div>
+      ${a.obs_feedback ? `<div class="am-det-obs">${esc(a.obs_feedback)}</div>` : ''}
+      ${a.feedback_at ? linha('Registrado em', fmtDH(new Date(a.feedback_at))) : ''}
+    </div>`;
+  const btn = document.getElementById('am-det-fb');
+  if (!a.status_feedback) {
+    btn.style.display = '';
+    btn.onclick = () => { fecharModal('modal-amostra-det'); abrirModalFeedback(a.id); };
+  } else {
+    btn.style.display = 'none';
+  }
+  document.getElementById('modal-amostra-det').classList.add('open');
 }
 
 function abrirFotoAmostra(url, legenda) {

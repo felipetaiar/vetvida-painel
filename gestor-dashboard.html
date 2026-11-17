@@ -356,7 +356,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 }
 
 /* SPLASH de carregamento — a logo acende por partes */
-#vv-splash{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .3s;}
+#vv-splash{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .2s;}
 #vv-splash.out{opacity:0;pointer-events:none;}
 .sp-logo{position:relative;width:min(170px,44vw);aspect-ratio:1000/716;}
 .sp-logo img{position:absolute;inset:0;width:100%;height:100%;display:block;}
@@ -2133,7 +2133,7 @@ window.addEventListener('load', function(){
     renderProdutos();
     renderAlertas();
     var sp=document.getElementById('vv-splash');
-    if(sp){ setTimeout(function(){ sp.classList.add('out'); setTimeout(function(){ sp.remove(); },350); },100); }
+    if(sp){ setTimeout(function(){ sp.classList.add('out'); setTimeout(function(){ sp.remove(); },250); },0); }
   });
   // segurança: nunca prender a tela caso algo falhe
   setTimeout(function(){ var sp=document.getElementById('vv-splash'); if(sp){ sp.classList.add('out'); setTimeout(function(){ sp.remove(); },350); } },12000);

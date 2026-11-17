@@ -126,10 +126,11 @@ const URLS = {
 // rep:     'https://rep.vetvidasp.com/'
 
 function irPara(destino, rapido) {
-  var sp = document.getElementById('splash');
+  // O gestor já mostra a animação enquanto carrega os dados; evita duplicar a espera.
+  if (destino === URLS.gestor) { window.location.href = destino; return; }
   document.getElementById('card').style.display = 'none';
-  sp.classList.add('on');
-  setTimeout(function(){ window.location.href = destino; }, rapido ? 450 : 800);
+  document.getElementById('splash').classList.add('on');
+  setTimeout(function(){ window.location.href = destino; }, rapido ? 200 : 350);
 }
 
 function fazerLogin() {

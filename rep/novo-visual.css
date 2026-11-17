@@ -76,5 +76,5 @@ body{background:#eceef2!important;color:#161a22;-webkit-font-smoothing:antialias
 .hdr::before,.header::before{display:none!important;}
 
 /* barra de busca/filtros: some ao rolar para baixo e volta ao rolar para cima */
-.ctrl{transition:transform .25s ease,opacity .2s ease;}
+.ctrl{transition:transform .25s ease,opacity .2s ease;margin-bottom:14px!important;}
 body.vv-ctrl-off .ctrl{transform:translateY(-140%);opacity:0;pointer-events:none;}

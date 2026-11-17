@@ -356,12 +356,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 }
 
 /* SPLASH de carregamento — a logo acende por partes */
-#vv-splash{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;transition:opacity .3s;}
+#vv-splash{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .3s;}
 #vv-splash.out{opacity:0;pointer-events:none;}
-.sp-logo{position:relative;width:min(300px,68vw);aspect-ratio:1000/716;}
+.sp-logo{position:relative;width:min(170px,44vw);aspect-ratio:1000/716;}
 .sp-logo img{position:absolute;inset:0;width:100%;height:100%;display:block;}
 .sp-dim{filter:grayscale(1) brightness(1.7) contrast(.9);opacity:.22;}
-.sp-lit{-webkit-mask-image:linear-gradient(100deg,transparent 0%,transparent 30%,#000 48%,#000 52%,transparent 70%,transparent 100%);mask-image:linear-gradient(100deg,transparent 0%,transparent 30%,#000 48%,#000 52%,transparent 70%,transparent 100%);-webkit-mask-size:300% 100%;mask-size:300% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;animation:sp-sweep 1.5s cubic-bezier(.45,0,.35,1) infinite;filter:drop-shadow(0 0 10px rgba(204,0,0,.35));}
+.sp-lit{-webkit-mask-image:linear-gradient(100deg,transparent 0%,transparent 30%,#000 48%,#000 52%,transparent 70%,transparent 100%);mask-image:linear-gradient(100deg,transparent 0%,transparent 30%,#000 48%,#000 52%,transparent 70%,transparent 100%);-webkit-mask-size:300% 100%;mask-size:300% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;animation:sp-sweep 1.1s cubic-bezier(.45,0,.35,1) infinite;filter:drop-shadow(0 0 10px rgba(204,0,0,.35));}
 @keyframes sp-sweep{from{-webkit-mask-position:100% 0;mask-position:100% 0}to{-webkit-mask-position:0% 0;mask-position:0% 0}}
 .sp-txt{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);}
 @media (prefers-reduced-motion:reduce){.sp-lit{animation:none;-webkit-mask-image:none;mask-image:none;opacity:.9}}
@@ -2133,7 +2133,7 @@ window.addEventListener('load', function(){
     renderProdutos();
     renderAlertas();
     var sp=document.getElementById('vv-splash');
-    if(sp){ setTimeout(function(){ sp.classList.add('out'); setTimeout(function(){ sp.remove(); },350); },400); }
+    if(sp){ setTimeout(function(){ sp.classList.add('out'); setTimeout(function(){ sp.remove(); },350); },100); }
   });
   // segurança: nunca prender a tela caso algo falhe
   setTimeout(function(){ var sp=document.getElementById('vv-splash'); if(sp){ sp.classList.add('out'); setTimeout(function(){ sp.remove(); },350); } },12000);

@@ -671,6 +671,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica N
 #dash-header-card #dash-saudacao{font-size:19px!important;letter-spacing:-.3px;}
 #dash-header-card #dash-data-hoje{opacity:.8;}
 #screen-dashboard [style*="border-radius:10px"]{border-radius:16px!important;}
+
+/* Amostras */
+.am-kpis{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+.am-kpi{background:#fff;border-radius:var(--radius);padding:14px 12px;box-shadow:var(--shadow);}
+.am-kpi b{display:block;font-size:24px;font-weight:800;letter-spacing:-.5px;line-height:1;}
+.am-kpi span{display:block;font-size:11px;color:var(--gray-500);margin-top:6px;font-weight:600;}
+.am-kpi.hero{background:linear-gradient(135deg,#CC0000,#8f0000);color:#fff;box-shadow:0 8px 20px rgba(204,0,0,.2);}
+.am-kpi.hero span{color:rgba(255,255,255,.8);}
+.am-kpi.warn b{color:var(--red);}
+.am-seg{display:flex;gap:4px;background:#fff;border-radius:18px;padding:4px;box-shadow:var(--shadow);margin-bottom:12px;overflow-x:auto;}
+.am-seg::-webkit-scrollbar{display:none;}
+.filtro-am-btn{flex:1;white-space:nowrap;border:none;background:none;border-radius:14px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--gray-500);cursor:pointer;font-family:inherit;transition:background .15s,color .15s;}
+.filtro-am-btn.active{background:var(--red-light);color:var(--red);}
+.am-card{background:#fff;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:10px;}
+.am-card.urg{box-shadow:inset 3px 0 0 var(--red),var(--shadow);}
+.am-top{display:flex;align-items:center;gap:12px;}
+.am-foto{width:48px;height:48px;border-radius:14px;object-fit:cover;flex-shrink:0;cursor:pointer;}
+.am-foto-v{display:flex;align-items:center;justify-content:center;background:var(--red-light);font-size:22px;cursor:default;}
+.am-info{flex:1;min-width:0;}
+.am-nome{font-weight:700;font-size:14px;letter-spacing:-.1px;}
+.am-sub{font-size:12px;color:var(--gray-500);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.am-tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;flex-shrink:0;}
+.am-tag.ok{background:var(--green-light);color:var(--green);}
+.am-tag.no{background:var(--red-light);color:var(--red);}
+.am-tag.neutro{background:var(--gray-100);color:var(--gray-600);}
+.am-tag.wait{background:var(--yellow-light);color:var(--yellow);}
+.am-meta{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;}
+.am-chip{background:var(--gray-100);color:var(--gray-700);font-weight:700;padding:4px 10px;border-radius:999px;}
+.am-data{color:var(--gray-400);}
+.am-data.w{color:var(--red);font-weight:700;}
+.am-btn{width:100%;margin-top:12px;background:var(--gray-100);border:none;border-radius:14px;padding:11px;font-size:13px;font-weight:700;color:var(--gray-700);cursor:pointer;font-family:inherit;}
+.am-btn:active{transform:scale(.99);}
+.am-obs{margin-top:10px;font-size:12px;color:var(--gray-600);background:#f7f8fa;border-radius:12px;padding:10px 12px;}
+.am-vazio{text-align:center;background:#fff;border-radius:var(--radius);padding:34px 16px;color:var(--gray-500);box-shadow:var(--shadow);font-size:13px;}
+.am-vazio-i{font-size:30px;margin-bottom:8px;opacity:.6;}
 /* SPLASH — a própria logo acende por partes */
 #vv-splash{position:fixed;inset:0;z-index:99999;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .2s;}
 #vv-splash.out{opacity:0;pointer-events:none;}
@@ -858,14 +893,12 @@ document.addEventListener('click', function(e) {
 
   <!-- ── SCREEN: AMOSTRAS ── -->
   <div id="screen-amostras" class="screen">
-    <div class="card">
-      <div class="card-title">📦 Amostras</div>
-      <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;">
-        <button class="filtro-am-btn active" data-status="todos" data-oc="filtrarAmostrasStatus('todos',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:#CC0000;color:white;font-size:12px;font-weight:600;cursor:pointer;">Todas</button>
-        <button class="filtro-am-btn" data-status="pendente" data-oc="filtrarAmostrasStatus('pendente',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Sem feedback</button>
-        <button class="filtro-am-btn" data-status="aprovado" data-oc="filtrarAmostrasStatus('aprovado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Aprovadas</button>
-        <button class="filtro-am-btn" data-status="recusado" data-oc="filtrarAmostrasStatus('recusado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Recusadas</button>
-      </div>
+    <div class="am-kpis" id="am-kpis"></div>
+    <div class="am-seg">
+      <button class="filtro-am-btn active" data-status="todos" data-oc="filtrarAmostrasStatus('todos',this)">Todas</button>
+      <button class="filtro-am-btn" data-status="pendente" data-oc="filtrarAmostrasStatus('pendente',this)">Sem feedback</button>
+      <button class="filtro-am-btn" data-status="aprovado" data-oc="filtrarAmostrasStatus('aprovado',this)">Aprovadas</button>
+      <button class="filtro-am-btn" data-status="recusado" data-oc="filtrarAmostrasStatus('recusado',this)">Recusadas</button>
     </div>
     <div id="lista-amostras"><div class="empty-state">Carregando...</div></div>
   </div>
@@ -3845,17 +3878,23 @@ async function renderAmostras() {
 
 function filtrarAmostrasStatus(status, btn) {
   AMOSTRAS_FILTRO_ATUAL = status;
-  document.querySelectorAll('.filtro-am-btn').forEach(b => {
-    b.classList.toggle('active', b === btn);
-    b.style.background = b === btn ? '#CC0000' : 'white';
-    b.style.color = b === btn ? 'white' : '#374151';
-  });
+  document.querySelectorAll('.filtro-am-btn').forEach(b => b.classList.toggle('active', b === btn));
   exibirAmostrasFiltradas();
 }
 
 function exibirAmostrasFiltradas() {
   const hoje = new Date();
-  let lista = AMOSTRAS_CACHE;
+  const todas = AMOSTRAS_CACHE || [];
+  // Resumo no topo (sobre todas as amostras, não só o filtro)
+  const semFb = todas.filter(a => !a.status_feedback);
+  const urgentes = semFb.filter(a => Math.floor((hoje - new Date(a.created_at)) / 86400000) >= 45);
+  const kp = document.getElementById('am-kpis');
+  if (kp) kp.innerHTML = `
+    <div class="am-kpi hero"><b>${todas.length}</b><span>Amostras</span></div>
+    <div class="am-kpi"><b>${semFb.length}</b><span>Sem feedback</span></div>
+    <div class="am-kpi ${urgentes.length ? 'warn' : ''}"><b>${urgentes.length}</b><span>Há 45+ dias</span></div>`;
+
+  let lista = todas;
   if (AMOSTRAS_FILTRO_ATUAL === 'pendente') {
     lista = lista.filter(a => !a.status_feedback);
   } else if (AMOSTRAS_FILTRO_ATUAL !== 'todos') {
@@ -3864,28 +3903,40 @@ function exibirAmostrasFiltradas() {
 
   const el = document.getElementById('lista-amostras');
   if (!lista.length) {
-    el.innerHTML = '<div class="empty-state">Nenhuma amostra encontrada.</div>';
+    el.innerHTML = '<div class="am-vazio"><div class="am-vazio-i">📦</div>Nenhuma amostra encontrada.</div>';
     return;
   }
+  const tags = {
+    aprovado: ['ok', 'Aprovada'],
+    neutro:   ['neutro', 'Neutro'],
+    recusado: ['no', 'Recusada']
+  };
   el.innerHTML = lista.map(a => {
     const dias = Math.floor((hoje - new Date(a.created_at)) / 86400000);
     const semFeedback = !a.status_feedback;
     const urgente = semFeedback && dias >= 45;
-    const statusLabel = { aprovado: '👍 Aprovado', neutro: '🤔 Neutro', recusado: '👎 Recusado' }[a.status_feedback] || null;
-    return `<div class="card" style="${urgente ? 'border-left:4px solid #CC0000;' : ''}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-        ${a.foto_url ? `<img src="${a.foto_url}" onclick="abrirFotoAmostra('${a.foto_url}','${(a.produto||'').replace(/'/g,"\\'")}')" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;cursor:pointer;">` : ''}
-        <div style="flex:1;">
-          <div style="font-weight:700;font-size:14px;">${a.produto || '—'}</div>
-          <div style="font-size:12px;color:#6b7280;">${a.estabelecimento_nome || ''}${a.contato_nome ? ' · '+a.contato_nome : ''}</div>
+    const t = tags[a.status_feedback];
+    const tag = t ? `<span class="am-tag ${t[0]}">${t[1]}</span>` : (urgente ? '<span class="am-tag no">Urgente</span>' : '<span class="am-tag wait">Aguardando</span>');
+    const foto = a.foto_url
+      ? `<img class="am-foto" src="${a.foto_url}" onclick="abrirFotoAmostra('${a.foto_url}','${(a.produto||'').replace(/'/g,"\\'")}')">`
+      : '<div class="am-foto am-foto-v">📦</div>';
+    const sub = [a.estabelecimento_nome || '', a.contato_nome || ''].filter(Boolean).join(' · ');
+    return `<div class="am-card${urgente ? ' urg' : ''}">
+      <div class="am-top">
+        ${foto}
+        <div class="am-info">
+          <div class="am-nome">${a.produto || '—'}</div>
+          <div class="am-sub">${sub}</div>
         </div>
-        ${statusLabel ? `<span style="font-size:11px;font-weight:600;">${statusLabel}</span>` : ''}
+        ${tag}
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:${urgente?'#CC0000':'#9ca3af'};${urgente?'font-weight:700;':''}">
-        <span>Qtd: ${a.quantidade || 1}</span>
-        <span>${new Date(a.created_at).toLocaleDateString('pt-BR')} · ${dias}d</span>
+      <div class="am-meta">
+        <span class="am-chip">Qtd ${a.quantidade || 1}</span>
+        <span class="am-data${urgente ? ' w' : ''}">${new Date(a.created_at).toLocaleDateString('pt-BR')} · ${dias}d</span>
       </div>
-      ${semFeedback ? `<button onclick="abrirModalFeedback(${a.id})" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;color:#374151;cursor:pointer;">💬 Registrar feedback</button>` : (a.obs_feedback ? `<div style="font-size:11px;color:#6b7280;margin-top:6px;">${a.obs_feedback}</div>` : '')}
+      ${semFeedback
+        ? `<button class="am-btn" onclick="abrirModalFeedback(${a.id})">💬 Registrar feedback</button>`
+        : (a.obs_feedback ? `<div class="am-obs">${a.obs_feedback}</div>` : '')}
     </div>`;
   }).join('');
 }

@@ -612,7 +612,129 @@ body {
 }
 .roteiro-dot.active { background: var(--red); }
 
+
+/* ═══ NOVO VISUAL (igual ao painel do gestor) — sobrescreve os tokens e o shell ═══ */
+:root{
+  --red:#CC0000;--red-dark:#8f0000;--red-light:#fdeeee;
+  --green:#12945a;--green-light:#e8f6ef;--yellow:#b86e00;--yellow-light:#fff4de;--blue:#2f5bd6;--blue-light:#eaf0ff;
+  --gray-50:#eceef2;--gray-100:#f0f1f4;--gray-200:#e6e8ec;--gray-300:#d3d7de;--gray-400:#a0a7b4;--gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#2c3340;--gray-800:#161a22;--gray-900:#161a22;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 6px 20px rgba(16,24,40,.05);--shadow-md:0 2px 4px rgba(16,24,40,.05),0 10px 28px rgba(16,24,40,.09);
+  --radius:20px;--radius-sm:14px;
+}
+html{background:var(--gray-50);}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;background:var(--gray-50);color:var(--gray-800);-webkit-font-smoothing:antialiased;}
+#app{padding-bottom:104px;max-width:760px;margin:0 auto;}
+.hdr{background:#fff;color:var(--gray-800);margin:10px 10px 0;border-radius:22px;border:none;box-shadow:var(--shadow);top:10px;padding:9px 12px;gap:10px;}
+.hdr .hdr-menu{background:var(--gray-100);border:none;color:var(--gray-700);border-radius:14px;width:40px;height:40px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.hdr .hdr-logo{height:34px;width:auto;display:block;}
+.hi h1{font-size:15px;font-weight:700;letter-spacing:-.2px;color:var(--gray-800);}
+.hi p{font-size:11px;color:var(--gray-500);}
+.hrep{background:var(--red-light);color:var(--red);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;letter-spacing:.4px;}
+.bs{background:var(--gray-100);border:none;color:var(--gray-700);border-radius:12px;}
+.screen{padding:14px 12px 24px;}
+.bottom-nav{left:12px;right:12px;bottom:12px;max-width:736px;margin:0 auto;border:none;border-radius:24px;box-shadow:var(--shadow-md);padding:6px;gap:2px;background:#fff;}
+.nav-btn{border-radius:18px;padding:8px 4px;color:var(--gray-400);font-weight:600;transition:background .15s,color .15s;}
+.nav-btn.active{color:var(--red);background:var(--red-light);}
+.card{border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:none;margin-bottom:12px;}
+.card-title{font-size:14px;font-weight:700;color:var(--gray-800);letter-spacing:-.1px;}
+.form-label{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gray-400);}
+.form-input,.form-select,.form-textarea,.filtro-select,.roteiro-cliente-input{background:#f7f8fa;border:1px solid var(--gray-200);border-radius:14px;padding:12px 14px;transition:border-color .15s,box-shadow .15s,background .15s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus,.roteiro-cliente-input:focus{border-color:var(--red);background:#fff;box-shadow:0 0 0 4px var(--red-light);}
+.btn{border-radius:14px;padding:13px 20px;}
+.btn-primary{box-shadow:0 6px 16px rgba(204,0,0,.2);}
+.btn-secondary{background:var(--gray-100);border:none;}
+.check-pill{border:1px solid var(--gray-200);border-radius:14px;background:#f7f8fa;}
+.check-pill.checked{background:var(--red-light);border-color:var(--red-mid,#f1b4b4);}
+.kpi-card{border:none;border-radius:var(--radius);box-shadow:var(--shadow);}
+.kpi-card::before{display:none;}
+.kpi-dot{border-radius:12px;width:32px;height:32px;}
+.visita-item{border:1px solid var(--gray-200);border-radius:16px;padding:14px;}
+.visita-item:hover{border-color:var(--red);}
+.feed-item,.regiao-card,.roteiro-semana,.roteiro-semana-card{border-radius:var(--radius);border-left-width:3px;}
+.roteiro-semana-header{border-radius:0;}
+.gestor-tabs{border-radius:18px;background:#fff;box-shadow:var(--shadow);}
+.gestor-tab{border-radius:14px;font-weight:600;}
+.gestor-tab.active{background:var(--red-light);box-shadow:none;}
+.badge,.roteiro-status{font-weight:700;}
+.modal{border-radius:28px 28px 0 0;}
+.toast{bottom:100px;border-radius:999px;}
+.dropdown-list,.roteiro-dropdown{border-radius:14px;border-color:var(--gray-200);box-shadow:var(--shadow-md);}
+/* menu lateral */
+#menu-lateral{border-radius:0 26px 26px 0;box-shadow:var(--shadow-md)!important;}
+#menu-lateral .ml-head{padding:20px 16px 8px;display:flex;justify-content:space-between;align-items:center;}
+#menu-lateral .ml-head img{height:46px;width:auto;}
+#menu-lateral .ml-x{background:var(--gray-100);border:none;color:var(--gray-600);width:36px;height:36px;border-radius:12px;font-size:16px;cursor:pointer;}
+#menu-lateral button[data-oc]{border-radius:14px!important;}
+/* hero do dashboard */
+#dash-header-card{background:linear-gradient(135deg,#CC0000 0%,#8f0000 100%);color:#fff;box-shadow:0 10px 26px rgba(204,0,0,.22);}
+#dash-header-card>div:not(#dash-streak){color:#fff!important;}
+#dash-header-card #dash-saudacao{font-size:19px!important;letter-spacing:-.3px;}
+#dash-header-card #dash-data-hoje{opacity:.8;}
+#screen-dashboard [style*="border-radius:10px"]{border-radius:16px!important;}
+
+/* Amostras */
+.am-kpis{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+.am-kpi{background:#fff;border-radius:var(--radius);padding:14px 12px;box-shadow:var(--shadow);}
+.am-kpi b{display:block;font-size:24px;font-weight:800;letter-spacing:-.5px;line-height:1;}
+.am-kpi span{display:block;font-size:11px;color:var(--gray-500);margin-top:6px;font-weight:600;}
+.am-kpi.hero{background:linear-gradient(135deg,#CC0000,#8f0000);color:#fff;box-shadow:0 8px 20px rgba(204,0,0,.2);}
+.am-kpi.hero span{color:rgba(255,255,255,.8);}
+.am-kpi.warn b{color:var(--red);}
+.am-seg{display:flex;gap:4px;background:#fff;border-radius:18px;padding:4px;box-shadow:var(--shadow);margin-bottom:12px;overflow-x:auto;}
+.am-seg::-webkit-scrollbar{display:none;}
+.filtro-am-btn{flex:1;white-space:nowrap;border:none;background:none;border-radius:14px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--gray-500);cursor:pointer;font-family:inherit;transition:background .15s,color .15s;}
+.am-card{background:#fff;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:10px;}
+.am-card.urg{box-shadow:inset 3px 0 0 var(--red),var(--shadow);}
+.am-top{display:flex;align-items:center;gap:12px;}
+.am-foto{width:48px;height:48px;border-radius:14px;object-fit:cover;flex-shrink:0;cursor:pointer;}
+.am-foto-v{display:flex;align-items:center;justify-content:center;background:var(--red-light);font-size:22px;cursor:default;}
+.am-info{flex:1;min-width:0;}
+.am-nome{font-weight:700;font-size:14px;letter-spacing:-.1px;}
+.am-sub{font-size:12px;color:var(--gray-500);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.am-tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;flex-shrink:0;}
+.am-tag.ok{background:var(--green-light);color:var(--green);}
+.am-tag.no{background:var(--red-light);color:var(--red);}
+.am-tag.neutro{background:var(--gray-100);color:var(--gray-600);}
+.am-tag.wait{background:var(--yellow-light);color:var(--yellow);}
+.am-meta{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;}
+.am-chip{background:var(--gray-100);color:var(--gray-700);font-weight:700;padding:4px 10px;border-radius:999px;}
+.am-data{color:var(--gray-400);}
+.am-data.w{color:var(--red);font-weight:700;}
+.am-btn{width:100%;margin-top:12px;background:var(--gray-100);border:none;border-radius:14px;padding:11px;font-size:13px;font-weight:700;color:var(--gray-700);cursor:pointer;font-family:inherit;}
+.am-btn:active{transform:scale(.99);}
+.am-obs{margin-top:10px;font-size:12px;color:var(--gray-600);background:#f7f8fa;border-radius:12px;padding:10px 12px;}
+.am-vazio{text-align:center;background:#fff;border-radius:var(--radius);padding:34px 16px;color:var(--gray-500);box-shadow:var(--shadow);font-size:13px;}
+.am-vazio-i{font-size:30px;margin-bottom:8px;opacity:.6;}
+.am-card{cursor:pointer;transition:transform .1s;}
+.am-card:active{transform:scale(.99);}
+.am-seta{color:var(--gray-300);font-size:15px;margin-left:4px;}
+.filtro-am-btn.active{background:var(--red);color:#fff;box-shadow:0 4px 12px rgba(204,0,0,.22);}
+.am-det-foto{width:100%;max-height:200px;object-fit:cover;border-radius:16px;margin-bottom:12px;cursor:pointer;}
+.am-det-bloco{background:#f7f8fa;border-radius:16px;padding:6px 14px;margin-bottom:10px;}
+.am-det-l{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--gray-200);font-size:13px;}
+.am-det-l:last-child{border-bottom:none;}
+.am-det-l span{color:var(--gray-500);flex-shrink:0;}
+.am-det-l b{font-weight:600;text-align:right;word-break:break-word;}
+.am-det-obs{font-size:13px;color:var(--gray-700);padding:4px 0 10px;}
+/* SPLASH — a própria logo acende por partes */
+#vv-splash{position:fixed;inset:0;z-index:99999;background:var(--gray-50);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .2s;}
+#vv-splash.out{opacity:0;pointer-events:none;}
+.sp-logo{position:relative;width:min(170px,44vw);aspect-ratio:1000/716;}
+.sp-logo img{position:absolute;inset:0;width:100%;height:100%;display:block;}
+.sp-dim{filter:grayscale(1) brightness(1.7) contrast(.9);opacity:.22;}
+.sp-lit{-webkit-mask-image:linear-gradient(100deg,transparent 0%,transparent 30%,#000 48%,#000 52%,transparent 70%,transparent 100%);mask-image:linear-gradient(100deg,transparent 0%,transparent 30%,#000 48%,#000 52%,transparent 70%,transparent 100%);-webkit-mask-size:300% 100%;mask-size:300% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;animation:sp-sweep .8s cubic-bezier(.45,0,.35,1) infinite;filter:drop-shadow(0 0 10px rgba(204,0,0,.35));}
+@keyframes sp-sweep{from{-webkit-mask-position:100% 0;mask-position:100% 0}to{-webkit-mask-position:0% 0;mask-position:0% 0}}
+.sp-txt{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray-400);}
+@media (prefers-reduced-motion:reduce){.sp-lit{animation:none;-webkit-mask-image:none;mask-image:none;opacity:.9}}
 </style>
+<script>
+window.addEventListener('load',function(){
+  var sp=document.getElementById('vv-splash'); if(!sp) return;
+  var falta=Math.max(0,800-(Date.now()-(window.__vvT0||Date.now())));
+  setTimeout(function(){ sp.classList.add('out'); setTimeout(function(){ sp.remove(); },250); },falta);
+  setTimeout(function(){ var s=document.getElementById('vv-splash'); if(s) s.remove(); },12000);
+});
+</script>
 <script>
 // Interceptor universal de clicks
 function _execOc(oc) {
@@ -647,6 +769,8 @@ document.addEventListener('click', function(e) {
 </script>
 </head>
 <body>
+<script>window.__vvT0=Date.now();</script>
+<div id="vv-splash"><div class="sp-logo"><img class="sp-dim" src="/logo-transparente.png" alt=""><img class="sp-lit" src="/logo-transparente.png" alt=""></div><div class="sp-txt">Carregando</div></div>
 <script>
 
 </script>
@@ -655,16 +779,16 @@ document.addEventListener('click', function(e) {
 <!-- APP -->
 <div id="app">
 <div class="hdr">
-  <button data-oc="abrirMenuLateral()" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;flex-shrink:0;">&#9776;</button>
-  <img src="logo.jpg" alt="VetVida" onerror="this.style.display='none'" style="height:30px;background:white;padding:3px 8px;border-radius:6px;">
-  <div class="hi"><h1>VetVida</h1><p id="header-usuario">Promotora</p></div>
+  <button class="hdr-menu" data-oc="abrirMenuLateral()" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <img class="hdr-logo" src="/logo-transparente.png" alt="Vet Vida" onerror="this.src='logo.jpg'">
+  <div class="hi"><h1>Vet Hub</h1><p id="header-usuario">Promotora</p></div>
   <div class="hr" style="display:flex;align-items:center;gap:8px;"><span id="notif-sininho-placeholder"></span><span class="hrep">NICOLLE</span></div>
 </div>
 <div id="menu-overlay" data-oc="fecharMenuLateral()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;"></div>
 <div id="menu-lateral" style="position:fixed;top:0;left:-280px;bottom:0;width:260px;background:white;z-index:501;transition:left 0.25s;box-shadow:2px 0 20px rgba(0,0,0,0.2);overflow-y:auto;">
-  <div style="background:#CC0000;padding:18px 16px;display:flex;justify-content:space-between;align-items:center;">
-    <img src="logo.jpg" alt="VetVida" style="height:32px;background:white;padding:3px 8px;border-radius:6px;" onerror="this.style.display='none'">
-    <button data-oc="fecharMenuLateral()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">&#x2715;</button>
+  <div class="ml-head">
+    <img src="/logo-transparente.png" alt="Vet Vida" onerror="this.src='logo.jpg'">
+    <button class="ml-x" data-oc="fecharMenuLateral()" aria-label="Fechar">&#x2715;</button>
   </div>
   <div style="padding:10px;">
     <button data-oc="fecharMenuLateral();navegarPara('dashboard');" style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;color:#CC0000;background:#fdf2f2;border:none;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:4px;">&#127968; In&#237;cio</button>
@@ -779,14 +903,12 @@ document.addEventListener('click', function(e) {
 
   <!-- ── SCREEN: AMOSTRAS ── -->
   <div id="screen-amostras" class="screen">
-    <div class="card">
-      <div class="card-title">📦 Amostras</div>
-      <div style="display:flex;gap:6px;margin-top:8px;overflow-x:auto;">
-        <button class="filtro-am-btn active" data-status="todos" data-oc="filtrarAmostrasStatus('todos',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:#CC0000;color:white;font-size:12px;font-weight:600;cursor:pointer;">Todas</button>
-        <button class="filtro-am-btn" data-status="pendente" data-oc="filtrarAmostrasStatus('pendente',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Sem feedback</button>
-        <button class="filtro-am-btn" data-status="aprovado" data-oc="filtrarAmostrasStatus('aprovado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Aprovadas</button>
-        <button class="filtro-am-btn" data-status="recusado" data-oc="filtrarAmostrasStatus('recusado',this)" style="white-space:nowrap;padding:6px 12px;border-radius:14px;border:1px solid #e5e7eb;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">Recusadas</button>
-      </div>
+    <div class="am-kpis" id="am-kpis"></div>
+    <div class="am-seg">
+      <button class="filtro-am-btn active" data-status="todos" data-oc="filtrarAmostrasStatus('todos',this)">Todas</button>
+      <button class="filtro-am-btn" data-status="pendente" data-oc="filtrarAmostrasStatus('pendente',this)">Sem feedback</button>
+      <button class="filtro-am-btn" data-status="aprovado" data-oc="filtrarAmostrasStatus('aprovado',this)">Aprovadas</button>
+      <button class="filtro-am-btn" data-status="recusado" data-oc="filtrarAmostrasStatus('recusado',this)">Recusadas</button>
     </div>
     <div id="lista-amostras"><div class="empty-state">Carregando...</div></div>
   </div>
@@ -1355,6 +1477,19 @@ document.addEventListener('click', function(e) {
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Modal detalhe amostra -->
+<div class="modal-overlay" id="modal-amostra-det">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="am-det-title"></div>
+    <div id="am-det-body"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary" id="am-det-fb" style="flex:1;display:none;">💬 Registrar feedback</button>
+      <button class="btn btn-secondary" style="flex:1;" data-oc="fecharModal('modal-amostra-det')">Fechar</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal detalhe visita -->
 <div class="modal-overlay" id="modal-visita">
@@ -3766,17 +3901,23 @@ async function renderAmostras() {
 
 function filtrarAmostrasStatus(status, btn) {
   AMOSTRAS_FILTRO_ATUAL = status;
-  document.querySelectorAll('.filtro-am-btn').forEach(b => {
-    b.classList.toggle('active', b === btn);
-    b.style.background = b === btn ? '#CC0000' : 'white';
-    b.style.color = b === btn ? 'white' : '#374151';
-  });
+  document.querySelectorAll('.filtro-am-btn').forEach(b => b.classList.toggle('active', b.dataset.status === status));
   exibirAmostrasFiltradas();
 }
 
 function exibirAmostrasFiltradas() {
   const hoje = new Date();
-  let lista = AMOSTRAS_CACHE;
+  const todas = AMOSTRAS_CACHE || [];
+  // Resumo no topo (sobre todas as amostras, não só o filtro)
+  const semFb = todas.filter(a => !a.status_feedback);
+  const urgentes = semFb.filter(a => Math.floor((hoje - new Date(a.created_at)) / 86400000) >= 45);
+  const kp = document.getElementById('am-kpis');
+  if (kp) kp.innerHTML = `
+    <div class="am-kpi hero"><b>${todas.length}</b><span>Amostras</span></div>
+    <div class="am-kpi"><b>${semFb.length}</b><span>Sem feedback</span></div>
+    <div class="am-kpi ${urgentes.length ? 'warn' : ''}"><b>${urgentes.length}</b><span>Há 45+ dias</span></div>`;
+
+  let lista = todas;
   if (AMOSTRAS_FILTRO_ATUAL === 'pendente') {
     lista = lista.filter(a => !a.status_feedback);
   } else if (AMOSTRAS_FILTRO_ATUAL !== 'todos') {
@@ -3785,30 +3926,88 @@ function exibirAmostrasFiltradas() {
 
   const el = document.getElementById('lista-amostras');
   if (!lista.length) {
-    el.innerHTML = '<div class="empty-state">Nenhuma amostra encontrada.</div>';
+    el.innerHTML = '<div class="am-vazio"><div class="am-vazio-i">📦</div>Nenhuma amostra encontrada.</div>';
     return;
   }
+  const tags = {
+    aprovado: ['ok', 'Aprovada'],
+    neutro:   ['neutro', 'Neutro'],
+    recusado: ['no', 'Recusada']
+  };
   el.innerHTML = lista.map(a => {
     const dias = Math.floor((hoje - new Date(a.created_at)) / 86400000);
     const semFeedback = !a.status_feedback;
     const urgente = semFeedback && dias >= 45;
-    const statusLabel = { aprovado: '👍 Aprovado', neutro: '🤔 Neutro', recusado: '👎 Recusado' }[a.status_feedback] || null;
-    return `<div class="card" style="${urgente ? 'border-left:4px solid #CC0000;' : ''}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-        ${a.foto_url ? `<img src="${a.foto_url}" onclick="abrirFotoAmostra('${a.foto_url}','${(a.produto||'').replace(/'/g,"\\'")}')" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;cursor:pointer;">` : ''}
-        <div style="flex:1;">
-          <div style="font-weight:700;font-size:14px;">${a.produto || '—'}</div>
-          <div style="font-size:12px;color:#6b7280;">${a.estabelecimento_nome || ''}${a.contato_nome ? ' · '+a.contato_nome : ''}</div>
+    const t = tags[a.status_feedback];
+    const tag = t ? `<span class="am-tag ${t[0]}">${t[1]}</span>` : (urgente ? '<span class="am-tag no">Urgente</span>' : '<span class="am-tag wait">Aguardando</span>');
+    const foto = a.foto_url
+      ? `<img class="am-foto" src="${a.foto_url}" onclick="event.stopPropagation();abrirFotoAmostra('${a.foto_url}','${(a.produto||'').replace(/'/g,"\\'")}')">`
+      : '<div class="am-foto am-foto-v">📦</div>';
+    const sub = [a.estabelecimento_nome || '', a.contato_nome || ''].filter(Boolean).join(' · ');
+    return `<div class="am-card${urgente ? ' urg' : ''}" onclick="abrirDetalheAmostra(${a.id})">
+      <div class="am-top">
+        ${foto}
+        <div class="am-info">
+          <div class="am-nome">${a.produto || '—'}</div>
+          <div class="am-sub">${sub}</div>
         </div>
-        ${statusLabel ? `<span style="font-size:11px;font-weight:600;">${statusLabel}</span>` : ''}
+        ${tag}
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:${urgente?'#CC0000':'#9ca3af'};${urgente?'font-weight:700;':''}">
-        <span>Qtd: ${a.quantidade || 1}</span>
-        <span>${new Date(a.created_at).toLocaleDateString('pt-BR')} · ${dias}d</span>
+      <div class="am-meta">
+        <span class="am-chip">Qtd ${a.quantidade || 1}</span>
+        <span class="am-data${urgente ? ' w' : ''}">${new Date(a.created_at).toLocaleDateString('pt-BR')} · ${dias}d <span class="am-seta">›</span></span>
       </div>
-      ${semFeedback ? `<button onclick="abrirModalFeedback(${a.id})" style="width:100%;margin-top:10px;background:#f3f4f6;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:600;color:#374151;cursor:pointer;">💬 Registrar feedback</button>` : (a.obs_feedback ? `<div style="font-size:11px;color:#6b7280;margin-top:6px;">${a.obs_feedback}</div>` : '')}
+      ${semFeedback
+        ? `<button class="am-btn" onclick="event.stopPropagation();abrirModalFeedback(${a.id})">💬 Registrar feedback</button>`
+        : (a.obs_feedback ? `<div class="am-obs">${a.obs_feedback}</div>` : '')}
     </div>`;
   }).join('');
+}
+
+function abrirDetalheAmostra(id) {
+  const a = (AMOSTRAS_CACHE || []).find(x => String(x.id) === String(id));
+  if (!a) return;
+  const esc = t => String(t == null ? '' : t).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const dt = a.created_at ? new Date(a.created_at) : null;
+  const dias = dt ? Math.floor((new Date() - dt) / 86400000) : null;
+  const fmtDH = d => d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const fb = { aprovado: '👍 Aprovada', neutro: '🤔 Neutro', recusado: '👎 Recusada' }[a.status_feedback] || null;
+  const v = a.visita_id ? (VISITAS || []).find(x => String(x.id) === String(a.visita_id)) : null;
+  const linha = (rot, val) => val ? `<div class="am-det-l"><span>${rot}</span><b>${esc(val)}</b></div>` : '';
+  document.getElementById('am-det-title').textContent = a.produto || 'Amostra';
+  document.getElementById('am-det-body').innerHTML = `
+    ${a.foto_url ? `<img class="am-det-foto" src="${a.foto_url}" onclick="abrirFotoAmostra('${a.foto_url}','${(a.produto||'').replace(/'/g,"\\'")}')">` : ''}
+    <div class="am-det-bloco">
+      ${linha('📦 Produto', a.produto)}
+      ${linha('🧪 Laboratório', a.lab)}
+      ${linha('🔢 Quantidade', (a.quantidade || 1) + ' un')}
+      ${dt ? linha('📅 Entregue em', fmtDH(dt) + ' (' + (dias === 0 ? 'hoje' : 'há ' + dias + ' dia' + (dias === 1 ? '' : 's')) + ')') : ''}
+    </div>
+    <div class="am-det-bloco">
+      ${linha('🏥 Estabelecimento', a.estabelecimento_nome)}
+      ${linha('👤 Veterinário / contato', a.contato_nome)}
+      ${linha('📍 Área', a.area)}
+      ${linha('🧑‍💼 Representante da área', a.vendedor)}
+      ${linha('🙋 Entregue por', a.promotora_id)}
+    </div>
+    ${v ? `<div class="am-det-bloco">
+      ${linha('🗓️ Visita vinculada', formatarData(v.created_at))}
+      ${linha('🎯 Objetivo da visita', v.objetivo)}
+      ${linha('📊 Resultado da visita', v.resultado)}
+    </div>` : ''}
+    <div class="am-det-bloco">
+      <div class="am-det-l"><span>💬 Feedback</span><b>${fb || (dias >= 45 ? 'Sem feedback — há ' + dias + ' dias' : 'Ainda sem feedback')}</b></div>
+      ${a.obs_feedback ? `<div class="am-det-obs">${esc(a.obs_feedback)}</div>` : ''}
+      ${a.feedback_at ? linha('Registrado em', fmtDH(new Date(a.feedback_at))) : ''}
+    </div>`;
+  const btn = document.getElementById('am-det-fb');
+  if (!a.status_feedback) {
+    btn.style.display = '';
+    btn.onclick = () => { fecharModal('modal-amostra-det'); abrirModalFeedback(a.id); };
+  } else {
+    btn.style.display = 'none';
+  }
+  document.getElementById('modal-amostra-det').classList.add('open');
 }
 
 function abrirFotoAmostra(url, legenda) {

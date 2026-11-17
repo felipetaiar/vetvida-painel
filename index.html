@@ -5,32 +5,62 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>VetVida — Painel</title>
 <style>
+:root{--red:#CC0000;--red-dk:#8f0000;--red-soft:#fdeeee;--bg:#eceef2;--border:#e6e8ec;--text:#161a22;--muted:#6b7280;--muted2:#a0a7b4;--sh:0 1px 2px rgba(16,24,40,.04),0 10px 34px rgba(16,24,40,.07);}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
-.card{background:white;border-radius:16px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
-.logo-wrap{text-align:center;margin-bottom:28px;}
-.logo-wrap img{height:56px;}
-.logo-wrap h1{font-size:20px;font-weight:700;color:#1f2937;margin-top:10px;}
-.logo-wrap p{font-size:13px;color:#6b7280;margin-top:4px;}
+html{background:var(--bg);}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;-webkit-font-smoothing:antialiased;}
+.card{background:#fff;border-radius:26px;padding:34px 30px 26px;width:100%;max-width:400px;box-shadow:var(--sh);animation:rise .5s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.logo-wrap{text-align:center;margin-bottom:26px;}
+.logo-wrap img{height:112px;width:auto;display:block;margin:0 auto;}
+.logo-wrap h1{font-size:18px;font-weight:700;letter-spacing:-.2px;margin-top:14px;}
+.logo-wrap p{font-size:13px;color:var(--muted);margin-top:4px;}
 .form-group{margin-bottom:14px;}
-.form-group label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.4px;}
-.form-group input{width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:11px 13px;font-size:14px;outline:none;transition:border-color 0.15s;color:#1f2937;background:white;}
-.form-group input:focus{border-color:#CC0000;}
+.form-group label{display:block;font-size:10.5px;font-weight:700;color:var(--muted2);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;}
+.form-group input[type=text],.form-group input[type=password]{width:100%;border:1px solid var(--border);border-radius:14px;padding:13px 14px;font-size:15px;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:var(--text);background:#f7f8fa;font-family:inherit;}
+.form-group input:focus{border-color:var(--red);background:#fff;box-shadow:0 0 0 4px var(--red-soft);}
 .pw-wrap{position:relative;}
-.pw-wrap input{padding-right:40px;}
-.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;padding:4px;}
-.btn-login{width:100%;background:#CC0000;color:white;border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;transition:background 0.15s;}
-.btn-login:hover{background:#a80000;}
-.btn-login:active{background:#8b0000;}
-.erro{color:#CC0000;font-size:13px;text-align:center;margin-top:10px;display:none;}
-.rodape{text-align:center;font-size:11px;color:#d1d5db;margin-top:24px;}
+.pw-wrap input{padding-right:44px!important;}
+.pw-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted2);padding:8px;line-height:0;border-radius:10px;}
+.pw-toggle:hover{color:var(--text);}
+.lembrar{display:flex;align-items:center;gap:9px;margin:4px 0 16px;}
+.lembrar input{width:17px;height:17px;cursor:pointer;accent-color:#CC0000;}
+.lembrar label{font-size:13px;color:var(--muted);cursor:pointer;}
+.btn-login{width:100%;background:var(--red);color:#fff;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s,transform .1s,box-shadow .15s;font-family:inherit;box-shadow:0 6px 16px rgba(204,0,0,.22);}
+.btn-login:hover{background:#b30000;}
+.btn-login:active{background:var(--red-dk);transform:scale(.985);}
+.erro{color:var(--red);font-size:13px;text-align:center;margin-top:12px;display:none;background:var(--red-soft);border-radius:12px;padding:9px 12px;}
+.rodape{text-align:center;font-size:11px;color:var(--muted2);margin-top:22px;}
+
+/* SPLASH — a própria logo acende por partes */
+#splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:26px;opacity:0;transition:opacity .25s;}
+#splash.on{display:flex;opacity:1;}
+#splash.out{opacity:0;}
+.sp-logo{position:relative;width:min(300px,68vw);aspect-ratio:1000/716;}
+.sp-logo img{position:absolute;inset:0;width:100%;height:100%;display:block;}
+.sp-dim{filter:grayscale(1) brightness(1.7) contrast(.9);opacity:.22;}
+.sp-lit{
+  -webkit-mask-image:linear-gradient(100deg,transparent 0%,transparent 30%,#000 48%,#000 52%,transparent 70%,transparent 100%);
+  mask-image:linear-gradient(100deg,transparent 0%,transparent 30%,#000 48%,#000 52%,transparent 70%,transparent 100%);
+  -webkit-mask-size:300% 100%;mask-size:300% 100%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  animation:sp-sweep 1.5s cubic-bezier(.45,0,.35,1) infinite;
+  filter:drop-shadow(0 0 10px rgba(204,0,0,.35));
+}
+@keyframes sp-sweep{from{-webkit-mask-position:100% 0;mask-position:100% 0}to{-webkit-mask-position:0% 0;mask-position:0% 0}}
+.sp-txt{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);}
+@media (prefers-reduced-motion:reduce){.sp-lit{animation:none;-webkit-mask-image:none;mask-image:none;opacity:.9}}
 </style>
 </head>
 <body>
-<div class="card">
+<div id="splash" aria-hidden="true">
+  <div class="sp-logo"><img class="sp-dim" src="logo-transparente.png" alt=""><img class="sp-lit" src="logo-transparente.png" alt=""></div>
+  <div class="sp-txt">Carregando</div>
+</div>
+<div class="card" id="card">
   <div class="logo-wrap">
-    <img src="logo.jpg" alt="VetVida">
-    <h1>VetVida Painel</h1>
+    <img src="logo-transparente.png" alt="Vet Vida">
+    <h1>Vet Hub</h1>
     <p>Entre com seu usuário e senha</p>
   </div>
 
@@ -53,9 +83,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:2px;">
-    <input type="checkbox" id="lembrar" style="width:16px;height:16px;cursor:pointer;accent-color:#CC0000;">
-    <label for="lembrar" style="font-size:13px;color:#374151;cursor:pointer;">Lembrar meu acesso</label>
+  <div class="lembrar">
+    <input type="checkbox" id="lembrar">
+    <label for="lembrar">Lembrar meu acesso</label>
   </div>
   <button class="btn-login" onclick="fazerLogin()">Entrar</button>
   <div class="erro" id="erro">Usuário ou senha incorretos.</div>
@@ -95,6 +125,13 @@ const URLS = {
 // promotora.vetvidasp.com/'
 // rep:     'https://rep.vetvidasp.com/'
 
+function irPara(destino, rapido) {
+  var sp = document.getElementById('splash');
+  document.getElementById('card').style.display = 'none';
+  sp.classList.add('on');
+  setTimeout(function(){ window.location.href = destino; }, rapido ? 900 : 1500);
+}
+
 function fazerLogin() {
   const user = (document.getElementById('login-user').value || '').toLowerCase().trim();
   const pass = document.getElementById('login-pass').value;
@@ -131,8 +168,7 @@ function fazerLogin() {
     localStorage.removeItem('vv_lembrar');
   }
 
-  const destino = URLS[match.perfil] || URLS.rep;
-  window.location.href = destino;
+  irPara(URLS[match.perfil] || URLS.rep, false);
 }
 
 function toggleSenha() {
@@ -176,7 +212,7 @@ window.addEventListener('load', function() {
       return (e[1].perfil === 'rep' || e[1].perfil === 'motorista') ? e[0] === lsUser : e[1].perfil === lsPerfil;
     });
     if (perfMatch) {
-      window.location.href = URLS[perfMatch[1].perfil] || URLS.rep;
+      irPara(URLS[perfMatch[1].perfil] || URLS.rep, true);
       return;
     }
   }
